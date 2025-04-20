@@ -101,11 +101,11 @@
 
 信息处理包括：Fscan结果解析、蓝队大批量封禁IP处置、OSS资源桶遍
 
-![image-20250420181530577](README.assets/image-20250420181530577.png)
+![image-20250420181530577](images/image-20250420181530577.png)
 
-![image-20250420181613257](README.assets/image-20250420181613257.png)
+![image-20250420181613257](images/image-20250420181613257.png)
 
-![image-20250420181624725](README.assets/image-20250420181624725.png)
+![image-20250420181624725](images/image-20250420181624725.png)
 
 ### 数据库管理
 
