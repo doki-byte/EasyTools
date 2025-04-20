@@ -71,8 +71,6 @@
 + 如果程序有图标的话，烦请放在`EasyToolsFiles\icon`路径下，程序会自动导入，当然直接使用图片url也是可以的
 + tips: 例如java程序，如果需要使用多个版本，可以直接通过绝对路径进行启动哦、`C:\Java\jdk1.8\bin\java.exe -jar xxxx.jar`
 
-![image-20250216011634576](images/image-20250216011634576.png)
-
 ![image-20250415224705041](images/image-20250415224705041.png)
 
 ### 网址导航
