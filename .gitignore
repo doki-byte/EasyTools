@@ -1,8 +1,7 @@
 build/bin
 frontend/node_modules
 frontend/dist
-EasyToolsFiles/logs
-EasyToolsFiles/tools
+EasyToolsFiles
 
 
 
