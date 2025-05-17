@@ -1,0 +1,17 @@
+build/bin
+frontend/node_modules
+frontend/dist
+EasyToolsFiles/logs
+EasyToolsFiles/tools
+
+
+
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,16 @@
+{
+	"fixed": {
+		"file_version": "v1.7.3"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "v1.7.3",
+			"FileVersion": "v1.7.3",
+			"CompanyName": "渗透云记",
+			"FileDescription": "EasyTools渗透测试工具箱",
+			"LegalCopyright": "渗透云记",
+			"ProductName": "EasyTools渗透测试工具箱",
+			"Comments": "power By Muhan"
+		}
+	}
+}
