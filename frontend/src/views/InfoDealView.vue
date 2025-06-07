@@ -5,6 +5,7 @@
             <el-tab-pane label="Fscan结果处理" name="fscan-deal" />
           <el-tab-pane label="蓝队大批量封禁IP处置" name="ip-ban-deal" />
           <el-tab-pane label="OSS存储桶遍历" name="oss-list" />
+          <el-tab-pane label="WX小程序反编译" name="unwxapp" />
         </el-tabs>
 
         <!-- 内容区域 -->
@@ -139,15 +140,66 @@
               </el-button>
             </div>
           </div>
+
+          <!--wx小程序反编译-->
+          <div v-if="activeTab === 'unwxapp'" class="tab-content">
+            <div class="unwxapp-wrapper">
+              <el-card shadow="hover" class="box-card">
+                <template #header>
+                  <div class="card-header">
+                    <span>微信小程序反编译</span>
+                  </div>
+                </template>
+
+                <el-form label-width="120px" label-position="left">
+                  <el-form-item label="选择小程序包">
+                    <el-input v-model="wxpackages" readonly placeholder="请选择小程序文件或文件夹，例如：C:\xxxxx\WeChat Files\Applet\wx93fde323abb050f8\xxx" />
+                    <el-button type="primary" class="ml-2" @click="selectPackage">选择</el-button>
+                  </el-form-item>
+
+                  <el-form-item label="AppID（可选）">
+                    <el-input v-model="wxappid" placeholder="留空将自动获取" />
+                  </el-form-item>
+
+                  <el-form-item label="格式化代码">
+                    <el-switch v-model="wxformat" />
+                  </el-form-item>
+
+                  <el-form-item>
+                    <el-button type="primary" @click="runUnWxapp">开始反编译</el-button>
+                    <el-button
+                        type="success"
+                        v-if="wxresult && wxoutputPath"
+                        @click="openOutputFolder"
+                    >
+                      打开文件夹
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+
+                <el-divider>输出结果</el-divider>
+                <el-input
+                    type="textarea"
+                    v-model="wxresult"
+                    rows="15"
+                    readonly
+                    resize="none"
+                    placeholder="运行结果将在此显示"
+                />
+              </el-card>
+            </div>
+          </div>
         </el-main>
     </el-container>
 </template>
 
 <script>
 import {DealOssList, FscanResultDeal, GetExcelContent, UploadFile} from "../../wailsjs/go/controller/InfoDeal";
+import {OpenFolder, RunUnWxapp, SelectDirectory} from "../../wailsjs/go/controller/UnWxapp";
 import {ElMessage, ElMessageBox} from "element-plus";
 import * as XLSX from "xlsx";
 import axios from "axios";
+
 
 export default {
     data() {
@@ -157,6 +209,7 @@ export default {
                 "fscan-deal": "Fscan结果处理",
                 "ip-ban-deal": "蓝队大批量封禁IP处置",
                 "oss-list": "OSS资源桶遍历",
+                "unwxapp": "wx小程序反编译",
             },
             fileName: "", // 当前上传的文件名
             fileList: [], // 上传的文件列表
@@ -176,6 +229,12 @@ export default {
             OsslistInput:"", //oss资源桶路径
             OssListSuccess: false, //oss处理结果
             OssListSavePath: "", //oss处理结果文件保存位置
+
+            wxpackages: [],
+            wxappid: "",
+            wxformat: true,
+            wxresult: "",
+            wxoutputPath:""
         };
     },
     mounted() {
@@ -328,20 +387,78 @@ export default {
           ElMessageBox.close()
 
         } catch (err) {
-          this.$message.error("处理失败，请重试！");
+          ElMessageBox.close()
+          this.$message.warning("请检查链接，只有存在信息泄露,的链接才可以爬取哦");
         }
       },
       // 打开文件夹
       openDir() {
-        axios
-            .get("http://localhost:10086/opendir")
-            .catch(() => {
-              ElMessage.error({
-                message: "打开文件夹失败",
-                type: "error",
-              });
-            });
+        OpenFolder({path:"EasyToolsFiles/file"})
       },
+      async selectPackage() {
+        try {
+          const path = await SelectDirectory(); // 打开系统文件夹选择对话框
+          if (path) {
+            this.wxpackages = [path]; // Node.js 脚本支持多个路径，这里用数组
+          }
+        } catch (e) {
+          ElMessage.error("选择路径失败");
+        }
+      },
+      async runUnWxapp() {
+        if (this.wxpackages.length === 0) {
+          ElMessage.warning("请先选择小程序包路径");
+          return;
+        }
+
+        try {
+          // 关闭之前的弹窗（如果有）
+          ElMessageBox.close();
+          // 显示正在修改的提示框
+          ElMessageBox({
+            title: "提示",
+            message: "正在进行反编译，请稍等~~~",
+            type: "info",
+            showConfirmButton: false,
+            closeOnClickModal: false,
+            closeOnPressEscape: false,
+          });
+
+
+          // 添加空对象 {} 作为第一个参数
+          this.wxresult = await RunUnWxapp({}, this.wxpackages, this.wxappid, this.wxformat);
+
+          this.wxoutputPath = this.wxpackages + "/__APP__";
+
+          // 关闭之前的弹窗（如果有）
+          ElMessageBox.close();
+          // 显示正在修改的提示框
+          ElMessageBox({
+            title: "提示",
+            message: `反编译完成，文件保存在 ${this.wxoutputPath} 文件夹中`,
+            type: "success",
+            showConfirmButton: false,
+            closeOnClickModal: false,
+            closeOnPressEscape: false,
+          });
+
+        } catch (err) {
+          ElMessageBox.close();
+          this.wxresult = err?.message || "运行失败，请检查小程序路径是否选择合适，路径下是否存在xxxxx.wxapkg文件";
+          ElMessage.error("运行失败，请检查小程序路径是否选择合适，路径下是否存在xxxxx.wxapkg文件");
+        }
+      },
+      openOutputFolder() {
+        if (!this.wxoutputPath) {
+          ElMessage.warning("没有输出路径");
+          return;
+        }
+        OpenFolder({
+          path: Array.isArray(this.wxoutputPath)
+              ? this.wxoutputPath[0]
+              : this.wxoutputPath
+        });
+      }
     },
     watch: {
         activeSheet() {
@@ -516,6 +633,17 @@ export default {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
+}
+
+/* 小程序反编译 */
+.unwxapp-wrapper {
+  padding: 4px;
+}
+.ml-2 {
+  margin-left: 5px;
+}
+.box-card {
+  margin: 0 auto;
 }
 
 

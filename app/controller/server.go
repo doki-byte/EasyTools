@@ -45,6 +45,7 @@ func (s *Server) start(port int) *Server {
 	s.staticDir = filepath.Join(execPath, "EasyToolsFiles/icon/")
 
 	go func() {
+		gin.SetMode(gin.ReleaseMode)
 		r := gin.Default()
 
 		// 配置跨域支持

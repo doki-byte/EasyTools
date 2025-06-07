@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"EasyTools/app/unwxapp"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -34,10 +36,33 @@ func (u *Util) Db() *gorm.DB {
 	return db
 }
 
+// 初始化免杀模块
+func (u *Util) InitMianSha() *Util {
+	_ = u.PathExist(fmt.Sprintf("%s/icon", u.GetAppPath()))
+	_ = u.PathExist(fmt.Sprintf("%s/tools", u.GetAppPath()))
+	_ = u.PathExist(fmt.Sprintf("%s/file", u.GetAppPath()))
+
+	return u
+}
+
 func (u *Util) InitFile() *Util {
 	_ = u.PathExist(fmt.Sprintf("%s/icon", u.GetAppPath()))
 	_ = u.PathExist(fmt.Sprintf("%s/tools", u.GetAppPath()))
 	_ = u.PathExist(fmt.Sprintf("%s/file", u.GetAppPath()))
+
+	targetUnwxappDir := filepath.Join("EasyToolsFiles", "tools", "Unwxapp")
+	if _, err := os.Stat(targetUnwxappDir); os.IsNotExist(err) {
+		// 如果目标目录不存在，执行资源解压
+		fmt.Println("目标文件夹不存在，正在解压资源...")
+		err := unwxapp.ExtractAllResources() // 调用解压逻辑
+		if err != nil {
+			log.Printf("Unwxapp解压资源失败: %w", err)
+		}
+		fmt.Println("Unwxapp资源解压完成")
+	} else {
+		// 如果目标目录已存在
+		fmt.Println("Unwxapp资源文件夹已存在，跳过解压。")
+	}
 	return u
 }
 

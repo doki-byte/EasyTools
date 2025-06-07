@@ -32,12 +32,12 @@ func (s *Tools) Initialize(db *gorm.DB) {
 	}
 
 	if count == 0 {
-		defaultSites := []Tools{
+		defaultTools := []Tools{
 			{Category: "命令测试", Cmd: "whoami", Param: "", Name: "whoami", Desc: "终端命令显示", Icon: "", Terminal: 1, CateSort: 0, CmdSort: 0},
 			{Category: "命令测试", Cmd: "calc", Param: "", Name: "弹计算器", Desc: "不显示终端框框", Icon: "", Terminal: 0, CateSort: 0, CmdSort: 0},
 			{Category: "数据库管理", Cmd: "cd EasyToolsFiles\\tools\\HeidiSQL &", Param: "heidisql.exe", Name: "HeidiSQL", Desc: "便携数据库连接工具", Icon: "", Terminal: 0, CateSort: 0, CmdSort: 0},
 		}
-		if err := db.Create(&defaultSites).Error; err != nil {
+		if err := db.Create(&defaultTools).Error; err != nil {
 			log.Fatalf("Error inserting default data: %v", err)
 		}
 	}

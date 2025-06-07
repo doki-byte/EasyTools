@@ -49,6 +49,18 @@ export namespace controller {
 		}
 	}
 	
+	export class OpenFolderRequest {
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenFolderRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
 	export class PasswordData {
 	    id: number;
 	    name: string;
@@ -400,6 +412,23 @@ export namespace define {
 	        this.key = source["key"];
 	        this.score = source["score"];
 	        this.member = source["member"];
+	    }
+	}
+
+}
+
+export namespace struct {} {
+	
+	export class  {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new (source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
 	    }
 	}
 

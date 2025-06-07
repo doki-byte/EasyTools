@@ -10,15 +10,15 @@ export function DeleteSiteCategory(arg1:string):Promise<void>;
 
 export function GetAllSites():Promise<Array<controller.SiteCategory>>;
 
-export function GetCategoryList():Promise<Array<{[key: string]: any}>>;
+export function GetCategoryList():Promise<Array<Record<string, any>>>;
 
 export function GetSearchSites(arg1:string):Promise<Array<controller.SiteCategory>>;
 
-export function MoveCommandToCategory(arg1:{[key: string]: any}):Promise<void>;
+export function MoveCommandToCategory(arg1:Record<string, any>):Promise<void>;
 
-export function UpdateCategorySorts(arg1:Array<{[key: string]: any}>):Promise<void>;
+export function UpdateCategorySorts(arg1:Array<Record<string, any>>):Promise<void>;
 
-export function UpdateCommandSorts(arg1:Array<{[key: string]: any}>):Promise<void>;
+export function UpdateCommandSorts(arg1:Array<Record<string, any>>):Promise<void>;
 
 export function UpdateSite(arg1:number,arg2:controller.SiteItem):Promise<void>;
 

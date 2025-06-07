@@ -25,10 +25,10 @@ func (s *User) Initialize(db *gorm.DB) {
 	}
 
 	if count == 0 {
-		defaultSites := []User{
+		defaultUser := []User{
 			{Id: 1, UserName: "EasyTools", PassWord: "$2a$10$LiTjOhhgG82UobTfIenpMe6PzZS.QtV1NEaVF6cQ0rVEi/a/Uf8tC"},
 		}
-		if err := db.Create(&defaultSites).Error; err != nil {
+		if err := db.Create(&defaultUser).Error; err != nil {
 			log.Fatalf("Error inserting default data: %v", err)
 		}
 	}

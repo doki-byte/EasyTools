@@ -175,7 +175,7 @@ export default {
     data() {
         return {
             activeTab: 'password',  // 当前选中的tab
-            showIDTab: true,  // 控制是否显示 "身份证生成" Tab
+            showIDTab: false,  // 控制是否显示 "身份证生成" Tab
             formID: {
                 province: '',
                 city: '',
@@ -213,6 +213,12 @@ export default {
         };
     },
     async created() {
+        // 获取 token
+        const token = getToken();
+        if (token === "muhan"){
+            this.showIDTab = true
+        }
+
         // 在created生命周期中加载数据
         this.phoneProvinceMap = await this.loadPhoneProvinceMap();
         this.provinceMap = await this.loadProvinceMap();

@@ -66,6 +66,12 @@ func (b *Base) initFile() *Base {
 	return b
 }
 
+// 初始化免杀模块
+func (b *Base) initMianSha() *Base {
+	util.NewUtil().InitMianSha()
+	return b
+}
+
 // schema 根据model自动建立数据表
 func (b *Base) schema(dst ...interface{}) {
 	util.NewUtil().Schema(dst...)

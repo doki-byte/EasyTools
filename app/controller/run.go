@@ -6,6 +6,8 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"runtime"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -26,6 +28,7 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 	infoDeal := NewInfoDeal()
 	redisDb := redis.NewRedis()
 	checkVersion := CheckVersion()
+	Unwxapp := NewUnWxapp()
 
 	// 启动 Wails 服务
 	err := wails.Run(&options.App{
@@ -48,11 +51,16 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			infoSearch.setCtx(ctx)
 			infoDeal.setCtx(ctx)
 			checkVersion.setCtx(ctx)
+			Unwxapp.setCtx(ctx)
 
 			redisDb.SetCtx(ctx)
 
-			// 启动自定义服务，初始化数据表
-			server.start(port).initFile().schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{})
+			if runtime.GOOS == "windows" {
+				// 启动自定义服务，初始化数据表
+				server.start(port).initFile().initMianSha().schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{})
+			} else {
+				server.start(port).initFile().schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{})
+			}
 
 		},
 
@@ -87,6 +95,7 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			infoDeal,
 			redisDb,
 			checkVersion,
+			Unwxapp,
 		},
 	})
 

@@ -26,6 +26,7 @@ func connectFTP(host string, port int, username, password string) (*ftp.ServerCo
 }
 
 func StartWebFTP() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(cors.Default())
 
