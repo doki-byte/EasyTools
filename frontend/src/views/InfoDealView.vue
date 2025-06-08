@@ -153,7 +153,7 @@
 
                 <el-form label-width="120px" label-position="left">
                   <el-form-item label="选择小程序包">
-                    <el-input v-model="wxpackages" readonly placeholder="请选择小程序文件或文件夹，例如：C:\xxxxx\WeChat Files\Applet\wx93fde323abb050f8\xxx" />
+                    <el-input v-model="wxpackages" readonly placeholder="请选择小程序文件或文件夹，例如：C:\xxxxx\WeChat Files\Applet\wx93fde323abxxxxxxx\xxx" />
                     <el-button type="primary" class="ml-2" @click="selectPackage">选择</el-button>
                   </el-form-item>
 
