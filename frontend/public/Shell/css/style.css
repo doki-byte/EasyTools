@@ -1,0 +1,237 @@
+html {
+    transform: scale(0.90);
+    transform-origin: top center;
+}
+
+body {
+    transform: scale(1);
+    /* 确保 body 不重复缩放 */
+    background-color: #ffffff !important;
+    /* overflow: hidden; */
+}
+
+.download-svg {
+    height: 20px;
+    width: 20px;
+    filter: invert(100%) sepia(0%) saturate(7497%) hue-rotate(347deg) brightness(103%) contrast(99%);
+}
+.download-svg:hover {
+    filter: invert(100%) sepia(0%) saturate(7497%) hue-rotate(347deg) brightness(50%) contrast(99%);
+}
+
+.card {
+    background-color: white !important;
+    color: #000;
+}
+
+.bg-white {
+    background-color: rgb(221, 215, 215) !important;
+}
+
+.bg-dark {
+    background-color: #ecefff !important;
+}
+
+.github-corner > svg{
+    fill: #151513 !important;
+    color: #fff !important;
+}
+
+.rainbow {
+    color: #000;
+}
+
+.prompt-sign {
+    position: absolute;
+    top: 25px;
+    left: 40px;
+    pointer-events: none;
+    font-size: 1em;
+    color: #2e3e86;
+}
+
+.input-group-text {
+    background-color: #c0c8f1;
+    color: #000;
+}
+
+.btn {
+    background-color: #1e63b8;
+    color: #fff;
+    border: none;
+}
+
+.highlighted-parameter {
+    color: #7223b5;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.highlighted-warning {
+    color: red;
+    font-weight: bold;
+}
+
+.custom-switch label {
+    cursor: pointer;
+    user-select: none;
+}
+
+.custom-control-input:checked~.custom-control-label::before {
+    background-color: #7223b5;
+}
+
+#listener-command {
+    border: none !important;
+    border-radius: 5px;
+    /*box-shadow: 10px 10px 20px 0px rgba(209, 209, 209, 0.75); original*/
+    box-shadow: rgba(153, 153, 153, 0.16) 0px 3px 6px, rgba(123, 122, 122, 0.23) 0px 3px 6px;
+    background-color: rgb(45, 139, 135);
+    color: #000;
+}
+
+#reverse-shell-command {
+    border: none !important;
+    border-radius: 5px;
+    /*box-shadow: 10px 10px 20px 0px rgba(209, 209, 209, 0.75); original*/
+    box-shadow: rgba(153, 153, 153, 0.16) 0px 3px 6px, rgba(123, 122, 122, 0.23) 0px 3px 6px;
+    background-color: rgb(45, 139, 135);
+    color: #000;
+    max-height: 10rem;
+}
+
+#bind-shell-command {
+    border: none !important;
+    border-radius: 5px;
+    /*box-shadow: 10px 10px 20px 0px rgba(209, 209, 209, 0.75); original*/
+    box-shadow: rgba(153, 153, 153, 0.16) 0px 3px 6px, rgba(123, 122, 122, 0.23) 0px 3px 6px;
+    background-color: rgb(45, 139, 135);
+    color: #000;
+    max-height: 10rem;
+}
+
+#msfvenom-command {
+    border: none !important;
+    border-radius: 5px;
+    /*box-shadow: 10px 10px 20px 0px rgba(209, 209, 209, 0.75); original*/
+    box-shadow: rgba(153, 153, 153, 0.16) 0px 3px 6px, rgba(123, 122, 122, 0.23) 0px 3px 6px;
+    background-color: rgb(45, 139, 135);
+    color: #000;
+    max-height: 20rem;
+}
+
+#hoaxshell-command {
+    border: none !important;
+    border-radius: 5px;
+    /*box-shadow: 10px 10px 20px 0px rgba(209, 209, 209, 0.75); original*/
+    box-shadow: rgba(153, 153, 153, 0.16) 0px 3px 6px, rgba(123, 122, 122, 0.23) 0px 3px 6px;
+    background-color: rgb(45, 139, 135);
+    color: #000;
+    max-height: 20rem;
+}
+
+.custom-select {
+    background-color: #f2f2f2;
+    color: #000;
+    border-color: #e4e3e2;
+}
+
+.nav-link {
+    color: #000;
+    background-color: #98a6ea;
+    box-shadow: 5px 5px 5px 0px rgba(209, 209, 209, 0.75);
+    border: none;
+}
+
+.nav-link:hover {
+    background-color: #c0c8f1;
+}
+
+.nav-link.active {
+    background-color: #1e63b8;
+    color:#fff;
+}
+
+.custom-control-input:checked {
+    color: #000;
+}
+
+a {
+    background-color: #f1c6ce;
+    color: #000;
+}
+
+.list-group-item {
+    background-color: #ecefff;
+    color: #000;
+    border-color: #AAA;
+}
+
+.list-group-item.active {
+    background-color: #586edd;
+    border-color: #444;
+}
+
+.list-group-item:hover {
+    background-color: #c0c8f1;
+}
+
+.list-group-item.hover {
+    background-color: #c0c8f1;
+}
+
+/* .container {
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    height: 100% !important;
+    background: #fff;
+    margin: 20px auto;
+} */
+
+.card-title {
+    color: #000 !important;
+}
+
+.custom-control-label {
+    color: black;
+}
+
+h2 {
+    color: white;
+    text-align: center;
+}
+
+.pre-wrap {
+    white-space: pre-wrap;
+}
+
+.card-body {
+    max-height: 29rem;
+}
+.download-svg {
+    filter: none;
+}
+.download-svg:hover {
+    filter: opacity(50%);
+}
+@font-face {
+    font-family: "Comic Mono";
+    src: url(../assets/ComicMono.ttf);
+}
+
+.shadow {
+	margin-bottom: 0px !important;
+}
+
+a[href*="t3l3machus"] {
+/* Fixes a minor style bug of the "Download Listener" button */
+  background: none;
+}
+
+.middle-card {
+    min-height: 400px; 
+    max-height: 100%; 
+    overflow-y: auto; 
+    padding: 1.5rem; 
+}

@@ -1,0 +1,35 @@
+{
+  "name": "EasyTools",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "serve": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.6.7",
+    "clipboard": "^2.0.11",
+    "element-plus": "^2.x",
+    "hls.js": "^1.5.7",
+    "nprogress": "^0.2.0",
+    "vue": "^3.x",
+    "vue-router": "^4.x",
+    "vue3-json-viewer": "^2.x",
+    "vuedraggable": "^4.1.0",
+    "vuex": "^4.x",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "sass": "^1.83.3",
+    "sass-loader": "^12.0.0",
+    "vite": "^6.0.7"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

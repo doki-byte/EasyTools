@@ -1,0 +1,21 @@
+build/bin
+frontend/node_modules
+frontend/dist
+数据处理
+EasyToolsFiles
+EasyToolsFiles/config.db
+EasyToolsFiles/icon
+EasyToolsFiles/logs
+EasyToolsFiles/tools
+
+
+
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
