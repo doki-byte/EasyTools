@@ -2,9 +2,6 @@ build/bin
 frontend/node_modules
 frontend/dist
 数据处理
-EasyToolsFiles
-EasyToolsFiles/config.db
-EasyToolsFiles/icon
 EasyToolsFiles/logs
 EasyToolsFiles/tools
 

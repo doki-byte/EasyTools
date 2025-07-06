@@ -11,6 +11,8 @@ import InfoSearchView from '@/views/InfoSearchView.vue';
 import InfoDealView from '@/views/InfoDealView.vue';
 import CyberChefView from '@/views/CyberChefView.vue';
 import ConnectView from "@/views/ConnectView.vue";
+import AboutView from "@/views/About.vue";
+import noteView from "@/views/NoteView.vue";
 
 // 路由配置
 const routes = [
@@ -48,6 +50,16 @@ const routes = [
     path: '/randomInfo',
     name: 'randomInfo',
     component: RandomInfoView,
+  },
+  {
+    path: '/notes',
+    name: 'notes',
+    component: noteView,
+  },
+  {
+    path: '/About',
+    name: 'about',
+    component: AboutView,
   },
   {
     path: '/login',

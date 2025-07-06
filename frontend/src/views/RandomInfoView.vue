@@ -401,29 +401,37 @@ export default {
                 this.generatedPassword.push(password);
             }
         },
-        // 复制到剪贴板
-        copyToClipboard() {
-            let text = '';
-            if (this.generatedIDs.length > 0) {
-                text += this.generatedIDs.join('\n') + '\n';
-            }
-            if (this.generatedPassword.length > 0) {
-                text += this.generatedPassword.join('\n') + '\n';
-            }
-            if (this.generatedPhone.length > 0) {
-                text += this.generatedPhone.join('\n') + '\n';
-            }
+      // 复制到剪贴板
+      copyToClipboard() {
+        let text = '';
+        const separator = '\n###########\n'; // 分割线定义
+        const parts = []; // 存储各部分的数组
 
-            navigator.clipboard.writeText(text).then(() => {
-                this.$message.success('已复制到剪贴板');
-            }).catch(() => {
-                this.$message.error('复制失败');
-            });
+        // 构建各部分内容
+        if (this.generatedIDs.length > 0) {
+          parts.push(this.generatedIDs.join('\n'));
         }
+        if (this.generatedPassword.length > 0) {
+          parts.push(this.generatedPassword.join('\n'));
+        }
+        if (this.generatedPhone.length > 0) {
+          parts.push(this.generatedPhone.join('\n'));
+        }
+
+        // 用分隔符连接所有部分
+        if (parts.length > 0) {
+          text = parts.join(separator) + '\n';
+        }
+
+        navigator.clipboard.writeText(text).then(() => {
+          this.$message.success('已复制到剪贴板');
+        }).catch(() => {
+          this.$message.error('复制失败');
+        });
+      }
     }
 };
 </script>
-
 
 <style lang="scss" scoped>
 .id-generator {

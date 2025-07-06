@@ -6,37 +6,55 @@
             <el-tab-pane label="默认密码查询" name="password-query" />
             <el-tab-pane label="反弹Shell" name="shell-syntax" />
             <el-tab-pane label="杀软进程查询" name="process-query" />
+            <el-tab-pane label="地图测试" name="map-query"></el-tab-pane>
         </el-tabs>
 
         <!-- 内容区域 -->
         <el-main :class="['content', { 'shell-syntax-active': activeTab === 'shell-syntax' }]">
-            <!-- 默认密码查询 -->
-            <div v-if="activeTab === 'password-query'" class="tab-content">
-                <div class="header">
-                    <div class="search-bar">
-                        <el-input placeholder="请输入查询条件" v-model="queryPasswordInput" class="input" />
-                        <el-button type="primary" @click="fetchPasswords">查询</el-button>
-                    </div>
-                </div>
-                <el-table :data="passwordData" border class="custom-table" @cell-click="handleCopeClick">
-                    <el-table-column prop="name" label="Name" :min-width="190" />
-                    <el-table-column prop="method" label="Method" :min-width="190" />
-                    <el-table-column prop="userId" label="User ID" :min-width="190" />
-                    <el-table-column prop="password" label="PassWord" :min-width="190" />
-                    <el-table-column prop="level" label="Level" :min-width="190" />
-                </el-table>
-                <!-- 自定义分页样式 -->
-                <el-pagination ref="pagination" :current-page="currentPage" :page-size="pageSize" :total="total"
-                    @current-change="handlePageChange" layout="prev, pager, next, jumper, total" :pager-count="5"
-                    background style="padding: 10px 0; text-align: center;">
-                    <template #prev>
-                        <el-button size="small" type="primary">Previous</el-button>
-                    </template>
-                    <template #next>
-                        <el-button size="small" type="primary">Next</el-button>
-                    </template>
-                </el-pagination>
+          <!-- 默认密码查询 -->
+          <div v-if="activeTab === 'password-query'" class="tab-content">
+            <div class="header">
+              <div class="search-bar">
+                <el-input placeholder="请输入查询条件" v-model="queryPasswordInput" class="input" />
+                <el-button type="primary" @click="handleSearch">查询</el-button>
+              </div>
             </div>
+            <!-- 修改点1：添加行高和行距设置 -->
+            <el-table
+                :data="passwordData"
+                border
+                class="custom-table uniform-rows"
+                :row-style="{ height: '45px' }"
+            :cell-style="{ padding: '8px 0', lineHeight: '1.5' }"
+            @cell-click="handleCopeClick">
+
+            <!-- 修改点2：添加溢出提示 -->
+            <el-table-column prop="name" label="Name" :min-width="190" show-overflow-tooltip />
+            <el-table-column prop="method" label="Method" :min-width="190" show-overflow-tooltip />
+            <el-table-column prop="userId" label="User ID" :min-width="190" show-overflow-tooltip />
+            <el-table-column prop="password" label="PassWord" :min-width="190" show-overflow-tooltip />
+            <el-table-column prop="level" label="Level" :min-width="190" show-overflow-tooltip />
+            </el-table>
+
+            <!-- 修改点3：统一分页按钮间距 -->
+            <el-pagination
+                ref="pagination"
+                :current-page="currentPage"
+                :page-size="pageSize"
+                :total="total"
+                @current-change="handlePageChange"
+                layout="prev, pager, next, jumper, total"
+                :pager-count="5"
+                class="uniform-pagination"
+                background>
+              <template #prev>
+                <el-button size="small" type="primary" class="pagination-btn">Previous</el-button>
+              </template>
+              <template #next>
+                <el-button size="small" type="primary" class="pagination-btn">Next</el-button>
+              </template>
+            </el-pagination>
+          </div>
 
             <!-- 杀软进程查询 -->
             <div v-if="activeTab === 'process-query'" class="tab-content">
@@ -98,6 +116,107 @@
                     <iframe src="/Shell/index.html"></iframe>
                 </div>
             </div>
+
+          <!-- 地图测试 -->
+          <div v-if="activeTab === 'map-query'" class="tab-content">
+            <el-card shadow="always" class="map-query-card">
+              <div class="map-query-container">
+                <!-- 左侧：选择与参数输入 -->
+                <div class="map-form">
+                  <el-form :model="mapForm" label-width="100px" class="inner-form">
+                    <el-form-item label="地图服务">
+                      <el-select v-model="mapForm.provider" placeholder="请选择" @change="resetMapResult">
+                        <el-option
+                            v-for="item in mapProviders"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value"
+                        />
+                      </el-select>
+                    </el-form-item>
+
+                    <!-- 公共 Key 输入 -->
+                    <el-form-item label="API Key">
+                      <el-input v-model="mapForm.key" placeholder="输入你的 key" />
+                    </el-form-item>
+
+                    <!-- 动态参数区域 -->
+                    <template v-if="mapForm.provider === 'amap-walking'">
+                      <el-form-item label="起点坐标">
+                        <el-input v-model="mapForm.origin" placeholder="lng,lat(如：116.434446,39.90816)" />
+                      </el-form-item>
+                      <el-form-item label="终点坐标">
+                        <el-input v-model="mapForm.destination" placeholder="lng,lat(如：116.434446,39.90816)" />
+                      </el-form-item>
+                    </template>
+
+                    <template v-else-if="mapForm.provider === 'amap-geocode'">
+                      <el-form-item label="坐标">
+                        <el-input v-model="mapForm.location" placeholder="lng,lat(如：116.434446,39.90816)" />
+                      </el-form-item>
+                    </template>
+
+                    <template v-else-if="mapForm.provider === 'amap-mini'">
+                      <el-form-item label="坐标">
+                        <el-input v-model="mapForm.location" placeholder="lng,lat(如：116.434446,39.90816)" />
+                      </el-form-item>
+                    </template>
+
+                    <template v-else-if="mapForm.provider === 'baidu-web' || mapForm.provider === 'baidu-ios'">
+                      <el-form-item label="关键字">
+                        <el-input v-model="mapForm.query" placeholder="如：ATM机" />
+                      </el-form-item>
+                      <el-form-item label="关键字">
+                        <el-input v-model="mapForm.baiduTag" placeholder="如：银行" />
+                      </el-form-item>
+                      <el-form-item label="地区">
+                        <el-input v-model="mapForm.region" placeholder="如：北京" />
+                      </el-form-item>
+                    </template>
+
+                    <template v-else-if="mapForm.provider === 'qq-web'">
+                      <el-form-item label="关键词">
+                        <el-input v-model="mapForm.keyword" placeholder="如：酒店" />
+                      </el-form-item>
+                      <el-form-item label="中心坐标">
+                        <el-input v-model="mapForm.center" placeholder="lat,lng" />
+                      </el-form-item>
+                      <el-form-item label="半径 (m)">
+                        <el-input v-model="mapForm.radius" placeholder="1000" />
+                      </el-form-item>
+                    </template>
+
+                    <el-form-item>
+                      <el-button
+                          type="primary"
+                          @click="doMapQuery"
+                          :loading="mapLoading"
+                          class="submit-btn"
+                      >
+                        发起请求
+                      </el-button>
+                    </el-form-item>
+                  </el-form>
+                </div>
+
+                <!-- 右侧：结果展示 -->
+                <div class="map-result">
+                  <el-card shadow="hover" class="result-card">
+                    <div class="result-header">
+                      <i class="el-icon-document"></i>
+                      <span>返回结果</span>
+                    </div>
+                    <div class="result-content" v-if="mapResult">
+                      <pre>{{ mapResult }}</pre>
+                    </div>
+                    <div v-else class="no-result">
+                      暂无数据，请先发起请求
+                    </div>
+                  </el-card>
+                </div>
+              </div>
+            </el-card>
+          </div>
         </el-main>
     </el-container>
 </template>
@@ -105,6 +224,7 @@
 
 <script>
 import { QueryAntivirusProcesses, QueryGoogleQueries, QueryPasswordsAPI } from "../../wailsjs/go/controller/InfoSearch"
+import axios from 'axios'
 export default {
     name: "InfoSearchView",
     data() {
@@ -130,8 +250,34 @@ export default {
             googleQueries: [],
             activeCategories: [], // 默认展开的分类
 
+          // 地图测试相关
+          mapProviders: [
+            { label: '高德 Walking', value: 'amap-walking' },
+            { label: '高德 Geocode(JSAPI)', value: 'amap-geocode' },
+            { label: '高德 小程序 RE Geocode', value: 'amap-mini' },
+            { label: '百度 Web 搜索', value: 'baidu-web' },
+            { label: '百度 iOS 搜索', value: 'baidu-ios' },
+            { label: '腾讯 Web 搜索', value: 'qq-web' },
+          ],
+          mapForm: {
+            provider: '',
+            key: '',
+            origin: '',
+            destination: '',
+            location: '',
+            query: '',
+            region: '',
+            keyword: '',
+            center: '',
+            radius: '',
+            amapMiniAppID:"",
+            baiduTag:"",
+          },
+          mapResult: null,
+          mapLoading: false,
         };
     },
+
     mounted() {
         // 页面加载时自动加载第一页数据
         this.fetchPasswords(false);
@@ -147,116 +293,227 @@ export default {
         });
     },
     methods: {
-        // 加载数据（支持默认查询和按条件查询）
-        async fetchPasswords(isSearch = false) {
-            const query = isSearch ? this.queryPasswordInput.trim() : ""; // 根据是否是搜索查询设置条件
+      // 添加搜索处理函数
+      handleSearch() {
+        this.currentPage = 1; // 重置到第一页
+        this.fetchPasswords(true); // 执行带条件的查询
+      },
+      // 修改加载数据方法
+      async fetchPasswords(isSearch = false) {
+        const query = isSearch ? this.queryPasswordInput.trim() : "";
 
-            try {
-                // 调用后端的 QueryPasswordsAPI 方法
-                let response = await QueryPasswordsAPI(this.currentPage, this.pageSize, query);
+        // 添加加载状态
+        this.loading = true;
 
-                // 检查返回数据
-                if (!response || !response.data || !("total" in response)) {
-                    this.$message.error("查询结果为空或格式不正确！");
-                    return;
-                }
+        try {
+          let response = await QueryPasswordsAPI(this.currentPage, this.pageSize, query);
 
-                // 更新表格数据和分页总数
-                this.passwordData = response.data;
-                // console.log(this.passwordData)
-                this.total = response.total;
-            } catch (err) {
-                console.error("查询错误：", err);
-                this.$message.error("查询失败，请重试！");
-            }
-        },
-        // 搜索按钮点击事件
-        handlePasswdQuery() {
-            this.fetchPasswords(true); // 执行按条件查询
-        },
-        // 分页控件页码切换事件
-        handlePageChange(page) {
-            this.currentPage = page;
-            this.fetchPasswords(); // 根据新页码重新加载
-        },
+          // 更健壮的数据检查
+          if (!response || !response.data || typeof response.total !== 'number') {
+            this.$message.error("查询结果格式不正确！");
+            return;
+          }
 
-        async handleCopeClick(row, column, cell, event) {
-            const textToCopy = cell.innerText; // 获取单元格内容
-            try {
-                await navigator.clipboard.writeText(textToCopy); // 复制到剪贴板
-                this.$message.success(`已复制: ${textToCopy}`);
-            } catch (error) {
-                this.$message.error("复制失败，请重试");
-            }
-        },
+          this.passwordData = response.data || [];
+          this.total = response.total;
 
-        async handleAVQuery() {
-            // 如果用户输入为空，返回错误提示
-            if (!this.tasklistInput.trim()) {
-                this.$message.error("请输入有效的 tasklist /svc 输出内容！");
-                this.avResults = [];
-                this.isAvQueried = false;
-                return;
-            }
-
-            try {
-                // 调用后端接口查询杀软进程
-                const response = await QueryAntivirusProcesses(this.tasklistInput);
-
-                this.avResults = response.map(item => ({
-                    program: item.program,    // 数据库中匹配的进程名
-                    match: item.match,        // 可选，显示完整的进程名
-                    description: item.description         // 杀软描述
-                }));
-
-                this.isAvQueried = true; // 标记查询完成
-            } catch (err) {
-                this.isAvQueried = true; // 标记查询完成
-            }
-        },
-
-        async generateGoogleQueries() {
-            // 如果用户输入为空，返回错误提示
-            if (!this.googleDomainInput.trim()) {
-                this.$message.error('请输入域名或IP！');
-                return;
-            }
-
-            const googleDomain = this.googleDomainInput.trim();
-            try {
-                // 调用后端接口查询生成的 Google 查询语法
-                let response = await QueryGoogleQueries(googleDomain);
-
-                // 如果返回的是单一对象而非数组，包装成数组
-                if (!Array.isArray(response)) {
-                    response = [response];
-                }
-
-                // 更新查询结果
-                this.googleQueries = response.map(item => ({
-                    category: item.category,           // 查询分类
-                    commands: [{
-                        id: "google1",                 // 查询命令的ID（根据实际数据格式修改）
-                        description: item.description, // 查询命令的描述
-                        command: item.command          // 生成的查询语法
-                    }]
-                }));
-
-                // 设置所有分类为展开状态
-                this.activeCategories = this.googleQueries.map((query) => query.category);
-
-            } catch (err) {
-                this.$message.error("查询失败，请重试！");
-            }
-        },
-        CopyToClipboard(query) {
-            navigator.clipboard.writeText(query).then(() => {
-                this.$message.success('复制成功！');
-            }).catch(() => {
-                this.$message.error('复制失败！');
+          // 如果查询结果为空
+          if (this.passwordData.length === 0 && this.currentPage > 1) {
+            this.currentPage = 1; // 自动回到第一页
+            await this.$nextTick(() => {
+              this.fetchPasswords(isSearch); // 重新获取数据
             });
-        },
-    },
+          }
+        } catch (err) {
+          console.error("查询错误：", err);
+          this.$message.error(`查询失败: ${err.message || "请重试！"}`);
+        } finally {
+          this.loading = false;
+        }
+      },
+      // 修改分页切换处理函数
+      handlePageChange(newPage) {
+        this.currentPage = newPage; // 确保更新当前页码
+        this.fetchPasswords(!!this.queryPasswordInput.trim()); // 保留当前查询状态
+      },
+
+      async handleCopeClick(row, column, cell, event) {
+        const textToCopy = cell.innerText; // 获取单元格内容
+        try {
+          await navigator.clipboard.writeText(textToCopy); // 复制到剪贴板
+          this.$message.success(`已复制: ${textToCopy}`);
+        } catch (error) {
+          this.$message.error("复制失败，请重试");
+        }
+      },
+
+      async handleAVQuery() {
+        // 如果用户输入为空，返回错误提示
+        if (!this.tasklistInput.trim()) {
+          this.$message.error("请输入有效的 tasklist /svc 输出内容！");
+          this.avResults = [];
+          this.isAvQueried = false;
+          return;
+        }
+
+        try {
+          // 调用后端接口查询杀软进程
+          const response = await QueryAntivirusProcesses(this.tasklistInput);
+
+          this.avResults = response.map(item => ({
+            program: item.program,    // 数据库中匹配的进程名
+            match: item.match,        // 可选，显示完整的进程名
+            description: item.description         // 杀软描述
+          }));
+
+          this.isAvQueried = true; // 标记查询完成
+        } catch (err) {
+          this.isAvQueried = true; // 标记查询完成
+        }
+      },
+
+      async generateGoogleQueries() {
+        // 如果用户输入为空，返回错误提示
+        if (!this.googleDomainInput.trim()) {
+          this.$message.warning('请输入域名或IP！');
+          return;
+        }
+
+        const googleDomain = this.googleDomainInput.trim();
+        try {
+          // 调用后端接口查询生成的 Google 查询语法
+          let response = await QueryGoogleQueries(googleDomain);
+
+          // 如果返回的是单一对象而非数组，包装成数组
+          if (!Array.isArray(response)) {
+            response = [response];
+          }
+
+          // 更新查询结果
+          this.googleQueries = response.map(item => ({
+            category: item.category,           // 查询分类
+            commands: [{
+              id: "google1",                 // 查询命令的ID（根据实际数据格式修改）
+              description: item.description, // 查询命令的描述
+              command: item.command          // 生成的查询语法
+            }]
+          }));
+
+          // 设置所有分类为展开状态
+          this.activeCategories = this.googleQueries.map((query) => query.category);
+
+        } catch (err) {
+          this.$message.error("查询失败，请重试！");
+        }
+      },
+      CopyToClipboard(query) {
+        navigator.clipboard.writeText(query).then(() => {
+          this.$message.success('复制成功！');
+        }).catch(() => {
+          this.$message.error('复制失败！');
+        });
+      },
+
+      // 地图key泄露
+      resetMapResult() {
+        this.mapResult = null;
+      },
+
+      async doMapQuery() {
+        if (!this.mapForm.provider || !this.mapForm.key) {
+          this.$message.warning('请先选择服务并填写 API Key');
+          return;
+        }
+        this.mapLoading = true;
+        const k = encodeURIComponent(this.mapForm.key);
+        try {
+          switch (this.mapForm.provider) {
+            case 'amap-walking':
+              this.mapResult = (
+                  await axios.get(
+                      `https://restapi.amap.com/v3/direction/walking?origin=${this.mapForm.origin}&destination=${this.mapForm.destination}&key=${k}`
+                  )
+              ).data;
+              break;
+
+            case 'amap-geocode':
+              this.mapResult = (
+                  await axios.get(
+                      `https://restapi.amap.com/v3/geocode/regeo?key=${k}&s=rsv3&location=${this.mapForm.location}&callback=jsonp_258885_&platform=JS`
+                  )
+              ).data;
+              break;
+
+            case 'amap-mini':
+              this.mapResult = (
+                  await axios.get(
+                      `https://restapi.amap.com/v3/geocode/regeo?key=${k}&location=${encodeURIComponent(
+                          this.mapForm.location
+                      )}&extensions=all&platform=WXJS&appname=${this.mapForm.amapMiniAppID}&sdkversion=1.2.0&logversion=2.0`
+                  )
+              ).data;
+              break;
+
+            case 'baidu-web':
+            case 'baidu-ios':
+              // JSONP 调用百度 API，避免 CORS
+            {
+              const cbName = `jsonp_cb_${Date.now()}`;
+              let url = `https://api.map.baidu.com/place/v2/search?query=${encodeURIComponent(
+                  this.mapForm.query
+              )}&tag=${this.mapForm.baiduTag}&region=${encodeURIComponent(
+                  this.mapForm.region
+              )}&output=json&ak=${k}&callback=${cbName}`;
+              if (this.mapForm.provider === 'baidu-ios') {
+                url += '&mcode=com.didapinche.taxi&os=12.5.6';
+              }
+              await this.jsonp(url, cbName, (data) => {
+                this.mapResult = data;
+                this.mapLoading = false;
+              });
+            }
+              return; // JSONP 内部已结束 loading
+
+            case 'qq-web':
+            {
+              // 1. 生成 JSONP 回调名
+              const cbName = `jsonp_qq_${Date.now()}`;
+              // 2. 构建带 callback 和 output=jsonp 的请求 URL
+              const url = `https://apis.map.qq.com/ws/place/v1/search?keyword=${encodeURIComponent(
+                  this.mapForm.keyword
+              )}&boundary=nearby(${this.mapForm.center},${this.mapForm.radius})&key=${k}&output=jsonp&callback=${cbName}`;
+              // 3. JSONP 调用
+              await this.jsonp(url, cbName, (data) => {
+                this.mapResult = data;
+                this.mapLoading = false;
+              });
+            }
+              return; // JSONP 回调内部已结束 loading
+          }
+        } catch (err) {
+          this.mapResult = err.toString();
+        } finally {
+          this.mapLoading = false;
+        }
+      },
+
+      /**
+       * JSONP 工具函数：动态插入 <script> 并执行回调
+       * @param {string} url 带 callback 参数的请求 URL
+       * @param {string} cbName 全局回调函数名
+       * @param {Function} onSuccess 回调执行后调用
+       */
+      jsonp(url, cbName, onSuccess) {
+        window[cbName] = (res) => {
+          onSuccess(res);
+          delete window[cbName];
+          document.head.removeChild(script);
+        };
+        const script = document.createElement('script');
+        script.src = url;
+        document.head.appendChild(script);
+      },
+    }
 };
 </script>
 
@@ -279,24 +536,6 @@ export default {
     padding-left: 10px;
     /* 增加左边距 */
     border-radius: 10px 10px 10px 10px;
-}
-
-:deep(.el-tabs__item) {
-    font-weight: 700;
-    /* 加粗字体 */
-    font-size: 16px;
-    /* 设置字体大小 */
-    transition: all 0.3s;
-}
-
-.el-tabs__item:hover {
-    color: #409eff !important;
-}
-
-.el-tabs__item.is-active {
-    color: #ffffff !important;
-    background-color: #409eff !important;
-    border-radius: 5px 5px 0 0;
 }
 
 /* 内容区域 */
@@ -360,18 +599,6 @@ export default {
     border-right: 1px solid #ddd;
 }
 
-/* 占位内容 */
-.placeholder {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 16px;
-    color: #606266;
-    background-color: #f9f9f9;
-    border: 1px dashed #dcdfe6;
-    border-radius: 8px;
-}
 
 /* 杀软查询输入框 */
 .process_textarea {
@@ -418,7 +645,7 @@ export default {
 
 /* google语法 */
 .google-syntax-container {
-    padding: 20px;
+    padding: 0;
 }
 
 .form-group {
@@ -464,81 +691,65 @@ export default {
     margin-left: 10px;
 }
 
-/* 蓝队封禁IP工具 */
-/* 上半部分和下半部分使用 flex 布局 */
-.tab-content .info {
-    color: #409eff;
+
+
+/* 地图测试 样式 */
+.el-card{
+
 }
 
-.row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
+.map-query-card {
+  width: auto;
 
-.column {
-    width: 48%;
-    /* 两个元素各占一半的宽度 */
-    box-sizing: border-box;
 }
-
-.upper-row .column {
-    margin-bottom: 20px;
-    /* 上半部分的列之间添加空隙 */
+.map-query-container {
+  display: flex;
+  gap: 20px;
 }
-
-.lower-row .column {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+.map-form {
+  flex: 1;
 }
-
-/* 包裹 el-input 和按钮的容器 */
-.ip-input-container {
-    position: relative;
+.inner-form {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-
-/* 输入框 */
-.input-box {
-    width: 100%;
+.submit-btn {
+  width: 100%;
 }
-
-/* 按钮定位到输入框右上角 */
-.ip-copy-button {
-    position: absolute;
-    top: 5px;
-    /* 距离容器顶部 5px */
-    right: 5px;
-    /* 距离容器右侧 5px */
-    z-index: 10;
-    /* 确保按钮位于输入框上方 */
-    padding: 5px 10px;
-    font-size: 12px;
-    background-color: #00aaff;
-    /* 按钮颜色 */
-    color: #ffffff;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.map-result {
+  flex: 1;
 }
-
-/* 按钮 hover 效果 */
-.ip-copy-button:hover {
-    background-color: #176bca;
+.result-card {
+  height: 100%;
+  padding: 0;
 }
-
-/* 按钮优化 */
-.process-button {
-    display: block;
-    margin: 10px auto;
-    padding: 8px 16px;
-    margin-top: 25px;
-    border-radius: 5px;
-    /* margin-left: 0; */
-    width: 100%;
-    font-size: 18px;
-    text-align: center;
-    background-color: #5cb85c;
+.result-header {
+  display: flex;
+  align-items: center;
+  background: #f0f9ff;
+  padding: 12px 20px;
+  font-weight: 500;
+  border-bottom: 1px solid #e4e7ed;
+}
+.result-header i {
+  margin-right: 8px;
+  font-size: 16px;
+  color: #409EFF;
+}
+.result-content {
+  padding: 20px;
+  max-height: 500px;
+  overflow: auto;
+  background: #fafafa;
+}
+.result-content pre {
+  white-space: pre-wrap;
+}
+.no-result {
+  padding: 40px;
+  text-align: center;
+  color: #909399;
 }
 </style>

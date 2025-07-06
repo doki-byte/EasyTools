@@ -192,7 +192,8 @@ func (a *InfoSearch) QueryPasswordsWithQuery(page, pageSize int, query string) (
 
 	// 执行查询，带上查询条件
 	err := db.Model(&PasswordData{}).
-		Where("name LIKE ? OR method LIKE ? OR userId LIKE ? OR password LIKE ? OR level LIKE ?", queryString, queryString, queryString, queryString, queryString).
+		//Where("name LIKE ? OR method LIKE ? OR userId LIKE ? OR password LIKE ? OR level LIKE ?", queryString, queryString, queryString, queryString, queryString).
+		Where("name LIKE ? ", queryString).
 		Count(&total). // 获取总数据数
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).

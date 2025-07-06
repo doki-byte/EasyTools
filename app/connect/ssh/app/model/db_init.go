@@ -62,6 +62,6 @@ func DbMigrate(dbType, dsn string) error {
 		return err
 	}
 
-	slog.Info("AutoMigrate completed successfully")
+	//slog.Info("AutoMigrate completed successfully")
 	return nil
 }

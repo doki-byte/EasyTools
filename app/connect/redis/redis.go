@@ -132,7 +132,7 @@ func (b *Redis) KeyList(req *define.KeyListRequest) H {
 
 // GetKeyValue 键值对查询
 func (b *Redis) GetKeyValue(req *define.KeyValueRequest) H {
-	if req.Key == "" || req.ConnIdentity == "" {
+	if req.ConnIdentity == "" {
 		return M{
 			"code": -1,
 			"msg":  "必填参不能为空",

@@ -1,5 +1,20 @@
 <template>
   <div class="menu">
+    <!-- 版本更新通知 -->
+    <transition name="slide-fade">
+      <div v-if="showUpdate" class="update-notice">
+        <div class="notice-content">
+          <div class="version-info">
+            <span class="badge">New</span>
+            <h3>发现新版本 {{ latestVersion }}!</h3>
+          </div>
+          <div class="action-buttons">
+            <button @click="openBrowerToDownload" class="download-btn">立即下载</button>
+            <button @click="closeNotice" class="close-btn">稍后提醒</button>
+          </div>
+        </div>
+      </div>
+    </transition>
     <div class="list">
       <div class="item" v-for="(item, index) in list" :key="index" @click="toPage(item.name)"
         :class="{ active: routeName === item.name }">
@@ -9,6 +24,16 @@
         </el-icon>
         <span>{{ item.title }}</span>
       </div>
+    </div>
+    <div class="logout-btn" @click="checkUpdate()">
+      <span style="display: flex; align-items: center; white-space: nowrap;">
+        <el-icon>
+          <Promotion />
+        </el-icon>
+        <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.1' }}
+        </span>
+      </span>
     </div>
     <div class="logout-btn" @click="updateUser()">
       <!-- 使用图标 -->
@@ -87,13 +112,27 @@
 </template>
 
 <script setup>
-import { GetOs } from "../../wailsjs/go/controller/System";
 import {ref, onMounted, markRaw, reactive} from 'vue';
 import { useRouter } from 'vue-router';
 import {ElMessageBox, ElNotification} from 'element-plus';
 import { removeToken } from '@/utils/token';
-import {Link, Connection, DataAnalysis, UserFilled, WarningFilled, WindPower, Suitcase, Edit, Sugar, SetUp } from '@element-plus/icons-vue'; // 引入所有图标组件
+import {
+  Link,
+  Connection,
+  DataAnalysis,
+  UserFilled,
+  WarningFilled,
+  Promotion,
+  WindPower,
+  Suitcase,
+  Edit,
+  Sugar,
+  SetUp,
+  Management, MoreFilled
+} from '@element-plus/icons-vue'; // 引入所有图标组件
 import {UpdateUser} from "../../wailsjs/go/controller/User";
+import { GetLatestRelease } from '../../wailsjs/go/controller/Update'
+import { BrowserOpenURL } from "../../wailsjs/runtime";
 
 // 当前路由名称，默认设置为 'tool'
 const routeName = ref('tool');
@@ -109,6 +148,11 @@ const pwdForm = reactive({
   newPassword: "",
   confirmPassword: "",
 });
+
+// 初始化检查
+onMounted(() => {
+  AutoCheckUpdate()
+})
 
 // 打开修改密码弹窗
 const updateUser = () => {
@@ -170,6 +214,16 @@ const list = ref([
     name: 'randomInfo',
     icon: markRaw(DataAnalysis),
     title: '随机生成',
+  },
+  {
+    name: 'notes',
+    icon: markRaw(Management),
+    title: '备忘笔记',
+  },
+  {
+    name: 'about',
+    icon: markRaw(Promotion),
+    title: '关于软件',
   }
 ]);
 
@@ -261,6 +315,57 @@ function logout() {
     });
 }
 
+// 版本更新状态
+const showUpdate = ref(false)
+const latestVersion = ref('')
+const releaseUrl = ref('')
+
+// 获取版本信息
+const checkUpdate = async () => {
+  try {
+    const result = await GetLatestRelease()
+    if (result.hasUpdate) {
+      showUpdate.value = true
+      latestVersion.value = result.latestRelease.tag_name
+      releaseUrl.value = result.latestRelease.html_url
+    } else{
+      ElNotification({
+        title: "温馨提示",
+        message: "当前已经是最新版啦(*^▽^*)",
+        type: "success",
+        duration: 2500
+      });
+    }
+  } catch (error) {
+    console.error('版本检查失败:', error)
+  }
+}
+
+// 获取版本信息
+const AutoCheckUpdate = async () => {
+  try {
+    const result = await GetLatestRelease()
+    if (result.hasUpdate) {
+      showUpdate.value = true
+      latestVersion.value = result.latestRelease.tag_name
+      releaseUrl.value = result.latestRelease.html_url
+      console.log(result)
+    }
+  } catch (error) {
+    console.error('版本检查失败:', error)
+  }
+}
+
+// 关闭通知
+const closeNotice = () => {
+  showUpdate.value = false
+}
+
+const openBrowerToDownload = () => {
+  window.open(releaseUrl.value, "_blank");
+  console.log(releaseUrl)
+}
+
 // 页面加载时设置默认路由
 onMounted(() => {
   if (!routeName.value) {
@@ -271,7 +376,114 @@ onMounted(() => {
 
 </script>
 
+
 <style scoped lang="scss">
+/* 样式保持不变 */
+.update-notice {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: #fff;
+  border-radius: 8px;
+  border-left: 4px solid #4ee439;
+  animation: slideIn 0.3s ease-out;
+  max-width: 320px;
+
+  .notice-content {
+    padding: 16px;
+    position: relative;
+  }
+
+  .version-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    .badge {
+      background: #409eff;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+
+    .download-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #409eff;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+
+      &:hover {
+        background: #66b1ff;
+        transform: translateY(-1px);
+      }
+
+      .svg-icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .close-btn {
+      padding: 8px 16px;
+      background: #f0f2f5;
+      border: none;
+      border-radius: 6px;
+      color: #606266;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #e6e8eb;
+      }
+    }
+  }
+}
+
+/* 入场动画 */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 .menu {
   height: 100vh;
   // padding: 0 5px;

@@ -5,7 +5,13 @@
         <el-collapse-item v-for="item in list" :name="item.identity" @click="getInfo(item.identity)">
           <template #title>
             <div class="item">
-              <div>
+              <div class="truncate-name" style="
+                  flex: 1;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  padding-right: 8px;
+                ">
                 {{ item.name }}
               </div>
               <div style="display: flex">
@@ -110,6 +116,7 @@ function selectDB(db, connIdentity) {
 function resetSelectedDbInfo() {
   selectDbKey.value = null;
   infoDbList.value = [];
+  emits("emit-select-db", null, null);
 }
 </script>
 

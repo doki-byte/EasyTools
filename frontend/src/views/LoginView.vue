@@ -1,5 +1,6 @@
 <template>
   <div class="login" @contextmenu.prevent>
+<!--    <div class="login">-->
     <div class="left"></div>
     <div class="right">
       <div class="form">

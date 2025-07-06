@@ -80,19 +80,23 @@ function getKeyList() {
   let data = {
     conn_identity: props.keyConnIdentity,
     db: props.keyDB,
-    keyword: form.keyword
-  }
+    keyword: form.keyword.trim()
+  };
   KeyList(data).then(res => {
     if (res.code !== 200) {
       ElNotification({
-        title:res.msg,
+        title: res.msg,
         type: "error",
-      })
-      return
+      });
+      return;
     }
-    keys.value = res.data
-  })
+    // 重置选中的 key，保证后续点击一定会触发更新
+    emits("emit-select-key", null);
+    // 更新列表
+    keys.value = res.data;
+  });
 }
+
 
 function selectKeyKey(key) {
   selectKey.value = key

@@ -12,7 +12,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/tealeg/xlsx v1.0.5
 	github.com/wailsapp/wails/v2 v2.10.1
-	github.com/zan8in/gologger v0.0.0-20250329061145-d1614c9062d6
 )
 
 require (
@@ -37,7 +36,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

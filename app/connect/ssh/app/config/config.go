@@ -73,7 +73,7 @@ func init() {
 		DefaultConfig.CertFile = path.Join(WorkDir, "cert.pem")
 		DefaultConfig.KeyFile = path.Join(WorkDir, "key.key")
 	}
-	slog.Info("use-config-file", "path", confFileFullPath)
+	//slog.Info("use-config-file", "path", confFileFullPath)
 
 	info, err := os.Stat(WorkDir)
 	if os.IsNotExist(err) {
@@ -116,7 +116,7 @@ func init() {
 		slog.Error("TOML解析配置文件错误:", "err_msg", err.Error())
 		return
 	}
-	slog.Info("DefaultConfig:", "data", DefaultConfig)
+	//slog.Info("DefaultConfig:", "data", DefaultConfig)
 
 }
 

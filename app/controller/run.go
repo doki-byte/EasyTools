@@ -29,6 +29,8 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 	redisDb := redis.NewRedis()
 	checkVersion := CheckVersion()
 	Unwxapp := NewUnWxapp()
+	jwtcrack := NewJwtCrackController()
+	note := NewNote()
 
 	// 启动 Wails 服务
 	err := wails.Run(&options.App{
@@ -52,6 +54,8 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			infoDeal.setCtx(ctx)
 			checkVersion.setCtx(ctx)
 			Unwxapp.setCtx(ctx)
+			jwtcrack.setCtx(ctx)
+			note.setCtx(ctx)
 
 			redisDb.SetCtx(ctx)
 
@@ -100,6 +104,8 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			redisDb,
 			checkVersion,
 			Unwxapp,
+			jwtcrack,
+			note,
 		},
 	})
 

@@ -13,6 +13,7 @@
     "clipboard": "^2.0.11",
     "element-plus": "^2.x",
     "hls.js": "^1.5.7",
+    "marked": "^16.0.0",
     "nprogress": "^0.2.0",
     "vue": "^3.x",
     "vue-router": "^4.x",

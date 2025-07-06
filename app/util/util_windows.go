@@ -3,6 +3,7 @@
 package util
 
 import (
+	"EasyTools/app/note"
 	"EasyTools/app/unwxapp"
 	"fmt"
 	"log"
@@ -52,6 +53,21 @@ func (u *Util) InitMianSha() *Util {
 	_ = u.PathExist(fmt.Sprintf("%s\\icon", u.GetAppPath()))
 	_ = u.PathExist(fmt.Sprintf("%s\\tools", u.GetAppPath()))
 	_ = u.PathExist(fmt.Sprintf("%s\\file", u.GetAppPath()))
+
+	// 定义目标解压目录
+	targetNoteDir := filepath.Join("EasyToolsFiles", "notes")
+	if _, err := os.Stat(targetNoteDir); os.IsNotExist(err) {
+		// 如果目标目录不存在，执行资源解压
+		fmt.Println("目标文件夹不存在，正在解压资源...")
+		err := note.ExtractNoteFile() // 调用解压逻辑
+		if err != nil {
+			log.Printf("notes解压资源失败: %w", err)
+		}
+		fmt.Println("notes资源解压完成")
+	} else {
+		// 如果目标目录已存在
+		fmt.Println("notes资源文件夹已存在，跳过解压。")
+	}
 
 	targetUnwxappDir := filepath.Join("EasyToolsFiles", "tools", "Unwxapp")
 	if _, err := os.Stat(targetUnwxappDir); os.IsNotExist(err) {

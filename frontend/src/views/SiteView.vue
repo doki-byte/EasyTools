@@ -144,7 +144,7 @@ import {
 import {ReadImageAsBase64} from "../../wailsjs/go/controller/Tool";
 import {BrowserOpenURL} from "../../wailsjs/runtime"; // 打开链接的方法
 import {Search} from "@element-plus/icons-vue";
-import {ElTree} from "element-plus";
+import {ElNotification, ElTree} from "element-plus";
 import {GetOpenFilePath} from "../../wailsjs/go/controller/System";
 
 export default {
@@ -241,6 +241,14 @@ export default {
           this.siteList = await GetSearchSites(this.searchQuery.trim());
         }
       } catch (error) {
+        this.siteList = []
+        ElNotification({
+          title: '提示',
+          message: '没有符合条件的查询数据',
+          type: 'info',
+          position: 'top-right',  // 默认就是右上角
+          duration: 1000          // 可选：自动关闭时间，单位 ms
+        });
         console.error("搜索失败:", error);
       }
     },
@@ -810,26 +818,36 @@ export default {
   }
 
   .search-bar {
-    margin: 20px;
-    display: flex;
-    justify-content: center;
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    padding: 0 20px;
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 
     .custom-search-input {
       width: 100%;
       max-width: 500px;
-      height: 45px;
-      border: none;
-      border-radius: 25px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      background-color: #f9f9f9;
-      position: relative;
 
-      /* 将 ::v-deep 替换为 :deep */
-      :deep(.el-input__inner) {
-        height: 100%;
+      :deep(.el-input) {
         border: none;
-        border-radius: 25px;
+        background-color: transparent;
+      }
+
+      :deep(.el-input__wrapper) {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+      }
+
+      :deep(.el-input__inner) {
+        height: 45px;
+        border: none;
         font-size: 16px;
         background-color: transparent;
         padding-left: 30px !important;
@@ -837,6 +855,7 @@ export default {
 
         &:focus {
           outline: none;
+          box-shadow: none;
         }
       }
 
@@ -853,12 +872,13 @@ export default {
         font-size: 20px;
         color: #999;
         position: absolute;
-        left: 15px;
+        left: -5px;
         top: 50%;
         transform: translateY(-50%);
       }
     }
   }
+
 
   .context-menu {
     position: absolute;
