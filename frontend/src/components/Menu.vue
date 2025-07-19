@@ -31,7 +31,7 @@
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.1' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.2' }}
         </span>
       </span>
     </div>
@@ -112,6 +112,7 @@
 </template>
 
 <script setup>
+import { GetOs } from "../../wailsjs/go/controller/System";
 import {ref, onMounted, markRaw, reactive} from 'vue';
 import { useRouter } from 'vue-router';
 import {ElMessageBox, ElNotification} from 'element-plus';

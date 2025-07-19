@@ -99,11 +99,11 @@
               v-if="showPreview"
               class="preview-wrapper"
               :style="{
-      flex: showEdit ? '1 1 50%' : '1 1 100%',
-      minWidth: 0
-    }"
+              flex: showEdit ? '1 1 50%' : '1 1 100%',
+              minWidth: 0
+            }"
           >
-            <div class="preview-content" v-html="previewContent"></div>
+            <div class="preview-content" v-html="previewContent" ref="preview"></div>
           </div>
         </div>
 
@@ -127,14 +127,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, h, ref } from 'vue';
-import { ElMessageBox, ElMessage } from 'element-plus';
-import { marked } from 'marked';
+import {defineComponent, h} from 'vue';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {marked} from 'marked';
 import {
   CreateFile,
   CreateFolder,
   DeleteItem,
-  GetFiles, GetNotesDir,
+  GetFiles,
+  GetNotesDir,
   OpenDirectory,
   ReadFile,
   RenameItem,
@@ -185,11 +186,11 @@ const TreeNode = defineComponent({
                     node: child,
                     key: child.path,
                     depth: props.depth + 1,
+                    selected: props.selected,  // ✅ 添加这一行
                     onToggle: (payload) => emit('toggle', payload),
                     onDelete: (payload) => emit('delete', payload),
                     onRename: (payload) => emit('rename', payload),
                     onContextMenu: (payload) => emit('context-menu', payload),
-                    selected: props.selected
                   })
               ))
               : null
@@ -230,11 +231,10 @@ export default defineComponent({
     },
     previewContent(): string {
       if (!this.fileContent) {
-        return '<p class="empty-preview">输入内容以预览...</p>'
+        return '<p class="empty-preview">输入内容以预览...</p>';
       }
-      // 断言为 string
-      return (marked.parse(this.fileContent) as string)
-    }
+      return marked.parse(this.fileContent) as string;
+    },
   },
   async mounted() {
     document.addEventListener('click', this.closeContextMenu);
@@ -565,33 +565,98 @@ export default defineComponent({
       }
 
       this.searchMatches = indices;
-      this.highlightMatches();
+      // this.highlightMatches();
     },
 
     highlightMatches() {
-      if (!this.$refs.editor) return;
+      // 编辑区高亮
+      if (this.searchMatches.length > 0 && this.$refs.editor) {
+        const textarea = this.$refs.editor as HTMLTextAreaElement;
+        const startIndex = this.searchMatches[this.currentMatchIndex];
 
-      const textarea = this.$refs.editor as HTMLTextAreaElement;
-      const startIndex = this.searchMatches[this.currentMatchIndex];
-      if (startIndex != null) {
         textarea.focus();
         textarea.setSelectionRange(startIndex, startIndex + this.searchKeyword.length);
 
-        // ✅ 滚动到光标位置
-        this.scrollToCursor(textarea);
+        // 滚动编辑区到匹配位置
+        this.scrollTextareaToSelection(textarea);
       }
+
+      // 预览区高亮
+      this.$nextTick(() => {
+        const previewEl = this.$refs.preview as HTMLElement;
+        if (!previewEl) return;
+
+        // 清除旧高亮
+        previewEl.querySelectorAll('.mark-highlight').forEach(el => {
+          const parent = el.parentNode;
+          if (parent) parent.replaceChild(document.createTextNode(el.textContent || ''), el);
+        });
+
+        if (!this.searchKeyword) return;
+
+        const walker = document.createTreeWalker(previewEl, NodeFilter.SHOW_TEXT);
+        const keyword = this.searchKeyword.toLowerCase();
+        let matchCount = 0;
+        let currentHighlightElement: HTMLElement | null = null;
+
+        let node: Text | null;
+        while ((node = walker.nextNode() as Text | null)) {
+          const text = node.nodeValue;
+          if (!text) continue;
+
+          let index = text.toLowerCase().indexOf(keyword);
+          while (index !== -1) {
+            if (matchCount === this.currentMatchIndex) {
+              const range = document.createRange();
+              range.setStart(node, index);
+              range.setEnd(node, index + keyword.length);
+
+              const span = document.createElement('span');
+              span.className = 'mark-highlight current-highlight';
+              range.surroundContents(span);
+              currentHighlightElement = span;
+
+              // 滚动预览区到匹配位置
+              if (currentHighlightElement) {
+                currentHighlightElement.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center',
+                });
+              }
+
+              // 节点已被修改，需要重新获取当前节点
+              node = span.nextSibling as Text;
+              break;
+            }
+
+            matchCount++;
+            index = text.toLowerCase().indexOf(keyword, index + keyword.length);
+          }
+
+          if (currentHighlightElement) break;
+        }
+      });
     },
-    scrollToCursor(textarea: HTMLTextAreaElement) {
-      // 当前光标所在的行
-      const cursorPosition = textarea.selectionStart;
 
-      // 将光标前面的内容放入临时容器计算高度
-      const beforeText = textarea.value.substring(0, cursorPosition);
-      const lines = beforeText.split('\n');
-      const lineHeight = parseFloat(getComputedStyle(textarea).lineHeight || '20');
+    scrollTextareaToSelection(textarea: HTMLTextAreaElement) {
+      // 计算光标所在位置
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
 
-      const targetScrollTop = Math.max(0, (lines.length - 1) * lineHeight - textarea.clientHeight / 2);
-      textarea.scrollTop = targetScrollTop;
+      // 计算行号
+      const content = textarea.value;
+      const lines = content.substring(0, start).split('\n');
+      const lineNumber = lines.length;
+
+      // 计算滚动位置
+      const lineHeight = parseInt(getComputedStyle(textarea).lineHeight) || 20;
+      const scrollTop = (lineNumber - 1) * lineHeight - textarea.clientHeight / 2;
+
+      // 平滑滚动
+      textarea.scrollTo({
+        top: Math.max(0, scrollTop),
+        behavior: 'smooth'
+      });
     },
 
     nextMatch() {
@@ -650,7 +715,6 @@ $glass: rgba(30, 30, 46, 0.7);
   outline: none;
   width: 180px;
 }
-
 
 .note-views {
   display: flex;
@@ -866,7 +930,8 @@ $glass: rgba(30, 30, 46, 0.7);
           padding: 15px;
           border-left: 1px solid #ccc;
           overflow-y: auto;
-          background: rgba(0, 0, 0, 1.2);
+          background: rgba(0, 0, 0, 0.7);  // ✅ 修复非法透明度值
+          color: #fff;                     // ✅ 确保文字可见
           min-width: 0;
 
           .preview-content {
@@ -877,7 +942,12 @@ $glass: rgba(30, 30, 46, 0.7);
               margin: 0.6em 0;
             }
 
-            a,
+            a{
+              pointer-events: none;
+              color: inherit;
+              text-decoration: none;
+            }
+
             a:visited,
             a:hover,
             a:active {
@@ -887,9 +957,11 @@ $glass: rgba(30, 30, 46, 0.7);
               box-shadow: none !important;
             }
 
-            a:hover {
-              text-decoration: underline !important;
-              color: #4a90e2 !important;
+            img {
+              max-width: 80%;    /* 不超过父容器宽度 */
+              object-fit: contain; /* 保持比例缩放 */
+              display: block;
+              margin: 10px 0;
             }
 
             code {
@@ -920,12 +992,14 @@ $glass: rgba(30, 30, 46, 0.7);
               color: $gray-light;
             }
 
-            a {
-              color: inherit;
-              text-decoration: none;
+            .mark-highlight {
+              background-color: #fff59d;
+              color: #000;
+              font-weight: bold;
             }
           }
         }
+
       }
 
       .empty-state {

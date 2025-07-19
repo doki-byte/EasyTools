@@ -32,7 +32,7 @@ func CheckVersion() *Update {
 func (u *Update) GetLatestRelease() (*CheckResult, error) {
 	owner := "doki-byte"
 	repo := "EasyTools"
-	currentVersion := "v1.8.1" // 请确保与前端保持一致
+	currentVersion := "v1.8.2" // 请确保与前端保持一致
 
 	latest, err := CheckLatestRelease(owner, repo)
 	if err != nil {

@@ -143,7 +143,7 @@
                     <!-- 动态参数区域 -->
                     <template v-if="mapForm.provider === 'amap-walking'">
                       <el-form-item label="起点坐标">
-                        <el-input v-model="mapForm.origin" placeholder="lng,lat(如：116.434446,39.90816)" />
+                        <el-input v-model="mapForm.origin" placeholder="lng,lat(如：116.434307,39.90909)" />
                       </el-form-item>
                       <el-form-item label="终点坐标">
                         <el-input v-model="mapForm.destination" placeholder="lng,lat(如：116.434446,39.90816)" />
@@ -159,6 +159,9 @@
                     <template v-else-if="mapForm.provider === 'amap-mini'">
                       <el-form-item label="坐标">
                         <el-input v-model="mapForm.location" placeholder="lng,lat(如：116.434446,39.90816)" />
+                      </el-form-item>
+                      <el-form-item label="AppName">
+                        <el-input v-model="mapForm.amapMiniAppID" placeholder="如：c589cf63f592ac13bcab35f8cd18f495" />
                       </el-form-item>
                     </template>
 
@@ -179,7 +182,7 @@
                         <el-input v-model="mapForm.keyword" placeholder="如：酒店" />
                       </el-form-item>
                       <el-form-item label="中心坐标">
-                        <el-input v-model="mapForm.center" placeholder="lat,lng" />
+                        <el-input v-model="mapForm.center" placeholder="lat,lng(如：39.908491,116.374328)" />
                       </el-form-item>
                       <el-form-item label="半径 (m)">
                         <el-input v-model="mapForm.radius" placeholder="1000" />
@@ -262,16 +265,17 @@ export default {
           mapForm: {
             provider: '',
             key: '',
-            origin: '',
-            destination: '',
-            location: '',
-            query: '',
-            region: '',
-            keyword: '',
-            center: '',
-            radius: '',
+            origin: '116.434307,39.90909',
+            destination: '116.434446,39.90816',
+            location: '116.434446,39.90816',
+            query: 'ATM机',
+            baiduTag:"银行",
+            region: '北京',
+            keyword: '酒店',
+            center: '39.908491,116.374328',
+            radius: '1000',
             amapMiniAppID:"",
-            baiduTag:"",
+
           },
           mapResult: null,
           mapLoading: false,

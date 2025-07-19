@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"encoding/base64"
 	"errors"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -29,10 +31,9 @@ func NewNote() *Note {
 	return &Note{}
 }
 
-// GetNotesDir 返回默认的笔记目录路径（不弹出对话框）
+// GetNotesDir 返回笔记根目录
 func (n *Note) GetNotesDir() (string, error) {
 	notes := filepath.Join("EasyToolsFiles", "notes")
-	// 确保目录存在
 	if err := os.MkdirAll(notes, 0755); err != nil {
 		return "", err
 	}
@@ -116,13 +117,59 @@ func (n *Note) RenameItem(oldPath, newName string) error {
 	return os.Rename(oldPath, newPath)
 }
 
-// ReadFile 读取文件内容
+// ReadFile 读取 Markdown 文件并将图片路径替换为 base64（仅返回，不修改原文件）
 func (n *Note) ReadFile(filePath string) (string, error) {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
-	return string(data), nil
+	content := string(data)
+
+	// 正则匹配 Markdown 图片语法 ![xxx](路径)
+	imgPattern := regexp.MustCompile(`!\[.*?\]\((.*?)\)`)
+	dir := filepath.Dir(filePath)
+
+	// 替换图片链接为 base64
+	processed := imgPattern.ReplaceAllStringFunc(content, func(m string) string {
+		matches := imgPattern.FindStringSubmatch(m)
+		if len(matches) < 2 {
+			return m
+		}
+
+		imgRelPath := matches[1]
+		if strings.HasPrefix(imgRelPath, "http://") || strings.HasPrefix(imgRelPath, "https://") || strings.HasPrefix(imgRelPath, "data:") {
+			// 外链或已经是 base64 的不处理
+			return m
+		}
+
+		imgFullPath := filepath.Join(dir, imgRelPath)
+		imgBytes, err := ioutil.ReadFile(imgFullPath)
+		if err != nil {
+			return m // 图片不存在就跳过
+		}
+
+		mimeType := getMimeType(imgFullPath)
+		base64Str := base64.StdEncoding.EncodeToString(imgBytes)
+		return "![](" + "data:" + mimeType + ";base64," + base64Str + ")"
+	})
+
+	return processed, nil
+}
+
+// getMimeType 根据文件扩展名获取 mime type
+func getMimeType(path string) string {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".svg":
+		return "image/svg+xml"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 // SaveFile 保存文件内容

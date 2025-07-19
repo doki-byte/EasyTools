@@ -11,6 +11,7 @@ import InfoSearchView from '@/views/InfoSearchView.vue';
 import InfoDealView from '@/views/InfoDealView.vue';
 import CyberChefView from '@/views/CyberChefView.vue';
 import ConnectView from "@/views/ConnectView.vue";
+import NoteView from "@/views/NoteView.vue";
 import AboutView from "@/views/About.vue";
 import noteView from "@/views/NoteView.vue";
 

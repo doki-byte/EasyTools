@@ -15,16 +15,39 @@
       />
     </div>
 
-    <!-- 搜索框 -->
-    <div class="search-bar">
-      <el-input v-model="searchQuery" placeholder="请输入关键字搜索" clearable @input="handleSearch"
-        class="custom-search-input">
-        <template #prefix>
-          <el-icon class="search-icon">
-            <Search />
-          </el-icon>
-        </template>
-      </el-input>
+    <!-- 搜索框：图标/展开切换，支持拖拽 -->
+    <div
+        ref="searchBar"
+        class="search-bar"
+        :class="{ expanded: searchExpanded }"
+        :style="searchBarStyle"
+        @mousedown.stop="startDrag"
+        @click.stop="!searchExpanded && openSearch()"
+    >
+      <!-- 收起：仅图标 -->
+      <el-icon v-if="!searchExpanded" class="search-icon-collapsed">
+        <Search />
+      </el-icon>
+
+      <!-- 展开：输入框 -->
+      <transition name="fade">
+        <el-input
+            v-if="searchExpanded"
+            ref="searchInput"
+            v-model="searchQuery"
+            placeholder="请输入关键字"
+            clearable
+            @clear="collapseSearch"
+            @blur="collapseSearch"
+            @input="handleSearchInput"
+            class="custom-search-input-expanded"
+            @mousedown.stop
+        >
+          <template #prefix>
+            <el-icon class="search-icon-expanded"><Search /></el-icon>
+          </template>
+        </el-input>
+      </transition>
     </div>
 
     <!-- 工具列表 -->
@@ -176,7 +199,6 @@ import {
 } from "../../wailsjs/go/controller/Tool";
 import {Search} from "@element-plus/icons-vue";
 import {ElNotification, ElTree} from "element-plus";
-import {GetAllSites, GetSearchSites} from "../../wailsjs/go/controller/Site";
 
 export default {
   name: "ToolsView",
@@ -185,7 +207,19 @@ export default {
     return {
       toolList: [], // 初始化命令列表
       resolvedIcons: {}, // 图标缓存 {id: resolvedPath}
+
+      // 搜索框状态
+      searchExpanded: false,
+      // 拖拽相关
+      dragging: false,
+      dragOffset: { x: 0, y: 0 },
+      // 当前位置
+      searchPosition: {
+        x: window.innerWidth - 80,
+        y: window.innerHeight - 80,
+      },
       searchQuery: "",
+
       defaultExpandedKeys: [],
       contextMenuVisible: false,
       contextMenuOptions: [], // 动态右键菜单选项
@@ -223,6 +257,16 @@ export default {
         default: return "编辑";
       }
     },
+    searchBarStyle() {
+      return {
+        position: "fixed",
+        left: this.searchPosition.x + "px",
+        top: this.searchPosition.y + "px",
+        zIndex: 999,
+        cursor: this.dragging ? "grabbing" : "move",
+        transition: this.dragging ? "none" : "all 0.2s",
+      };
+    },
     treeData() {
       // 为了实现折叠，引入一个根节点“目录”
       return [
@@ -249,6 +293,61 @@ export default {
     },
   },
   methods: {
+    // 打开并自动调整到边缘
+    openSearch() {
+      this.searchExpanded = true;
+      this.$nextTick(() => {
+        const rect = this.$refs.searchBar.getBoundingClientRect();
+        let x = this.searchPosition.x;
+        let y = this.searchPosition.y;
+        const overX = rect.right - window.innerWidth;
+        const overY = rect.bottom - window.innerHeight;
+        if (overX > 0) x = Math.max(10, x - overX - 10);
+        if (overY > 0) y = Math.max(10, y - overY - 10);
+        this.searchPosition = { x, y };
+        this.$refs.searchInput.focus();
+      });
+    },
+    // 收起并靠边
+    collapseSearch() {
+      this.searchExpanded = false;
+      // 收起后让图标靠最近的屏幕边缘
+      this.$nextTick(() => {
+        const { x, y } = this.searchPosition;
+        const midX = window.innerWidth / 2;
+        const newX = x < midX ? 10 : window.innerWidth - 50;
+        // y 保持不变或根据需要靠上/下，这里保持原来 y
+        this.searchPosition.x = newX;
+      });
+    },
+    // 拖拽开始
+    startDrag(e) {
+      this.dragging = true;
+      const { left, top } = this.$refs.searchBar.getBoundingClientRect();
+      this.dragOffset.x = e.clientX - left;
+      this.dragOffset.y = e.clientY - top;
+      document.addEventListener("mousemove", this.onDrag);
+      document.addEventListener("mouseup", this.endDrag);
+    },
+    onDrag(e) {
+      if (!this.dragging) return;
+      let x = e.clientX - this.dragOffset.x;
+      let y = e.clientY - this.dragOffset.y;
+      // 限制边界
+      x = Math.min(Math.max(0, x), window.innerWidth - this.$refs.searchBar.offsetWidth);
+      y = Math.min(Math.max(0, y), window.innerHeight - this.$refs.searchBar.offsetHeight);
+      this.searchPosition = { x, y };
+    },
+    endDrag() {
+      this.dragging = false;
+      document.removeEventListener("mousemove", this.onDrag);
+      document.removeEventListener("mouseup", this.endDrag);
+    },
+    handleSearchInput(val) {
+      this.searchQuery = val;
+      this.handleSearch(); // 调用原来的搜索方法
+    },
+
     onTreeNodeClick(node) {
       if (node.id === 'root') return;
       const target = document.querySelector(`.cate[data-index=\"${node.id}\"]`);
@@ -885,66 +984,91 @@ export default {
   }
 
   .search-bar {
-    position: fixed;
-    top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 999;
-    background-color: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(8px);
-    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.63);   // 收起时半透明黑
     border-radius: 15px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid transparent; /* 占位，方便后面 override */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 5px;
+    user-select: none;
 
-    .custom-search-input {
-      width: 100%;
-      max-width: 500px;
+    &:focus-within {
+      outline: none;
+      box-shadow: none;
+    }
 
-      :deep(.el-input) {
-        border: none;
-        background-color: transparent;
-      }
+    &.expanded {
+      /* 外壳改灰色 & 去阴影 */
+      background: rgb(44, 43, 43) !important;
+      box-shadow: none !important;
+      border: none !important;
 
+      /* 覆盖 el-input 的 wrapper */
       :deep(.el-input__wrapper) {
-        background-color: transparent !important;
-        box-shadow: none !important;
+        background: transparent !important;
         border: none !important;
-        padding: 0 !important;
+        box-shadow: none !important;
+      }
+      /* 覆盖真正的 input */
+      :deep(.el-input__inner) {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+    }
+
+    .search-icon-collapsed {
+      font-size: 24px;
+      color: #ffffff;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .custom-search-input-expanded {
+      width: 200px;
+      transition: width 0.2s ease, opacity 0.2s ease;
+
+      /* 整个 wrapper 用灰色底 */
+      :deep(.el-input__wrapper) {
+        background: transparent !important;
       }
 
-      :deep(.el-input__inner) {
-        height: 45px;
-        border: none;
-        font-size: 16px;
-        background-color: transparent;
-        padding-left: 30px !important;
-        padding-right: 15px;
+      /* 覆盖 el-input__wrapper 聚焦样式 */
+      :deep(.el-input__wrapper:focus-within) {
+        outline: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
 
-        &:focus {
-          outline: none;
-          box-shadow: none;
-        }
+      /* 输入框本身也设置灰底 */
+      :deep(.el-input__inner) {
+        height: 36px;
+        background: transparent !important;
+        border: none;
+        padding-left: 30px;
+        color: #ffffff !important;
+      }
+
+      :deep(.el-input__inner:focus) {
+        outline: none !important;
+        box-shadow: none !important;
       }
 
       :deep(.el-input__clear) {
-        font-size: 20px;
-        color: #888;
+        font-size: 18px;
       }
 
-      :deep(.el-input__prefix) {
-        padding-left: 10px !important;
-      }
-
-      :deep(.search-icon) {
-        font-size: 20px;
-        color: #999;
-        position: absolute;
-        left: -5px;
-        top: 50%;
-        transform: translateY(-50%);
+      :deep(.search-icon-expanded) {
+        font-size: 18px;
+        color: #ffffff;
       }
     }
   }
+
 
   .context-menu {
     position: absolute;
