@@ -3,6 +3,7 @@
 package util
 
 import (
+	cyberchef "EasyTools/app/embedCyberChef"
 	"EasyTools/app/note"
 	"EasyTools/app/unwxapp"
 	"fmt"
@@ -81,6 +82,19 @@ func (u *Util) InitMianSha() *Util {
 	} else {
 		// 如果目标目录已存在
 		fmt.Println("Unwxapp资源文件夹已存在，跳过解压。")
+	}
+	targetCyberChefDir := filepath.Join("EasyToolsFiles", "CyberChef")
+	if _, err := os.Stat(targetCyberChefDir); os.IsNotExist(err) {
+		// 如果目标目录不存在，执行资源解压
+		fmt.Println("目标文件夹不存在，正在解压资源...")
+		err := cyberchef.ExtractAllResources() // 调用解压逻辑
+		if err != nil {
+			log.Printf("CyberChef解压资源失败: %w", err)
+		}
+		fmt.Println("CyberChef资源解压完成")
+	} else {
+		// 如果目标目录已存在
+		fmt.Println("CyberChef资源文件夹已存在，跳过解压。")
 	}
 
 	return u

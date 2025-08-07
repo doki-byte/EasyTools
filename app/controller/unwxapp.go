@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"syscall"
 )
 
 var ansiRegex = regexp.MustCompile(`\x1B\[[0-9;]*[mKJH]`)
@@ -94,7 +93,6 @@ func (u *UnWxapp) RunUnWxapp(_ struct{}, packages []string, appid string, format
 		os.Environ(),
 		"NODE_PATH="+nodeModulesPath,
 	)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	// 创建管道捕获实时输出
 	stdoutPipe, _ := cmd.StdoutPipe()

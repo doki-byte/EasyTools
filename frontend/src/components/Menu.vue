@@ -31,7 +31,7 @@
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.2' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.3' }}
         </span>
       </span>
     </div>
@@ -112,7 +112,6 @@
 </template>
 
 <script setup>
-import { GetOs } from "../../wailsjs/go/controller/System";
 import {ref, onMounted, markRaw, reactive} from 'vue';
 import { useRouter } from 'vue-router';
 import {ElMessageBox, ElNotification} from 'element-plus';
@@ -129,11 +128,10 @@ import {
   Edit,
   Sugar,
   SetUp,
-  Management, MoreFilled
+  Management, MoreFilled, MagicStick
 } from '@element-plus/icons-vue'; // 引入所有图标组件
 import {UpdateUser} from "../../wailsjs/go/controller/User";
 import { GetLatestRelease } from '../../wailsjs/go/controller/Update'
-import { BrowserOpenURL } from "../../wailsjs/runtime";
 
 // 当前路由名称，默认设置为 'tool'
 const routeName = ref('tool');
@@ -220,6 +218,11 @@ const list = ref([
     name: 'notes',
     icon: markRaw(Management),
     title: '备忘笔记',
+  },
+  {
+    name: 'proxy',
+    icon: markRaw(MagicStick),
+    title: '便携代理',
   },
   {
     name: 'about',

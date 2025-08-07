@@ -7,6 +7,12 @@ export function ClipboardGetText():Promise<string>;
 
 export function ClipboardSetText(arg1:string):Promise<void>;
 
+export function GetCPUUsage():Promise<number>;
+
+export function GetMemUsageSelf():Promise<number>;
+
+export function GetMemUsageTotal():Promise<number>;
+
 export function GetOpenDir():Promise<string>;
 
 export function GetOpenFilePath():Promise<string>;

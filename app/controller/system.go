@@ -1,11 +1,15 @@
 package controller
 
 import (
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/process"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	. "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -89,4 +93,29 @@ func (s *System) OpenPath(path string) error {
 		return exec.Command("open", absPath).Start() // 默认尝试 unix 方式
 	}
 
+}
+
+func (s *System) GetCPUUsage() float64 {
+	percent, _ := cpu.Percent(time.Second, false)
+	if len(percent) > 0 {
+		return percent[0]
+	}
+	return 0
+}
+
+func (s *System) GetMemUsageSelf() float64 {
+	p, _ := process.NewProcess(int32(os.Getpid()))
+	memoryInfo, _ := p.MemoryInfo()
+	if memoryInfo != nil {
+		return float64(memoryInfo.RSS) / 1024 / 1024 // 转换为MB
+	}
+	return 0
+}
+
+func (s *System) GetMemUsageTotal() float64 {
+	memory, _ := mem.VirtualMemory()
+	if memory != nil {
+		return memory.UsedPercent
+	}
+	return 0
 }

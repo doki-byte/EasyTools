@@ -14,6 +14,18 @@ export function ClipboardSetText(arg1) {
   return window['go']['controller']['System']['ClipboardSetText'](arg1);
 }
 
+export function GetCPUUsage() {
+  return window['go']['controller']['System']['GetCPUUsage']();
+}
+
+export function GetMemUsageSelf() {
+  return window['go']['controller']['System']['GetMemUsageSelf']();
+}
+
+export function GetMemUsageTotal() {
+  return window['go']['controller']['System']['GetMemUsageTotal']();
+}
+
 export function GetOpenDir() {
   return window['go']['controller']['System']['GetOpenDir']();
 }
