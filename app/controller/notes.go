@@ -33,7 +33,8 @@ func NewNote() *Note {
 
 // GetNotesDir 返回笔记根目录
 func (n *Note) GetNotesDir() (string, error) {
-	notes := filepath.Join("EasyToolsFiles", "notes")
+	baseDir := n.getAppPath()
+	notes := filepath.Join(baseDir, "notes")
 	if err := os.MkdirAll(notes, 0755); err != nil {
 		return "", err
 	}

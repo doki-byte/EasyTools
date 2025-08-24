@@ -9,5 +9,19 @@
   "author": {
     "name": "MuHan",
     "email": "anquanclub@foxmail.com"
+  },
+  "info": {
+    "companyName": "EasyTools",
+    "productName": "EasyTools",
+    "productVersion": "1.8.4",
+    "copyright": "Copyright © 2025 MuHan",
+    "comments": "EasyTools 渗透测试工具箱"
+  },
+  "mac": {
+    "bundleID": "com.muhan.easytools",
+    "helpBookFolder": "",
+    "helpBookName": "",
+    "icon": "build/appicon.png",
+    "darkMode": true
   }
 }

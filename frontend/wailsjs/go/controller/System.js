@@ -18,6 +18,10 @@ export function GetCPUUsage() {
   return window['go']['controller']['System']['GetCPUUsage']();
 }
 
+export function GetConfigDir() {
+  return window['go']['controller']['System']['GetConfigDir']();
+}
+
 export function GetMemUsageSelf() {
   return window['go']['controller']['System']['GetMemUsageSelf']();
 }

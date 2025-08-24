@@ -2,8 +2,6 @@ package define
 
 import "time"
 
-var ConfigName = "redis-client.conf"
-
 type Connection struct {
 	Identity string `json:"identity"`
 	Name     string `json:"name"`

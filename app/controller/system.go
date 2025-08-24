@@ -60,6 +60,11 @@ func (s *System) OpenConfigDir() {
 	s.openDir(s.getAppPath())
 }
 
+// GetConfigDir 打开应用配置目录
+func (s *System) GetConfigDir() string {
+	return s.getAppPath()
+}
+
 // GetOs 获取系统类型
 func (s *System) GetOs() string {
 	//windows、darwin、linux

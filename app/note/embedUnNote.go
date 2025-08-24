@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -13,6 +14,26 @@ import (
 
 //go:embed notes.md
 var assets embed.FS
+
+// 获取应用基础目录
+func getAppBaseDir() string {
+	// 如果是 macOS，使用应用支持目录
+	if runtime.GOOS == "darwin" {
+		appName := "EasyTools"
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic("获取用户主目录失败: " + err.Error())
+		}
+		return filepath.Join(homeDir, "Library", "Application Support", appName)
+	}
+
+	// 其他系统使用当前目录下的 EasyToolsFiles
+	currentPath, err := os.Getwd()
+	if err != nil {
+		panic("获取当前路径失败: " + err.Error())
+	}
+	return filepath.Join(currentPath, "EasyToolsFiles")
+}
 
 // 提取并写入文件到目标目录（保留目录结构）
 func ExtractResource(resourcePath, targetDir string) (string, error) {
@@ -43,7 +64,8 @@ func ExtractResource(resourcePath, targetDir string) (string, error) {
 
 // 解压所有嵌入资源
 func ExtractNoteFile() error {
-	targetDir := filepath.Join("EasyToolsFiles", "notes")
+	baseDir := getAppBaseDir()
+	targetDir := filepath.Join(baseDir, "notes")
 
 	// 创建目标根目录
 	if err := os.MkdirAll(targetDir, 0755); err != nil {

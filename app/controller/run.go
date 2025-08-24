@@ -39,8 +39,8 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 	// 启动 Wails 服务
 	err := wails.Run(&options.App{
 		Title:  "EasyTools：一款实用的渗透测试工具箱 ",
-		Width:  1180,
-		Height: 750,
+		Width:  1200,
+		Height: 800,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -89,7 +89,7 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 						memTotal := system.GetMemUsageTotal() // 实现获取总内存使用的方法
 
 						// 格式化标题
-						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱 v1.8.3            | CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
+						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.8.4            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
 							cpuUsage, memSelf, memTotal)
 
 						// 更新窗口标题

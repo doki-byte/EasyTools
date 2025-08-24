@@ -35,14 +35,10 @@ func NewServer() *Server {
 
 // start 启动文件服务
 func (s *Server) start(port int) *Server {
-	s.port = port
 
-	// 设置静态文件目录
-	execPath, err := filepath.Abs(".")
-	if err != nil {
-		panic(fmt.Sprintf("Failed to get current directory: %v", err))
-	}
-	s.staticDir = filepath.Join(execPath, "EasyToolsFiles/icon/")
+	baseDir := s.getAppPath()
+	s.staticDir = filepath.Join(baseDir, "icon")
+	s.port = port
 
 	go func() {
 		gin.SetMode(gin.ReleaseMode)
@@ -60,13 +56,15 @@ func (s *Server) start(port int) *Server {
 
 		// 添加静态文件服务
 		r.Static("/icon", s.staticDir)
-		cyberDir := filepath.Join(execPath, "EasyToolsFiles/CyberChef/")
+		cyberDir := filepath.Join(baseDir, "CyberChef")
 		r.Static("/CyberChef", cyberDir)
 
 		// 启动ssh服务
 		go ssh.StartWebSSH() // 52868
 		// 启动ftp服务
 		go ftp.StartWebFTP() // 52869
+		// 启动fuzz服务
+		go NewFuzzer() // 52870
 
 		// 启动服务
 		err := r.Run(fmt.Sprintf("%s:%d", s.address, s.port))

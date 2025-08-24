@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ type Scanner struct {
 	totalKeys map[string]bool
 	keysMutex sync.Mutex
 	baseURL   string
+	Base
 }
 
 func NewScanner(url string) *Scanner {
@@ -118,8 +120,12 @@ func (s *Scanner) getBucketInfo() (int, string, []string, string, error) {
 }
 
 func (s *Scanner) createCSV(headers []string) (string, error) {
+	// 确保目录存在
+	baseDir := s.getAppPath()
+	// 创建文件子目录
+	fileDir := filepath.Join(baseDir, "file")
 	cleanURL := regexp.MustCompile(`[:/?]`).ReplaceAllString(strings.TrimPrefix(s.baseURL, "http://"), "_")
-	filename := fmt.Sprintf("EasyToolsFiles/file/"+"%s.csv", cleanURL)
+	filename := filepath.Join(fileDir, fmt.Sprintf("%s.csv", cleanURL))
 
 	file, err := os.Create(filename)
 	if err != nil {

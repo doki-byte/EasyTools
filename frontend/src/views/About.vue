@@ -78,7 +78,8 @@ export default {
   data() {
     return {
       updates: [
-        {date:'v1.8.3',content: '1. 新增代理池功能；2. 优化CyberChef、ssh连接功能',isNew:true},
+        {date:'v1.8.4',content: '1. 新增fuzz调用界面; 2. 修复mac下app程序无法直接打开的bug;',isNew:true},
+        {date:'v1.8.3',content: '1. 新增代理池功能；2. 优化CyberChef、ssh连接功能'},
         {date:'v1.8.2',content: '优化工具、网址搜索功能;'},
         { date: 'v1.8.1', content: '1.新增Note备忘录功能;2.优化工具、网址搜索功能;3.新增jwt爆破功能;4.新增地图接口调用功能;5.优化redis连接及显示功能;6.修改CyberChef为中文版本的'},
         { date: 'v1.8.0', content: '1.新增工具箱打开路径;2.新增图标选择功能;3.优化ftp、ssh连接弹窗提示;4.小程序反编译模块新增node环境监测功能;5.新增杀软检测目录进程清单;6.修改CyberChef为中文版本的'},

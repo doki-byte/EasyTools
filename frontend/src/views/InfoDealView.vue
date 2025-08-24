@@ -294,7 +294,7 @@ import {DealOssList, FscanResultDeal, GetExcelContent, UploadFile} from "../../w
 import {InitCheck, RunUnWxapp, SelectDirectory} from "../../wailsjs/go/controller/UnWxapp";
 import {ElMessage, ElMessageBox} from "element-plus";
 import * as XLSX from "xlsx";
-import {OpenPath} from "../../wailsjs/go/controller/System";
+import {OpenPath,GetConfigDir} from "../../wailsjs/go/controller/System";
 import {EncodeJWTWithAlg, DecodeJWTWithAlg, ChooseJwtFile, BruteForceJWT} from "../../wailsjs/go/controller/JwtCrackController";
 
 
@@ -546,7 +546,9 @@ export default {
     },
     // 打开文件夹
     openDir() {
-      OpenPath("EasyToolsFiles/file")
+      const baseDir = GetConfigDir()
+      const fileDir = baseDir + "/file"; // 拼接file子目录
+      OpenPath(fileDir)
     },
 
     async selectPackage() {

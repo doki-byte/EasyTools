@@ -56,7 +56,7 @@ func (u *Util) InitMianSha() *Util {
 	_ = u.PathExist(fmt.Sprintf("%s\\file", u.GetAppPath()))
 
 	// 定义目标解压目录
-	targetNoteDir := filepath.Join("EasyToolsFiles", "notes")
+	targetNoteDir := filepath.Join(u.GetAppPath(), "notes")
 	if _, err := os.Stat(targetNoteDir); os.IsNotExist(err) {
 		// 如果目标目录不存在，执行资源解压
 		fmt.Println("目标文件夹不存在，正在解压资源...")
@@ -70,7 +70,7 @@ func (u *Util) InitMianSha() *Util {
 		fmt.Println("notes资源文件夹已存在，跳过解压。")
 	}
 
-	targetUnwxappDir := filepath.Join("EasyToolsFiles", "tools", "Unwxapp")
+	targetUnwxappDir := filepath.Join(u.GetAppPath(), "tools", "Unwxapp")
 	if _, err := os.Stat(targetUnwxappDir); os.IsNotExist(err) {
 		// 如果目标目录不存在，执行资源解压
 		fmt.Println("目标文件夹不存在，正在解压资源...")
@@ -83,7 +83,7 @@ func (u *Util) InitMianSha() *Util {
 		// 如果目标目录已存在
 		fmt.Println("Unwxapp资源文件夹已存在，跳过解压。")
 	}
-	targetCyberChefDir := filepath.Join("EasyToolsFiles", "CyberChef")
+	targetCyberChefDir := filepath.Join(u.GetAppPath(), "CyberChef")
 	if _, err := os.Stat(targetCyberChefDir); os.IsNotExist(err) {
 		// 如果目标目录不存在，执行资源解压
 		fmt.Println("目标文件夹不存在，正在解压资源...")
@@ -138,13 +138,31 @@ func (u *Util) Schema(dst ...interface{}) {
 
 // GetAppPath 获取应用主目录
 func (u *Util) GetAppPath() string {
-	//获取系统我的文档目录
+
+	// 如果是 macOS，使用应用支持目录
+	if runtime.GOOS == "darwin" {
+		appName := "EasyTools" // 你的应用名称
+
+		// 获取应用支持目录
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic("获取用户主目录失败: " + err.Error())
+		}
+
+		// macOS 的应用支持目录是 ~/Library/Application Support/
+		appSupportDir := filepath.Join(homeDir, "Library", "Application Support", appName)
+
+		// 确保目录存在
+		return u.PathExist(appSupportDir)
+	}
+
+	// 其他系统使用当前目录下的 EasyToolsFiles
 	currentPath, err := os.Getwd()
 	if err != nil {
-		panic(any("获取当前路径失败"))
+		panic("获取当前路径失败: " + err.Error())
 	}
-	//获取我的文档目录
-	return u.PathExist(fmt.Sprintf("%s/EasyToolsFiles", currentPath))
+
+	return u.PathExist(filepath.Join(currentPath, "EasyToolsFiles"))
 }
 
 // PathExist 判断文件目录是否存在，不存在创建

@@ -9,6 +9,8 @@ export function ClipboardSetText(arg1:string):Promise<void>;
 
 export function GetCPUUsage():Promise<number>;
 
+export function GetConfigDir():Promise<string>;
+
 export function GetMemUsageSelf():Promise<number>;
 
 export function GetMemUsageTotal():Promise<number>;

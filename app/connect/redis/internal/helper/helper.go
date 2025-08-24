@@ -7,17 +7,41 @@ import (
 	"errors"
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/crypto/ssh"
-	"io/ioutil"
 	"net"
 	"os"
-	"os/user"
+	"path/filepath"
+	"runtime"
 	"time"
 )
 
+// 获取应用基础目录
+func GetAppBaseDir() string {
+	// 如果是 macOS，使用应用支持目录
+	if runtime.GOOS == "darwin" {
+		appName := "EasyTools"
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic("获取用户主目录失败: " + err.Error())
+		}
+		return filepath.Join(homeDir, "Library", "Application Support", appName)
+	}
+
+	// 其他系统使用当前目录下的 EasyToolsFiles
+	currentPath, err := os.Getwd()
+	if err != nil {
+		panic("获取当前路径失败: " + err.Error())
+	}
+	return filepath.Join(currentPath, "EasyToolsFiles")
+}
+
 func GetConnection(identity string) (*define.Connection, error) {
 	conf := new(define.Config)
-	nowPath := GetConfPath()
-	data, err := ioutil.ReadFile(nowPath + string(os.PathSeparator) + define.ConfigName)
+	baseDir := GetAppBaseDir()
+	// 假设baseDir已经定义
+	configDir := filepath.Join(baseDir, "tools", "redis")
+	ConfigName := filepath.Join(configDir, "redis-client.conf")
+
+	data, err := os.ReadFile(ConfigName)
 	if err != nil {
 		return nil, err
 	}
@@ -31,12 +55,6 @@ func GetConnection(identity string) (*define.Connection, error) {
 		}
 	}
 	return nil, errors.New("连接数据不存在")
-}
-
-// GetConfPath 获取配置文件路径
-func GetConfPath() string {
-	current, _ := user.Current()
-	return current.HomeDir
 }
 
 func getSSHClient(username, password, addr string) (*ssh.Client, error) {

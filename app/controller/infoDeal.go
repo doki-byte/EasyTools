@@ -24,18 +24,19 @@ func NewInfoDeal() *InfoDeal {
 	return &InfoDeal{}
 }
 
-// 定义 EasyToolsFiles\file 路径
-const baseDir = "EasyToolsFiles/file"
-
 // 上传文件
 func (i *InfoDeal) UploadFile(fileName, content string) error {
 	// 确保目录存在
-	if err := os.MkdirAll(baseDir, os.ModePerm); err != nil {
+	baseDir := i.getAppPath()
+	// 创建文件子目录
+	fileDir := filepath.Join(baseDir, "file")
+
+	if err := os.MkdirAll(fileDir, os.ModePerm); err != nil {
 		return fmt.Errorf("创建目录失败: %v", err)
 	}
 
 	// 保存文件
-	filePath := filepath.Join(baseDir, fileName)
+	filePath := filepath.Join(fileDir, fileName)
 	err := os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
 		return fmt.Errorf("保存文件失败: %v", err)
@@ -45,8 +46,12 @@ func (i *InfoDeal) UploadFile(fileName, content string) error {
 
 // FscanResultDeal 处理文件并生成 Excel
 func (i *InfoDeal) FscanResultDeal(fileName string) (string, error) {
+	// 确保目录存在
+	baseDir := i.getAppPath()
+	// 创建文件子目录
+	fileDir := filepath.Join(baseDir, "file")
 	// 构造文件路径
-	filePath := filepath.Join(baseDir, fileName)
+	filePath := filepath.Join(fileDir, fileName)
 
 	// 检查文件是否存在
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -75,7 +80,7 @@ func (i *InfoDeal) FscanResultDeal(fileName string) (string, error) {
 
 	// 保存处理后的 Excel 文件
 	saveFileName := fmt.Sprintf("%s_%s.xlsx", strings.TrimSuffix(fileName, ".txt"), time.Now().Format("2006-01-02_15-04-05"))
-	saveFilePath := filepath.Join(baseDir, saveFileName)
+	saveFilePath := filepath.Join(fileDir, saveFileName)
 	if err := xlsxFile.SaveAs(saveFilePath); err != nil {
 		return "", fmt.Errorf("保存文件失败: %v", err)
 	}

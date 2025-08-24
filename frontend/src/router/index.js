@@ -13,6 +13,7 @@ import CyberChefView from '@/views/CyberChefView.vue';
 import ConnectView from "@/views/ConnectView.vue";
 import AboutView from "@/views/About.vue";
 import noteView from "@/views/NoteView.vue";
+import FuzzView from "@/views/FuzzView.vue";
 
 // 路由配置
 const routes = [
@@ -61,6 +62,11 @@ const routes = [
     name: 'proxy',
     component: () =>
         import('@/views/proxy/Panel.vue'),  // 确保路径正确
+  },
+  {
+    path: '/fuzz',
+    name: 'fuzz',
+    component: FuzzView,
   },
   {
     path: '/About',

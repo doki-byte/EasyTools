@@ -1,10 +1,11 @@
 package request
 
 import (
+	util "EasyTools/app/proxy"
 	"encoding/json"
 	"github.com/labstack/gommon/log"
 	"os"
-	"runtime"
+	"path/filepath"
 	"strconv"
 )
 
@@ -62,14 +63,8 @@ func (pm *ProxyManager) FetchAll() ([]string, error) {
 		pm.allProxies = append(pm.allProxies, proxies...)
 	}
 
-	// 获取配置文件路径
-	optSys := runtime.GOOS
-	path := ""
-	if optSys == "windows" {
-		path = "EasyToolsFiles" + "\\proxy.txt"
-	} else {
-		path = "EasyToolsFiles" + "/proxy.txt"
-	}
+	baseDir := util.GetAppBaseDir()
+	path := filepath.Join(baseDir, "proxy_success.txt")
 
 	// 检查文件是否已存在，如果不存在则创建
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)

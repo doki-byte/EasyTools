@@ -24,7 +24,7 @@ const route = useRoute()
 const routeName = computed(() => route.name)
 
 // 缓存页面列表 - 这些名称必须与页面组件的name属性匹配
-const cachedPages = ref(['ToolsView', 'SiteView', 'InfoSearchView', 'InfoDealView', 'ConnectView', 'CyberChefView', 'RandomInfoView', 'NoteViews', 'ProxyView']);
+const cachedPages = ref(['ToolsView', 'SiteView', 'InfoSearchView', 'InfoDealView', 'ConnectView', 'CyberChefView', 'RandomInfoView', 'BypassAvView', 'NoteViews', 'ProxyView']);
 
 </script>
 

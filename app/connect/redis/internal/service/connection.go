@@ -6,14 +6,17 @@ import (
 	"encoding/json"
 	"errors"
 	uuid "github.com/satori/go.uuid"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 // ConnectionList 连接列表
 func ConnectionList() ([]*define.Connection, error) {
-	nowPath := helper.GetConfPath()
-	data, err := ioutil.ReadFile(nowPath + string(os.PathSeparator) + define.ConfigName)
+	baseDir := helper.GetAppBaseDir()
+	// 假设baseDir已经定义
+	configDir := filepath.Join(baseDir, "tools", "redis")
+	ConfigName := filepath.Join(configDir, "redis-client.conf")
+	data, err := os.ReadFile(ConfigName)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil, errors.New("暂无连接数据")
 	}
@@ -39,21 +42,23 @@ func ConnectionCreate(conn *define.Connection) error {
 	}
 	conn.Identity = uuid.NewV4().String()
 	conf := new(define.Config)
-	nowPath := helper.GetConfPath()
-	data, err := ioutil.ReadFile(nowPath + string(os.PathSeparator) + define.ConfigName)
+	baseDir := helper.GetAppBaseDir()
+	configDir := filepath.Join(baseDir, "tools", "redis")
+	ConfigName := filepath.Join(configDir, "redis-client.conf")
+	data, err := os.ReadFile(ConfigName)
 	if errors.Is(err, os.ErrNotExist) {
 		// 配置文件的内容初始化
 		conf.Connections = []*define.Connection{conn}
 		data, _ = json.Marshal(conf)
 		// 写入配置内容
-		os.MkdirAll(nowPath, 0666)
-		ioutil.WriteFile(nowPath+string(os.PathSeparator)+define.ConfigName, data, 0666)
+		os.MkdirAll(configDir, 755)
+		os.WriteFile(ConfigName, data, 0666)
 		return nil
 	}
 	json.Unmarshal(data, conf)
 	conf.Connections = append(conf.Connections, conn)
 	data, _ = json.Marshal(conf)
-	ioutil.WriteFile(nowPath+string(os.PathSeparator)+define.ConfigName, data, 0666)
+	os.WriteFile(ConfigName, data, 0666)
 	return nil
 }
 
@@ -73,8 +78,11 @@ func ConnectionEdit(conn *define.Connection) error {
 		conn.Port = "6379"
 	}
 	conf := new(define.Config)
-	nowPath := helper.GetConfPath()
-	data, err := ioutil.ReadFile(nowPath + string(os.PathSeparator) + define.ConfigName)
+	baseDir := helper.GetAppBaseDir()
+	// 假设baseDir已经定义
+	configDir := filepath.Join(baseDir, "tools", "redis")
+	ConfigName := filepath.Join(configDir, "redis-client.conf")
+	data, err := os.ReadFile(ConfigName)
 	if err != nil {
 		return err
 	}
@@ -85,7 +93,7 @@ func ConnectionEdit(conn *define.Connection) error {
 		}
 	}
 	data, _ = json.Marshal(conf)
-	ioutil.WriteFile(nowPath+string(os.PathSeparator)+define.ConfigName, data, 0666)
+	os.WriteFile(ConfigName, data, 0666)
 	return nil
 }
 
@@ -95,8 +103,11 @@ func ConnectionDelete(identity string) error {
 		return errors.New("连接唯一标识不能为空")
 	}
 	conf := new(define.Config)
-	nowPath := helper.GetConfPath()
-	data, err := ioutil.ReadFile(nowPath + string(os.PathSeparator) + define.ConfigName)
+	baseDir := helper.GetAppBaseDir()
+	// 假设baseDir已经定义
+	configDir := filepath.Join(baseDir, "tools", "redis")
+	ConfigName := filepath.Join(configDir, "redis-client.conf")
+	data, err := os.ReadFile(ConfigName)
 	if err != nil {
 		return err
 	}
@@ -111,6 +122,6 @@ func ConnectionDelete(identity string) error {
 		}
 	}
 	data, _ = json.Marshal(conf)
-	ioutil.WriteFile(nowPath+string(os.PathSeparator)+define.ConfigName, data, 0666)
+	os.WriteFile(ConfigName, data, 0666)
 	return nil
 }

@@ -4,10 +4,10 @@ import (
 	"EasyTools/app/connect/ssh/app/utils"
 	"EasyTools/app/connect/ssh/toml"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
-	"path"
+	"path/filepath"
+	"runtime"
 	"time"
 )
 
@@ -27,10 +27,39 @@ type AppConfig struct {
 	KeyFile       string        `json:"key_file" toml:"key_file"`
 }
 
+// 获取应用基础目录
+func getAppBaseDir() string {
+	// 如果是 macOS，使用应用支持目录
+	if runtime.GOOS == "darwin" {
+		appName := "EasyTools"
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic("获取用户主目录失败: " + err.Error())
+		}
+		return filepath.Join(homeDir, "Library", "Application Support", appName)
+	}
+
+	// 其他系统使用当前目录下的 EasyToolsFiles
+	currentPath, err := os.Getwd()
+	if err != nil {
+		panic("获取当前路径失败: " + err.Error())
+	}
+	return filepath.Join(currentPath, "EasyToolsFiles")
+}
+
+var (
+	projectName      = "GoWebSSH"
+	confFileName     = "GoWebSSH.toml"
+	appBaseDir       = getAppBaseDir()
+	toolsDir         = filepath.Join(appBaseDir, "tools", projectName)
+	WorkDir          = toolsDir
+	confFileFullPath = filepath.Join(WorkDir, confFileName)
+)
+
 var DefaultConfig = AppConfig{
 	AppName:       "GoWebSHH",
 	DbType:        "sqlite3",
-	DbDsn:         "EasyToolsFiles/config.db",
+	DbDsn:         filepath.Join(appBaseDir, "config.db"), // 修改为使用 appBaseDir
 	JwtSecret:     utils.RandString(64),
 	AesSecret:     utils.RandString(32),
 	SessionSecret: utils.RandString(64),
@@ -39,22 +68,9 @@ var DefaultConfig = AppConfig{
 	ClientCheck:   time.Second * 15,
 	Address:       "127.0.0.1",
 	Port:          "52868",
-	CertFile:      path.Join(WorkDir, "cert.pem"),
-	KeyFile:       path.Join(WorkDir, "key.key"),
+	CertFile:      filepath.Join(WorkDir, "cert.pem"),
+	KeyFile:       filepath.Join(WorkDir, "key.key"),
 }
-
-var UserHomeDir, _ = os.UserHomeDir()
-
-var projectName = "GoWebSSH"
-
-var confFileName = "GoWebSSH.toml"
-
-var confPath = string(os.PathSeparator) + "." + projectName + string(os.PathSeparator)
-
-// WorkDir 程序默认工作目录,在用户的home目录下 .GoWebSSH 目录
-var WorkDir = path.Join(fmt.Sprintf("EasyToolsFiles/tools/%s/", projectName))
-
-var confFileFullPath = path.Join(WorkDir, confFileName)
 
 func init() {
 	defer func() {
@@ -68,10 +84,10 @@ func init() {
 	flag.StringVar(&dir, "WorkDir", "", "自定义工作目录")
 	flag.Parse()
 	if dir != "" {
-		WorkDir = path.Join(dir, confPath)
-		confFileFullPath = path.Join(WorkDir, confFileName)
-		DefaultConfig.CertFile = path.Join(WorkDir, "cert.pem")
-		DefaultConfig.KeyFile = path.Join(WorkDir, "key.key")
+		WorkDir = filepath.Join(dir, "."+projectName)
+		confFileFullPath = filepath.Join(WorkDir, confFileName)
+		DefaultConfig.CertFile = filepath.Join(WorkDir, "cert.pem")
+		DefaultConfig.KeyFile = filepath.Join(WorkDir, "key.key")
 	}
 	//slog.Info("use-config-file", "path", confFileFullPath)
 
@@ -85,8 +101,8 @@ func init() {
 	}
 
 	info, err = os.Stat(WorkDir)
-	if !info.IsDir() {
-		slog.Error("有一个和工作目录同名的文件")
+	if err != nil || !info.IsDir() {
+		slog.Error("有一个和工作目录同名的文件或无法访问")
 		return
 	}
 
@@ -117,7 +133,6 @@ func init() {
 		return
 	}
 	//slog.Info("DefaultConfig:", "data", DefaultConfig)
-
 }
 
 func RewriteConfig(conf AppConfig) error {

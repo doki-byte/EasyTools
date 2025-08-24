@@ -1,11 +1,12 @@
 package proxy
 
 import (
+	util "EasyTools/app/proxy"
 	"fmt"
 	"github.com/imroc/req/v3"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
-	runtime2 "runtime"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,14 +52,8 @@ func (p *Proxy) CheckDatasets() Response {
 
 	p.config.SetLiveProxies(availableProxiesList)
 
-	// 获取配置文件路径
-	optSys := runtime2.GOOS
-	path := ""
-	if optSys == "windows" {
-		path = "EasyToolsFiles" + "\\proxy_success.txt"
-	} else {
-		path = "EasyToolsFiles" + "/proxy_success.txt"
-	}
+	baseDir := util.GetAppBaseDir()
+	path := filepath.Join(baseDir, "proxy_success.txt")
 
 	// 使用 map 去重代理列表
 	proxySet := make(map[string]struct{})

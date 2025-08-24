@@ -64,19 +64,6 @@ func (p *Proxy) FetchProxies() Response {
 func (p *Proxy) ChooseFile() config.Config {
 	p.config.Code = 200
 
-	//// 获取配置文件路径
-	//optSys := runtime2.GOOS
-	//proxy_success_path := ""
-	//if optSys == "windows" {
-	//	proxy_success_path = config.GetCurrentAbPathByExecutable() + "\\proxy_success.txt"
-	//} else {
-	//	proxy_success_path = config.GetCurrentAbPathByExecutable() + "/proxy_success.txt"
-	//}
-	//if _, err := os.Stat(proxy_success_path); err == nil {
-	//	p.config.FilePath = proxy_success_path
-	//} else {
-	//}
-
 	p.config.FilePath, _ = runtime.OpenFileDialog(p.ctx, runtime.OpenDialogOptions{
 		Title:           "请选择配置文件",
 		ShowHiddenFiles: true,
