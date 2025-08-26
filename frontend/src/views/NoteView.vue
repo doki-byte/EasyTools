@@ -675,45 +675,54 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss" >
-$primary: #ccd1ef;
-$primary-dark: #e3e6ef;
-$secondary: #7209b7;
-$dark: #1e1e2e;
-$darker: #ddddf1;
-$light: #f8f9fa;
-$gray: #6c757d;
-$gray-light: #e9ecef;
+<style lang="scss">
+$primary: #4a6cf7;
+$primary-light: #dcdce1;
+$secondary: #6c757d;
+$success: #10b981;
+$warning: #f59e0b;
+$danger: #ef4444;
+$light: rgba(228,228,228,0.25);
+$light-gray: #f8f9fa;
+$medium-gray: #435568;
+$dark-gray: #6c757d;
+$text-dark: #212529;
 
 $border-radius: 8px;
 $transition: all 0.3s ease;
-$shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-$shadow-sm: 0 4px 8px rgba(0, 0, 0, 0.1);
-$glass: rgba(30, 30, 46, 0.7);
+$shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+$shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
 
 .toggle-sidebar-btn {
   position: absolute;
   top: 17px;
   left: 334px;
   z-index: 999;
-  background: rgba(255, 255, 255, 0.5);
-  border: none;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  background: $light;
+  border: 1px solid $medium-gray;
+  box-shadow: $shadow;
+  transition: $transition;
+  color: $primary;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: $primary-light;
+    box-shadow: $shadow-hover;
   }
 }
 
 .search-input {
-  padding: 6px 8px;
-  font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: $border-radius;
+  border: 1px solid $medium-gray;
   outline: none;
   width: 180px;
+  transition: $transition;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
 }
 
 .note-views {
@@ -721,8 +730,9 @@ $glass: rgba(30, 30, 46, 0.7);
   height: 100%;
   padding: 0;
   gap: 10px;
-  background: linear-gradient(186deg, #DDDDDB, #7f7f88);
-  color: $light;
+  background: $light-gray;
+  color: $text-dark;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   * {
     box-sizing: border-box;
@@ -731,10 +741,9 @@ $glass: rgba(30, 30, 46, 0.7);
   .file-manager {
     width: 250px;
     min-width: 250px;
-    background: $glass;
-    backdrop-filter: blur(10px);
+    background: $light;
     border-radius: $border-radius;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid $medium-gray;
     box-shadow: $shadow;
     display: flex;
     flex-direction: column;
@@ -747,11 +756,11 @@ $glass: rgba(30, 30, 46, 0.7);
       margin-bottom: 15px;
 
       .btn {
-        background: $primary;
-        color: white;
-        border: none;
+        background: $light;
+        color: $primary;
+        border: 1px solid $primary;
         padding: 8px 12px;
-        border-radius: 8px;
+        border-radius: $border-radius;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -759,18 +768,22 @@ $glass: rgba(30, 30, 46, 0.7);
         font-weight: 500;
         font-size: 13px;
         transition: $transition;
-        box-shadow: $shadow-sm;
+        box-shadow: $shadow;
 
         &:hover {
-          background: $primary-dark;
-          transform: translateY(-2px);
+          background: $primary;
+          color: $light;
+          box-shadow: $shadow-hover;
         }
 
         &.btn-secondary {
-          background: rgba(255, 255, 255, 0.1);
+          background: $light;
+          color: $secondary;
+          border: 1px solid $medium-gray;
 
           &:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: $light-gray;
+            color: $text-dark;
           }
         }
 
@@ -794,48 +807,55 @@ $glass: rgba(30, 30, 46, 0.7);
           align-items: center;
           gap: 6px;
           cursor: pointer;
-          padding-left: 10px;
+          padding: 6px 10px;
           transition: background 0.2s;
           user-select: none;
           white-space: nowrap;
+          border-radius: 4px;
+          margin-bottom: 2px;
 
           &:hover {
-            background-color: rgba(76, 175, 80, 0.2);
-            border-radius: $border-radius;
+            background-color: $primary-light;
           }
 
           i {
-            color: #4a90e2;
+            color: $dark-gray;
           }
         }
       }
     }
   }
+
   .tree-node.active-node {
-    background-color: rgba(72, 149, 239, 0.1);
-    color: #fff;
-    border-radius: 6px;
-    font-weight: bold;
+    background-color: $primary-light;
+    color: $primary;
+    font-weight: 600;
+
+    i {
+      color: $primary;
+    }
   }
 
   .editor-container {
-    flex: 1; /* 让它撑满剩余空间 */
+    flex: 1;
     display: flex;
     flex-direction: column;
-    /* 保留你原有的样式 */
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.5);
-    color: $light;
-    font-family: 'Segoe UI', monospace;
-    font-size: 15px;
-    overflow: hidden; /* 隐藏滚动条外 */
+    padding: 2px;
+    background: $light;
+    color: $text-dark;
+    border-radius: $border-radius;
+    border: 1px solid $medium-gray;
+    box-shadow: $shadow;
+    overflow: hidden;
 
     .editor-header {
       padding: 15px 20px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid $medium-gray;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: $light;
+      border-radius: $border-radius $border-radius 0 0;
 
       .editor-title {
         font-size: 16px;
@@ -843,21 +863,32 @@ $glass: rgba(30, 30, 46, 0.7);
         display: flex;
         align-items: center;
         gap: 10px;
+        min-width: 0; /* 允许内容被截断 */
+        flex: 1; /* 占据可用空间 */
+
+        /* 文件名部分 - 添加文本截断 */
+        &:first-child {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 30%; /* 限制最大宽度 */
+        }
 
         .save-status {
           font-size: 13px;
           display: flex;
           align-items: center;
           gap: 6px;
+          flex-shrink: 0; /* 防止保存状态被挤压 */
 
           .indicator {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: #e63946;
+            background: $danger;
 
             &.saved {
-              background: #2a9d8f;
+              background: $success;
             }
           }
         }
@@ -868,11 +899,11 @@ $glass: rgba(30, 30, 46, 0.7);
         gap: 8px;
 
         .btn {
-          background: $primary;
-          color: white;
-          border: none;
+          background: $light;
+          color: $primary;
+          border: 1px solid $primary;
           padding: 8px 12px;
-          border-radius: 8px;
+          border-radius: $border-radius;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -880,18 +911,22 @@ $glass: rgba(30, 30, 46, 0.7);
           font-weight: 500;
           font-size: 13px;
           transition: $transition;
-          box-shadow: $shadow-sm;
+          box-shadow: $shadow;
 
           &:hover {
-            background: $primary-dark;
-            transform: translateY(-2px);
+            background: $primary;
+            color: $light;
+            box-shadow: $shadow-hover;
           }
 
           &.btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
+            background: $light;
+            color: $secondary;
+            border: 1px solid $medium-gray;
 
             &:hover {
-              background: rgba(255, 255, 255, 0.2);
+              background: $light-gray;
+              color: $text-dark;
             }
           }
         }
@@ -902,6 +937,7 @@ $glass: rgba(30, 30, 46, 0.7);
       display: flex;
       flex: 1;
       overflow: hidden;
+      background: $light;
 
       .editor-content-wrapper {
         display: flex;
@@ -912,76 +948,82 @@ $glass: rgba(30, 30, 46, 0.7);
         .editor-textarea {
           flex: 1;
           padding: 20px;
-          background: rgba(0, 0, 0, 0.2);
-          color: $light;
-          font-family: 'Segoe UI', monospace;
+          background: $light;
+          color: $text-dark;
+          font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
           font-size: 15px;
           border: none;
           resize: none;
           line-height: 1.6;
           overflow-y: auto;
+          border-right: 1px solid $medium-gray;
 
           &:focus {
             outline: none;
+            box-shadow: inset 0 0 0 1px $primary-light;
           }
         }
 
         .preview-wrapper {
-          padding: 15px;
-          border-left: 1px solid #ccc;
+          padding: 20px;
           overflow-y: auto;
-          background: rgba(0, 0, 0, 0.7);  // ✅ 修复非法透明度值
-          color: #fff;                     // ✅ 确保文字可见
+          background: $light;
+          color: $text-dark;
           min-width: 0;
 
           .preview-content {
             white-space: normal;
-            line-height: 1.5;
+            line-height: 1.6;
+            font-size: 15px;
 
             p, h1, h2, h3, ul, ol {
-              margin: 0.6em 0;
+              margin: 0.8em 0;
             }
 
-            a{
-              pointer-events: none;
-              color: inherit;
+            h1, h2, h3 {
+              color: $text-dark;
+              font-weight: 600;
+            }
+
+            a {
+              color: $primary;
               text-decoration: none;
-            }
 
-            a:visited,
-            a:hover,
-            a:active {
-              color: inherit !important;
-              text-decoration: none !important;
-              background: none !important;
-              box-shadow: none !important;
+              &:hover {
+                text-decoration: underline;
+              }
             }
 
             img {
-              max-width: 80%;    /* 不超过父容器宽度 */
-              object-fit: contain; /* 保持比例缩放 */
+              max-width: 80%;
+              height: auto;
+              border-radius: 4px;
+              box-shadow: $shadow;
               display: block;
-              margin: 10px 0;
+              margin: 15px 0;
             }
 
             code {
-              background: rgba(255, 255, 255, 0.1);
+              background: $light-gray;
               padding: 2px 6px;
               border-radius: 4px;
               font-family: monospace;
               font-size: 14px;
+              color: $danger;
             }
 
             pre {
-              background: rgba(0, 0, 0, 0.2);
+              background: $light-gray;
               padding: 15px;
-              border-radius: 8px;
+              border-radius: $border-radius;
               overflow-x: auto;
               margin: 15px 0;
+              border: 1px solid $medium-gray;
 
               code {
                 background: none;
                 padding: 0;
+                color: inherit;
               }
             }
 
@@ -989,17 +1031,34 @@ $glass: rgba(30, 30, 46, 0.7);
               border-left: 4px solid $primary;
               padding-left: 15px;
               margin: 15px 0;
-              color: $gray-light;
+              color: $dark-gray;
+              font-style: italic;
+            }
+
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 15px 0;
+
+              th, td {
+                padding: 8px 12px;
+                border: 1px solid $medium-gray;
+              }
+
+              th {
+                background: $light-gray;
+              }
             }
 
             .mark-highlight {
               background-color: #fff59d;
               color: #000;
               font-weight: bold;
+              padding: 0 2px;
+              border-radius: 2px;
             }
           }
         }
-
       }
 
       .empty-state {
@@ -1008,24 +1067,25 @@ $glass: rgba(30, 30, 46, 0.7);
         align-items: center;
         justify-content: center;
         height: 100%;
-        color: $gray;
-        width: 780px;
+        color: $dark-gray;
+        width: 100%;
 
         i {
           font-size: 48px;
           margin-bottom: 15px;
-          color: $primary;
+          color: $primary-light;
         }
 
         h3 {
           font-size: 20px;
           margin-bottom: 12px;
-          color: $light;
+          color: $text-dark;
         }
 
         p {
           font-size: 14px;
           max-width: 300px;
+          text-align: center;
         }
       }
     }
@@ -1034,11 +1094,12 @@ $glass: rgba(30, 30, 46, 0.7);
   .custom-context-menu {
     position: fixed;
     z-index: 9999;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background: $light;
+    border: 1px solid $medium-gray;
+    border-radius: $border-radius;
+    box-shadow: $shadow-hover;
     min-width: 120px;
+    overflow: hidden;
 
     .context-menu-list {
       list-style: none;
@@ -1048,11 +1109,13 @@ $glass: rgba(30, 30, 46, 0.7);
       li {
         padding: 8px 16px;
         font-size: 14px;
-        color: #333;
+        color: $text-dark;
         cursor: pointer;
+        transition: background 0.2s;
 
         &:hover {
-          background-color: #f5f5f5;
+          background-color: $primary-light;
+          color: $primary;
         }
       }
     }

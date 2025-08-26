@@ -3,7 +3,7 @@ package controller
 import (
 	"EasyTools/app/connect/redis"
 	"EasyTools/app/model"
-	"EasyTools/app/proxy/client"
+	proxy "EasyTools/app/proxy/client"
 	"context"
 	"embed"
 	"fmt"
@@ -89,7 +89,7 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 						memTotal := system.GetMemUsageTotal() // 实现获取总内存使用的方法
 
 						// 格式化标题
-						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.8.4            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
+						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.8.5            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
 							cpuUsage, memSelf, memTotal)
 
 						// 更新窗口标题

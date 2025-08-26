@@ -15,9 +15,16 @@
         </div>
       </div>
     </transition>
+
     <div class="list">
-      <div class="item" v-for="(item, index) in list" :key="index" @click="toPage(item.name)"
-        :class="{ active: routeName === item.name }">
+      <!-- 不再在元素上同时使用 v-if 和 v-for，改为遍历 visibleMenu -->
+      <div
+          class="item"
+          v-for="(item, index) in visibleMenu"
+          :key="item.name"
+          @click="toPage(item.name)"
+          :class="{ active: routeName === item.name }"
+      >
         <!-- 动态渲染图标 -->
         <el-icon>
           <component :is="item.icon" />
@@ -25,28 +32,33 @@
         <span>{{ item.title }}</span>
       </div>
     </div>
+
     <div class="logout-btn" @click="checkUpdate()">
       <span style="display: flex; align-items: center; white-space: nowrap;">
         <el-icon>
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.4' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.5' }}
         </span>
       </span>
     </div>
+    <div class="logout-btn" @click="goToMenuManager()">
+      <span><el-icon>
+          <Menu />
+        </el-icon>&nbsp;菜单调整</span>
+    </div>
     <div class="logout-btn" @click="updateUser()">
-      <!-- 使用图标 -->
       <span><el-icon>
           <UserFilled />
         </el-icon>&nbsp;修改密码</span>
     </div>
     <div class="logout-btn" @click="logout()">
-      <!-- 使用图标 -->
       <span><el-icon>
           <WarningFilled />
         </el-icon>&nbsp;退出登录</span>
     </div>
+
   </div>
 
   <!-- 修改密码对话框 -->
@@ -108,36 +120,58 @@
       </div>
     </template>
   </el-dialog>
-
 </template>
 
 <script setup>
-import {ref, onMounted, markRaw, reactive} from 'vue';
-import { useRouter } from 'vue-router';
+import {computed, markRaw, onMounted, onUnmounted, reactive, ref} from 'vue';
+import {useRouter} from 'vue-router';
 import {ElMessageBox, ElNotification} from 'element-plus';
-import { removeToken } from '@/utils/token';
-import {
-  Link,
-  Connection,
-  DataAnalysis,
-  UserFilled,
-  WarningFilled,
-  Promotion,
-  WindPower,
-  Suitcase,
-  Edit,
-  Sugar,
-  SetUp,
-  Management, MoreFilled, MagicStick
-} from '@element-plus/icons-vue'; // 引入所有图标组件
+import {removeToken} from '@/utils/token';
+import {defaultMenu, iconMap, loadMenuOrder} from '@/utils/menuConfig';
+import {Menu, Promotion, UserFilled, WarningFilled,} from '@element-plus/icons-vue';
 import {UpdateUser} from "../../wailsjs/go/controller/User";
-import { GetLatestRelease } from '../../wailsjs/go/controller/Update'
+import {GetLatestRelease} from '../../wailsjs/go/controller/Update'
 
-// 当前路由名称，默认设置为 'tool'
+// 当前路由名称
 const routeName = ref('tool');
 const router = useRouter();
 
-// 修改密码相关状态
+// 响应式菜单项（从配置加载）
+const menuList = ref([]);
+
+// 排序后的菜单（computed）
+const sortedMenuList = computed(() => {
+  return menuList.value.slice().sort((a, b) => a.order - b.order);
+});
+
+// 过滤出 visible 为 true 的菜单（避免在模板中使用 v-if）
+const visibleMenu = computed(() => {
+  // 防御式：确保 sortedMenuList.value 是数组
+  const list = Array.isArray(sortedMenuList.value) ? sortedMenuList.value : [];
+  return list.filter(i => i && (i.visible === undefined ? true : !!i.visible));
+});
+
+// 加载菜单配置（从 localStorage / 默认合并）
+const loadMenu = async () => {
+  const savedOrder = await loadMenuOrder();
+
+  // 合并默认菜单和保存的顺序（包含 visible）
+  menuList.value = defaultMenu.map(item => {
+      const savedItem = savedOrder.find(i => i.name === item.name);
+      return {
+        ...item,
+        order: savedItem ? savedItem.order : item.defaultOrder,
+        visible: savedItem ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible) : item.visible,
+        icon: markRaw(iconMap[item.icon])
+      };
+    });
+};
+
+const goToMenuManager = () => {
+  router.push({ name: 'menuManager' });
+};
+
+// 修改密码相关（保持你原先逻辑）
 const pwdFormRef = ref(null);
 const showPasswordDialog = ref(false);
 const isUpdatingPassword = ref(false);
@@ -148,18 +182,42 @@ const pwdForm = reactive({
   confirmPassword: "",
 });
 
-// 初始化检查
-onMounted(() => {
-  AutoCheckUpdate()
-})
 
-// 打开修改密码弹窗
-const updateUser = () => {
-  // 自动填充当前登录用户（根据你的实际登录信息调整）
-  pwdForm.username = localStorage.getItem('EasyTools-Token') || 'EasyTools';
-  showPasswordDialog.value = true;
+// 设置事件处理函数：收到通知时重新加载菜单数据
+const handleMenuUpdated = (ev) => {
+  // 可选：可以通过 ev.detail 做更精细的判断
+  console.log('menu-order-updated event received', ev?.detail);
+  loadMenu();
 };
 
+// 页面加载时设置默认路由并加载菜单
+onMounted(() => {
+  if (!routeName.value) {
+    routeName.value = 'tool';
+    router.push({ name: 'tool' }).catch(() => { });
+  }
+  loadMenu();
+  AutoCheckUpdate();
+
+  // 添加事件监听器，供 menumange.vue 保存后触发
+  window.addEventListener('menu-order-updated', handleMenuUpdated);
+});
+
+// 组件卸载时移除监听器，防止内存泄漏
+onUnmounted(() => {
+  window.removeEventListener('menu-order-updated', handleMenuUpdated);
+});
+
+// 跳转到指定页面
+function toPage(name) {
+  if (routeName.value === name) {
+    return;
+  }
+  routeName.value = name;
+  router.push({ name }).catch(() => { });
+}
+
+// 密码修改处理（保留你的实现）
 const pwdRules = {
   oldPassword: [{ required: true, message: "请输入原密码", trigger: "blur" }],
   newPassword: [
@@ -177,92 +235,21 @@ const pwdRules = {
   ]
 };
 
-// 响应式菜单项
-const list = ref([
-  {
-    name: 'tool',
-    icon: markRaw(Suitcase),
-    title: '工具仓库',
-  },
-  {
-    name: 'website',
-    icon: markRaw(Link), // 使用图标组件
-    title: '网址导航',
-  },
-  {
-    name: 'infoSearch',
-    icon: markRaw(Connection),
-    title: '信息查询',
-  },
-  {
-    name: 'infoDeal',
-    icon: markRaw(Edit),
-    title: '信息处理',
-  },
-  {
-    name: 'connect',
-    icon: markRaw(SetUp),
-    title: '简连助手',
-  },
-  {
-    name: 'cyberchef',
-    icon: markRaw(WindPower),
-    title: '编码解码',
-  },
-  {
-    name: 'randomInfo',
-    icon: markRaw(DataAnalysis),
-    title: '随机生成',
-  },
-  {
-    name: 'notes',
-    icon: markRaw(Management),
-    title: '备忘笔记',
-  },
-  {
-    name: 'proxy',
-    icon: markRaw(MagicStick),
-    title: '便携代理',
-  },
-  {
-    name: 'fuzz',
-    icon: markRaw(MagicStick),
-    title: '随心FUZZ',
-  },
-  {
-    name: 'about',
-    icon: markRaw(Promotion),
-    title: '关于软件',
-  }
-]);
+const updateUser = () => {
+  pwdForm.username = localStorage.getItem('EasyTools-Token') || 'EasyTools';
+  showPasswordDialog.value = true;
+};
 
-
-
-// 跳转到指定页面
-function toPage(name) {
-  if (routeName.value === name) {
-    return;
-  }
-  routeName.value = name; // 更新路由名称以激活对应菜单样式
-  router.push({ name }).catch(() => { });
-}
-
-// 修改密码处理逻辑
 const handleChangePassword = async () => {
   try {
-    // 执行表单验证
     await pwdFormRef.value.validate();
-
-    // 显示加载状态
     isUpdatingPassword.value = true;
-
-    // 调用后端接口
     const error = await UpdateUser(
         pwdForm.username,
         {
           UserName: pwdForm.username,
           PassWord: pwdForm.newPassword,
-          OldPassword: pwdForm.oldPassword // 添加原密码字段
+          OldPassword: pwdForm.oldPassword
         }
     );
 
@@ -275,7 +262,6 @@ const handleChangePassword = async () => {
       duration: 2000
     });
 
-    // 关闭弹窗并跳转
     showPasswordDialog.value = false;
     removeToken();
     await router.replace({ name: "login" });
@@ -292,20 +278,14 @@ const handleChangePassword = async () => {
   }
 }
 
-// 修改密码取消处理
 const handleCancelPassword = () => {
-  showPasswordDialog.value = false
-
-  // 延迟执行确保动画完成
+  showPasswordDialog.value = false;
   setTimeout(() => {
-    // 重置表单验证状态
-    pwdFormRef.value?.resetFields()
-
-    // 清空敏感字段（保留用户名）
-    pwdForm.oldPassword = ""
-    pwdForm.newPassword = ""
-    pwdForm.confirmPassword = ""
-  }, 300)
+    pwdFormRef.value?.resetFields();
+    pwdForm.oldPassword = "";
+    pwdForm.newPassword = "";
+    pwdForm.confirmPassword = "";
+  }, 300);
 }
 
 // 退出登录
@@ -315,21 +295,21 @@ function logout() {
     cancelButtonText: '取消',
     type: 'warning',
   })
-    .then(() => {
-      removeToken();
-      router.push({ name: 'login' }).catch(() => { });
-    })
-    .catch(() => {
-      console.log('取消退出');
-    });
+      .then(() => {
+        removeToken();
+        router.push({ name: 'login' }).catch(() => { });
+      })
+      .catch(() => {
+        console.log('取消退出');
+      });
 }
 
-// 版本更新状态
+
+// 版本更新逻辑（保留）
 const showUpdate = ref(false)
 const latestVersion = ref('')
 const releaseUrl = ref('')
 
-// 获取版本信息
 const checkUpdate = async () => {
   try {
     const result = await GetLatestRelease()
@@ -350,7 +330,6 @@ const checkUpdate = async () => {
   }
 }
 
-// 获取版本信息
 const AutoCheckUpdate = async () => {
   try {
     const result = await GetLatestRelease()
@@ -365,7 +344,6 @@ const AutoCheckUpdate = async () => {
   }
 }
 
-// 关闭通知
 const closeNotice = () => {
   showUpdate.value = false
 }
@@ -374,15 +352,6 @@ const openBrowerToDownload = () => {
   window.open(releaseUrl.value, "_blank");
   console.log(releaseUrl)
 }
-
-// 页面加载时设置默认路由
-onMounted(() => {
-  if (!routeName.value) {
-    routeName.value = 'tool';
-    router.push({ name: 'tool' }).catch(() => { });
-  }
-});
-
 </script>
 
 

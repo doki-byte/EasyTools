@@ -79,6 +79,11 @@ const routes = [
     component: () =>
       import('@/views/LoginView.vue'),  // 确保路径正确
   },
+  {
+    path: '/menuManager',
+    name: 'menuManager',
+    component: () => import('@/views/MenuManager.vue')
+  },
   // 默认重定向路由
   {
     path: '/',

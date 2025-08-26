@@ -12,7 +12,7 @@
         <img :src="qrImage" alt="公众号二维码" class="qr-image" />
         <div class="qr-wrapper">
           <h3>关注公众号</h3>
-          <p>扫码关注，获取更多资讯</p>
+          <p style="color: #9fc6e8">扫码关注，获取更多资讯</p>
         </div>
       </div>
     </header>
@@ -78,7 +78,8 @@ export default {
   data() {
     return {
       updates: [
-        {date:'v1.8.4',content: '1. 新增fuzz调用界面; 2. 修复mac下app程序无法直接打开的bug;',isNew:true},
+        {date:'v1.8.5',content: '1. 修改Note笔记界面为奶白色; 2. 新增菜单顺序调整功能',isNew:true},
+        {date:'v1.8.4',content: '1. 新增fuzz调用界面'},
         {date:'v1.8.3',content: '1. 新增代理池功能；2. 优化CyberChef、ssh连接功能'},
         {date:'v1.8.2',content: '优化工具、网址搜索功能;'},
         { date: 'v1.8.1', content: '1.新增Note备忘录功能;2.优化工具、网址搜索功能;3.新增jwt爆破功能;4.新增地图接口调用功能;5.优化redis连接及显示功能;6.修改CyberChef为中文版本的'},
@@ -105,7 +106,8 @@ export default {
       ],
       relatedLinks: [
         { text: 'GitHub', url: 'https://github.com/doki-byte/EasyTools', icon: 'fab fa-github' },
-        { text: '纷传', url: 'https://h5.fenchuan8.com/#/index?forum=102706&yqm=CM4RP', icon: 'fas fa-book' },
+        { text: '纷传(叮叮当当)', url: 'https://h5.fenchuan8.com/#/index?forum=102706&yqm=CM4RP', icon: 'fas fa-book' },
+        { text: 'QQ交流群(702376033)', url: 'https://qm.qq.com/q/VEzWDiDMgm', icon: 'fas fa-book' },
       ],
       // sponsors: [
       //   { name: '科技先锋', amount: '500', src: 'data:image/png;base64,REPLACE_ME_5' },
@@ -123,7 +125,7 @@ export default {
 
 <style scoped>
 .max-limited {
-  max-height: 280px;
+  max-height: 400px;
   overflow-y: auto;
 }
 
@@ -241,7 +243,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 300px;
+  height: 380px;
 }
 .card3 {
   background: linear-gradient(35deg, #e4e8f6, #b4bacf);
@@ -345,7 +347,7 @@ export default {
 
 .links {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   list-style: none;
   padding: 0;
