@@ -177,7 +177,7 @@ wails build --trimpath -ldflags="-w -s"
 
 期待各位师傅们对出现的bug，以及需要增加的功能，提出宝贵的建议及意见，感激！！！
 
-<img src="README.assets/image-20250827113432737.png" alt="image-20250827113432737" style="zoom: 33%;" />
+<img src="images/image-20250827113432737.png" alt="image-20250827113432737" style="zoom: 33%;" />
 
 ## 参考
 
