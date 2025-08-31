@@ -78,7 +78,8 @@ export default {
   data() {
     return {
       updates: [
-        {date:'v1.8.5',content: '1. 修改Note笔记界面为奶白色; 2. 新增菜单顺序调整功能',isNew:true},
+        {date:'v1.8.6',content: '1. 简化Tools导航添加工具逻辑; 2. 新增site导航自动识别获取站点信息功能; 3. 优化模拟生成身份证时时间选择功能; 4. 新增系统托盘; 5. 新增全局快捷键控制程序的显示与隐藏',isNew:true},
+        {date:'v1.8.5',content: '1. 修改Note笔记界面为奶白色; 2. 新增菜单顺序调整功能'},
         {date:'v1.8.4',content: '1. 新增fuzz调用界面'},
         {date:'v1.8.3',content: '1. 新增代理池功能；2. 优化CyberChef、ssh连接功能'},
         {date:'v1.8.2',content: '优化工具、网址搜索功能;'},

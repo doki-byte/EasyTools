@@ -2,6 +2,7 @@ package controller
 
 import (
 	"EasyTools/app/connect/redis"
+	hotkey2 "EasyTools/app/hotkey"
 	"EasyTools/app/model"
 	proxy "EasyTools/app/proxy/client"
 	"context"
@@ -20,7 +21,7 @@ import (
 )
 
 // WailsRun 初始化
-func WailsRun(assets embed.FS, port int, icon []byte) {
+func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 	// 创建控制器实例
 	system := NewSystem()
 	site := NewSite()
@@ -34,7 +35,9 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 	Unwxapp := NewUnWxapp()
 	jwtcrack := NewJwtCrackController()
 	note := NewNote()
-	proxy := proxy.NewProxy()
+	freeProxy := proxy.NewProxy()
+	hotkey := hotkey2.NewHotKey()
+	systemTp := NewSystemTp()
 
 	// 启动 Wails 服务
 	err := wails.Run(&options.App{
@@ -59,9 +62,11 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			Unwxapp.setCtx(ctx)
 			jwtcrack.setCtx(ctx)
 			note.setCtx(ctx)
-
+			systemTp.Startup(ctx, systemTrayIcon)
 			redisDb.SetCtx(ctx)
-			proxy.SetCtx(ctx)
+			freeProxy.SetCtx(ctx)
+
+			hotkey.SetContext(ctx)
 
 			server.start(port)
 			if runtime2.GOOS == "windows" {
@@ -89,7 +94,7 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 						memTotal := system.GetMemUsageTotal() // 实现获取总内存使用的方法
 
 						// 格式化标题
-						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.8.5            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
+						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.8.6            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
 							cpuUsage, memSelf, memTotal)
 
 						// 更新窗口标题
@@ -110,14 +115,14 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			About: &mac.AboutInfo{
 				Title:   "EasyTools",
 				Message: "渗透测试工具箱",
-				Icon:    icon,
+				Icon:    appIcon,
 			},
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 		},
 		Linux: &linux.Options{
 			ProgramName:         "EasyTools",
-			Icon:                icon,
+			Icon:                appIcon,
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyOnDemand,
 			WindowIsTranslucent: false,
 		},
@@ -134,7 +139,9 @@ func WailsRun(assets embed.FS, port int, icon []byte) {
 			Unwxapp,
 			jwtcrack,
 			note,
-			proxy,
+			freeProxy,
+			hotkey,
+			systemTp,
 		},
 	})
 

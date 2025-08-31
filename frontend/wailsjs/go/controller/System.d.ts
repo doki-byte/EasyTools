@@ -25,4 +25,4 @@ export function OpenConfigDir():Promise<void>;
 
 export function OpenPath(arg1:string):Promise<void>;
 
-export function ShellCMD(arg1:string,arg2:string,arg3:number):Promise<void>;
+export function ShellCMD(arg1:string,arg2:string,arg3:string,arg4:number):Promise<void>;

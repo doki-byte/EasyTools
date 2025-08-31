@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -21,26 +20,6 @@ var (
 	mu      sync.Mutex
 	cmd     *exec.Cmd
 )
-
-// 获取应用基础目录
-func getAppBaseDir() string {
-	// 如果是 macOS，使用应用支持目录
-	if runtime.GOOS == "darwin" {
-		appName := "EasyTools"
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			panic("获取用户主目录失败: " + err.Error())
-		}
-		return filepath.Join(homeDir, "Library", "Application Support", appName)
-	}
-
-	// 其他系统使用当前目录下的 EasyToolsFiles
-	currentPath, err := os.Getwd()
-	if err != nil {
-		panic("获取当前路径失败: " + err.Error())
-	}
-	return filepath.Join(currentPath, "EasyToolsFiles")
-}
 
 // SSE 广播消息
 func broadcast(message string) {
@@ -220,9 +199,9 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 		args = append(args, "-H", fmt.Sprintf("%s: %s", k, v))
 	}
 
-	baseDir := getAppBaseDir()
+	baseDir := GetAppBaseDir()
 	resultFile := filepath.Join(baseDir, "results.json")
-	
+
 	args = append(args, "-of", "json", "-o", resultFile)
 
 	fmt.Println("Final ffuf args:", args)

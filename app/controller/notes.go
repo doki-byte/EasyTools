@@ -3,14 +3,13 @@ package controller
 import (
 	"encoding/base64"
 	"errors"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Note struct {

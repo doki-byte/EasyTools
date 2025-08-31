@@ -80,9 +80,9 @@ const routes = [
       import('@/views/LoginView.vue'),  // 确保路径正确
   },
   {
-    path: '/menuManager',
-    name: 'menuManager',
-    component: () => import('@/views/MenuManager.vue')
+    path: '/systemManage',
+    name: 'systemManage',
+    component: () => import('@/views/SystemView.vue')
   },
   // 默认重定向路由
   {

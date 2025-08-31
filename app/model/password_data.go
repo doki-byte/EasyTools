@@ -9660,6 +9660,7 @@ func (s *Password_data) Initialize(db *gorm.DB) {
 			{Name: "GVC DSL-802E/R3A", Method: "", UserId: "user", Password: "password", Level: ""},
 			{Name: "etek-td ADSL_T07L006.0", Method: "", UserId: "supervisor", Password: "12345", Level: ""},
 			{Name: "broadmax hsa300a", Method: "", UserId: "broadmax", Password: "broadmax", Level: ""},
+			{Name: "Bigemap离线地图服务器", Method: "", UserId: "bm-user", Password: "password", Level: ""},
 		}
 		// 每批次插入100条数据
 		batchSize := 100

@@ -175,9 +175,9 @@ func (u *Util) PathExist(path string) string {
 }
 
 // ShellCMD 以shell方式运行cmd命令，支持终端和无终端两种模式
-func (u *Util) ShellCMD(cmdStr string, paramStr string, terminal int) {
+func (u *Util) ShellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
 	// 拼接完整命令
-	command := fmt.Sprintf("%s %s", cmdStr, paramStr)
+	command := fmt.Sprintf("cd /D %s && %s %s", cmdPath, cmdStr, paramStr)
 
 	if terminal == 1 {
 		// 需要终端，保持终端打开
@@ -203,7 +203,12 @@ func (u *Util) ShellCMD(cmdStr string, paramStr string, terminal int) {
 
 // OpenDir 打开指定目录
 func (u *Util) OpenDir(path string, terminal int) {
-	u.ShellCMD("explorer", path, 0)
+	cmd := exec.Command("explorer", path)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	err := cmd.Run()
+	if err != nil {
+		fmt.Printf("Error opening directory: %v\n", err)
+	}
 }
 
 // PathConvert 路径转换

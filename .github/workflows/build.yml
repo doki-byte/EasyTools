@@ -50,12 +50,6 @@ jobs:
       with:
         go-version: '1.24'
 
-    - name: Update Wails version in go.mod
-      run: |
-        # 更新 go.mod 中的 Wails 版本以匹配 CLI
-        go mod edit -require github.com/wailsapp/wails/v2@v2.10.2
-        go mod tidy
-
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -83,7 +77,7 @@ jobs:
         sudo apt-get update
         
         # 安装所需的库
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev build-essential
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev build-essential libx11-dev xvfb
         
         # 注释掉添加的源以避免潜在问题
         sudo sed -i 's/^deb http:\/\/gb.archive.ubuntu.com\/ubuntu jammy main/# deb http:\/\/gb.archive.ubuntu.com\/ubuntu jammy main/' /etc/apt/sources.list

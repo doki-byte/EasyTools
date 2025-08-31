@@ -88,8 +88,8 @@ func (b *Base) pathExist(path string) string {
 }
 
 // shellCMD 以shell方式运行cmd命令
-func (b *Base) shellCMD(cmdStr string, paramStr string, terminal int) {
-	util.NewUtil().ShellCMD(cmdStr, paramStr, terminal)
+func (b *Base) shellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
+	util.NewUtil().ShellCMD(cmdPath, cmdStr, paramStr, terminal)
 }
 
 // openDir 打开指定目录

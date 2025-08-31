@@ -39,14 +39,14 @@
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.5' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.6' }}
         </span>
       </span>
     </div>
-    <div class="logout-btn" @click="goToMenuManager()">
+    <div class="logout-btn" @click="goToSystemManager()">
       <span><el-icon>
           <Menu />
-        </el-icon>&nbsp;菜单调整</span>
+        </el-icon>&nbsp;系统管理</span>
     </div>
     <div class="logout-btn" @click="updateUser()">
       <span><el-icon>
@@ -167,8 +167,8 @@ const loadMenu = async () => {
     });
 };
 
-const goToMenuManager = () => {
-  router.push({ name: 'menuManager' });
+const goToSystemManager = () => {
+  router.push({ name: 'systemManage' });
 };
 
 // 修改密码相关（保持你原先逻辑）
@@ -199,7 +199,7 @@ onMounted(() => {
   loadMenu();
   AutoCheckUpdate();
 
-  // 添加事件监听器，供 menumange.vue 保存后触发
+  // 添加事件监听器，供 Systemmange.vue 保存后触发
   window.addEventListener('menu-order-updated', handleMenuUpdated);
 });
 

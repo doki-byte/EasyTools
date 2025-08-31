@@ -14,6 +14,10 @@ export function DeleteSiteCategory(arg1) {
   return window['go']['controller']['Site']['DeleteSiteCategory'](arg1);
 }
 
+export function FetchSiteInfo(arg1) {
+  return window['go']['controller']['Site']['FetchSiteInfo'](arg1);
+}
+
 export function GetAllSites() {
   return window['go']['controller']['Site']['GetAllSites']();
 }

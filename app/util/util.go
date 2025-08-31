@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	cyberchef "EasyTools/app/embedCyberChef"
 	"EasyTools/app/note"
 	"EasyTools/app/unwxapp"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -171,7 +171,7 @@ func (u *Util) PathExist(path string) string {
 }
 
 // ShellCMD 跨平台执行 shell 命令
-func (u *Util) ShellCMD(cmdStr string, paramStr string, terminal int) {
+func (u *Util) ShellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
 	shellPath := os.Getenv("SHELL")
 	if shellPath == "" {
 		if runtime.GOOS == "darwin" {
@@ -182,7 +182,14 @@ func (u *Util) ShellCMD(cmdStr string, paramStr string, terminal int) {
 	}
 	shellName := filepath.Base(shellPath)
 
-	fullCommand := fmt.Sprintf("%s %s", cmdStr, paramStr)
+	// 拼接完整命令：先切换到指定目录，然后执行命令
+	var fullCommand string
+	if cmdPath != "" {
+		fullCommand = fmt.Sprintf("cd %s && %s %s", cmdPath, cmdStr, paramStr)
+	} else {
+		fullCommand = fmt.Sprintf("%s %s", cmdStr, paramStr)
+	}
+
 	fmt.Printf("执行命令: %s\n", fullCommand)
 
 	var cmd *exec.Cmd
@@ -314,16 +321,29 @@ func getLinuxTerminal(shellPath, shellName, command string) (string, []string) {
 	return "", nil
 }
 
-// OpenDir 打开目录
+// OpenDir 打开指定目录
 func (u *Util) OpenDir(path string, terminal int) {
-	if runtime.GOOS == "darwin" {
-		u.ShellCMD("open", path, terminal)
-		return
+	if terminal == 1 {
+		// 如果需要终端，使用文件管理器打开目录
+		if runtime.GOOS == "darwin" {
+			u.ShellCMD("", "open", path, 0)
+		} else {
+			// Linux 使用 xdg-open 或特定文件管理器
+			u.ShellCMD("", "xdg-open", path, 0)
+		}
+	} else {
+		// 直接使用系统默认方式打开目录
+		var cmd *exec.Cmd
+		if runtime.GOOS == "darwin" {
+			cmd = exec.Command("open", path)
+		} else {
+			cmd = exec.Command("xdg-open", path)
+		}
+		err := cmd.Run()
+		if err != nil {
+			fmt.Printf("Error opening directory: %v\n", err)
+		}
 	}
-	if !regexp.MustCompile(`^(http|ftp)s?://`).MatchString(path) {
-		path = fmt.Sprintf("file://%s", path)
-	}
-	u.ShellCMD("xdg-open", path, terminal)
 }
 
 // PathConvert 路径转换

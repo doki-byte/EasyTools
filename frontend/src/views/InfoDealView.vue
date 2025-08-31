@@ -136,7 +136,7 @@
           <p> 文件保存位置：
             <span style="color: #4dcd31">{{ OssListSavePath }}</span>
           </p>
-          <el-button type="success" @click="openDir">
+          <el-button type="success" @click="openFileDir">
             打开EasyToolsFiles文件夹
           </el-button>
         </div>
@@ -545,10 +545,10 @@ export default {
       }
     },
     // 打开文件夹
-    openDir() {
-      const baseDir = GetConfigDir()
+    async openFileDir() {
+      const baseDir = await GetConfigDir()
       const fileDir = baseDir + "/file"; // 拼接file子目录
-      OpenPath(fileDir)
+      await OpenPath(fileDir)
     },
 
     async selectPackage() {

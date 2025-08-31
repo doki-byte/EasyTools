@@ -2,7 +2,21 @@ package controller
 
 import (
 	"EasyTools/app/model"
+	"crypto/md5"
+	"crypto/tls"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"mime"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // Site 控制器
@@ -180,6 +194,184 @@ func (s *Site) GetSearchSites(title string) ([]SiteCategory, error) {
 	return categories, nil
 }
 
+// FetchSiteInfo 自动获取标题、描述并下载 favicon 到 ./icon 目录。
+// 返回 map[string]string 包含 keys: "title", "remark", "icon"（icon 是保存的文件名，如 "a1b2c3d4.png"）
+func (s *Site) FetchSiteInfo(rawURL string) (map[string]string, error) {
+	result := map[string]string{
+		"title":  "",
+		"remark": "",
+		"icon":   "",
+	}
+
+	if rawURL == "" {
+		return result, fmt.Errorf("url 为空")
+	}
+
+	// 如果用户没有写 scheme，默认加上 http://
+	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
+		rawURL = "http://" + rawURL
+	}
+
+	parsedBase, err := url.Parse(rawURL)
+	if err != nil {
+		return result, fmt.Errorf("无法解析 URL: %v", err)
+	}
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   12 * time.Second,
+	}
+
+	// 获取页面
+	req, _ := http.NewRequest("GET", rawURL, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return result, fmt.Errorf("请求失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 解析 HTML
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return result, fmt.Errorf("解析 HTML 失败: %v", err)
+	}
+
+	// title
+	title := strings.TrimSpace(doc.Find("title").First().Text())
+	result["title"] = title
+
+	// meta description 优先 name=description，然后 og:description
+	desc, _ := doc.Find("meta[name='description']").Attr("content")
+	if desc == "" {
+		desc, _ = doc.Find("meta[property='og:description']").Attr("content")
+	}
+	result["remark"] = strings.TrimSpace(desc)
+
+	// 找 favicon 链接：查找 rel 包含 icon 的 <link>
+	var iconHref string
+	doc.Find("link[rel]").EachWithBreak(func(i int, sSel *goquery.Selection) bool {
+		rel, _ := sSel.Attr("rel")
+		if rel != "" && strings.Contains(strings.ToLower(rel), "icon") {
+			href, ok := sSel.Attr("href")
+			if ok && strings.TrimSpace(href) != "" {
+				iconHref = strings.TrimSpace(href)
+				return false // stop
+			}
+		}
+		return true
+	})
+
+	// 若没找到 link，则尝试 site root /favicon.ico
+	if iconHref == "" {
+		iconHref = "/favicon.ico"
+	}
+
+	// 解析 icon URL（支持相对路径）
+	iconURL, err := url.Parse(iconHref)
+	if err != nil {
+		// fallback to root favicon
+		iconURL = &url.URL{Path: "/favicon.ico"}
+	}
+	iconAbs := parsedBase.ResolveReference(iconURL).String()
+
+	// 下载 icon
+	saveName, err := downloadAndSaveIcon(client, iconAbs)
+	if err != nil {
+		// 下载失败：尝试 /favicon.ico 作为最后手段（如果之前不是/fav）
+		if !strings.HasSuffix(strings.ToLower(iconAbs), "/favicon.ico") {
+			rootFav := parsedBase.Scheme + "://" + parsedBase.Host + "/favicon.ico"
+			if saveName2, err2 := downloadAndSaveIcon(client, rootFav); err2 == nil {
+				result["icon"] = saveName2
+				return result, nil
+			}
+		}
+		// 彻底失败也不返回 error（只是不给 icon），但把错误记录返回
+		return result, fmt.Errorf("获取图标失败: %v", err)
+	}
+
+	result["icon"] = saveName
+	return result, nil
+}
+
+// downloadAndSaveIcon 下载 iconUrl 并保存到 ./icon/<md5>.<ext>，返回文件名（不含路径）
+func downloadAndSaveIcon(client *http.Client, iconUrl string) (string, error) {
+	// 请求 icon
+	req, _ := http.NewRequest("GET", iconUrl, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("下载图标失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("下载图标返回状态 %d", resp.StatusCode)
+	}
+
+	// 读少量头部判断类型和文件扩展名
+	contentType := resp.Header.Get("Content-Type")
+	ext := ""
+	if contentType != "" {
+		exts, _ := mime.ExtensionsByType(strings.Split(contentType, ";")[0])
+		if len(exts) > 0 {
+			ext = exts[0] // e.g. .png
+		}
+	}
+	// 如果从 URL path 能获取 ext，则优先用它
+	u, err := url.Parse(iconUrl)
+	if err == nil {
+		if pext := path.Ext(u.Path); pext != "" {
+			ext = pext
+		}
+	}
+	if ext == "" {
+		ext = ".ico" // fallback
+	}
+
+	// 计算 md5 作为文件名
+	h := md5.New()
+	h.Write([]byte(iconUrl))
+	name := hex.EncodeToString(h.Sum(nil)) + ext
+
+	baseDir := GetAppBaseDir()
+
+	iconDir := filepath.Join(baseDir, "icon")
+	if err := os.MkdirAll(iconDir, 0755); err != nil {
+		return "", fmt.Errorf("创建 icon 目录失败: %v", err)
+	}
+
+	savePath := filepath.Join(iconDir, name)
+
+	// 如果文件已存在就直接返回
+	if _, err := os.Stat(savePath); err == nil {
+		return name, nil
+	}
+
+	// 写入文件
+	out, err := os.Create(savePath)
+	if err != nil {
+		return "", fmt.Errorf("创建文件失败: %v", err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		// 如果失败，尝试删除残缺文件
+		_ = os.Remove(savePath)
+		return "", fmt.Errorf("保存图标失败: %v", err)
+	}
+
+	return name, nil
+}
+
 // 新增工具
 func (s *Site) AddSite(site SiteItem) (int, error) {
 	// 获取数据库连接
@@ -224,15 +416,37 @@ func (s *Site) DeleteSite(id int) error {
 	// 获取数据库连接
 	db := s.db()
 	if db == nil {
-		// s.log("数据库连接未初始化")
 		return fmt.Errorf("数据库连接未初始化")
 	}
 
-	// 根据工具ID删除工具
-	err := db.Where("id = ?", id).Delete(&SiteItem{}).Error
+	// 先查询站点信息，获取图标文件名
+	var site SiteItem
+	err := db.Where("id = ?", id).First(&site).Error
 	if err != nil {
-		// s.log(fmt.Sprintf("删除工具失败: %v", err))
+		return fmt.Errorf("查询站点失败: %v", err)
+	}
+
+	// 删除数据库记录
+	err = db.Where("id = ?", id).Delete(&SiteItem{}).Error
+	if err != nil {
 		return fmt.Errorf("删除工具失败: %v", err)
+	}
+
+	// 如果站点有图标，删除对应的图标文件
+	if site.Icon != "" {
+		baseDir := GetAppBaseDir()
+		iconPath := filepath.Join(baseDir, "icon", site.Icon)
+
+		// 检查文件是否存在
+		if _, err := os.Stat(iconPath); err == nil {
+			// 文件存在，尝试删除
+			if err := os.Remove(iconPath); err != nil {
+				// 删除失败，记录错误但不中断流程
+				s.log(fmt.Sprintf("删除图标文件失败: %v", err))
+			} else {
+				s.log(fmt.Sprintf("已删除图标文件: %s", iconPath))
+			}
+		}
 	}
 
 	return nil
@@ -398,7 +612,7 @@ func (s *Site) UpdateCommandSorts(sorts []map[string]interface{}) error {
 	return nil
 }
 
-// 在Tool结构体中添加以下方法
+// 在Site结构体中添加以下方法
 func (s *Site) MoveCommandToCategory(request map[string]interface{}) error {
 	db := s.db()
 	if db == nil {

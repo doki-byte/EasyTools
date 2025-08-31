@@ -8,6 +8,8 @@ export function DeleteSite(arg1:number):Promise<void>;
 
 export function DeleteSiteCategory(arg1:string):Promise<void>;
 
+export function FetchSiteInfo(arg1:string):Promise<Record<string, string>>;
+
 export function GetAllSites():Promise<Array<controller.SiteCategory>>;
 
 export function GetCategoryList():Promise<Array<Record<string, any>>>;

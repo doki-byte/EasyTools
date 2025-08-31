@@ -9,9 +9,12 @@ import (
 var assets embed.FS
 
 //go:embed build/appicon.png
-var icon []byte
+var appIcon []byte
+
+//go:embed build/appicon.ico
+var sysTrayIcon []byte
 
 func main() {
 	//使用 52867 作为ginServer的端口
-	controller.WailsRun(assets, 52867, icon)
+	controller.WailsRun(assets, 52867, appIcon, sysTrayIcon)
 }

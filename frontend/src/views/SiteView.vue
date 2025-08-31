@@ -116,11 +116,14 @@
             <el-autocomplete v-model="form.category" :fetch-suggestions="queryCategories" placeholder="请输入或选择分类"
               @select="handleCategorySelect"></el-autocomplete>
           </el-form-item>
+          <el-form-item label="URL" prop="url">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+              <el-input v-model="form.url" placeholder="请输入站点URL" style="width: 100%;"></el-input>
+              <el-button type="warning" @click="autoFetchSiteInfo" title="自动获取站点信息" style="height: 30px; padding: 0 10px;">自动获取</el-button>
+            </div>
+          </el-form-item>
           <el-form-item label="标题" prop="title">
             <el-input v-model="form.title" placeholder="请输入站点标题"></el-input>
-          </el-form-item>
-          <el-form-item label="URL" prop="url">
-            <el-input v-model="form.url" placeholder="请输入站点URL"></el-input>
           </el-form-item>
           <el-form-item label="名称" prop="remark">
             <el-input v-model="form.remark" placeholder="请输入站点描述"></el-input>
@@ -163,12 +166,13 @@ import {
   UpdateCommandSorts,
   UpdateSite,
   UpdateSiteCategory,
+  FetchSiteInfo // <- 新增导入
 } from "../../wailsjs/go/controller/Site";
 import {ReadImageAsBase64} from "../../wailsjs/go/controller/Tool";
 import {BrowserOpenURL} from "../../wailsjs/runtime"; // 打开链接的方法
 import {Search} from "@element-plus/icons-vue";
 import {ElNotification, ElTree} from "element-plus";
-import {GetOpenFilePath} from "../../wailsjs/go/controller/System";
+import {GetConfigDir, GetOpenFilePath, OpenPath} from "../../wailsjs/go/controller/System";
 
 export default {
   name: "SiteView",
@@ -477,6 +481,7 @@ export default {
           { label: "新增", icon: "el-icon-circle-plus", action: () => this.openDialog("add") },
           { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("siteEdit") },
           { label: "删除", icon: "el-icon-delete", action: this.deleteCmd },
+          { label: "打开图标文件夹", icon: "el-icon-delete", action: this.openIconDir },
         ];
       } else if (cateElement) {
         // 点击的是分类
@@ -532,6 +537,13 @@ export default {
         this.$message.error('选择图标失败: ' + err.message);
         console.error('浏览图标错误:', err);
       }
+    },
+
+    // 打开文件夹
+    async openIconDir() {
+      const baseDir = await GetConfigDir()
+      const iconDir = baseDir + "/icon"; // 拼接icon子目录
+      await OpenPath(iconDir)
     },
 
     // 隐藏右键菜单
@@ -633,7 +645,7 @@ export default {
             const newResolvedIcons = {...this.resolvedIcons};
             newResolvedIcons[this.form.id] = await this.resolveIconPath(this.form.icon);
             this.resolvedIcons = newResolvedIcons;
-            this.$message.success(`新增命令成功: ${this.form.name}`);
+            this.$message.success(`新增成功`);
           } else if (this.dialogMode === "siteEdit") {
             // 修改命令
             await UpdateSite(this.form.id, this.form);
@@ -641,8 +653,7 @@ export default {
             const newResolvedIcons = {...this.resolvedIcons};
             newResolvedIcons[this.form.id] = await this.resolveIconPath(this.form.icon);
             this.resolvedIcons = newResolvedIcons;
-            this.$message.success(`修改命令成功: ${this.form.name}`);
-            console.log("修改命令成功:", this.form);
+            this.$message.success("修改成功");
           }
 
           this.dialogVisible = false;
@@ -809,6 +820,47 @@ export default {
         // 回退本地数据
         await this.loadSiteList()
         await this.loadAllIcons();
+      }
+    },
+    async autoFetchSiteInfo() {
+      if (!this.form.url || !this.form.url.trim()) {
+        this.$message.warning("请输入 URL 后再自动获取");
+        return;
+      }
+      try {
+        this.$message.info("正在获取信息，请稍等");
+        // 调用后端
+        const info = await FetchSiteInfo(this.form.url.trim());
+        // info 里应该包含 title, remark, icon
+        if (info) {
+          if (info.title) this.form.title = info.title;
+          if (info.remark) this.form.remark = info.remark;
+          if (info.icon) {
+            // 后端返回的是保存的文件名（例如 a1b2c3.png）
+            this.form.icon = info.icon;
+            // 更新预览（resolveIconPath 会把非 http 路径按照 /icon/... 处理）
+            const resolved = await this.resolveIconPath(this.form.icon);
+            // 使用临时 id（如果是新建还没有 id，就用一个特殊 key）
+            const previewId = this.form.id || `__preview_${Date.now()}`;
+            this.resolvedIcons = {
+              ...this.resolvedIcons,
+              [previewId]: resolved
+            };
+            // 如果是编辑已有 id，直接更新那个 id 的 resolved 图标
+            if (this.form.id) {
+              this.resolvedIcons = {
+                ...this.resolvedIcons,
+                [this.form.id]: resolved
+              };
+            }
+          }
+          this.$message.success("自动获取成功");
+        } else {
+          this.$message.info("未获取到任何信息");
+        }
+      } catch (err) {
+        console.error("自动获取失败:", err);
+        this.$message.error("自动获取失败: " + (err.message || err));
       }
     },
   },

@@ -66,7 +66,7 @@
             @dragstart.stop="handleDragStart($event, 'command', catIndex, cmdIndex)"
             @dragover.prevent.stop="handleDragOver($event, 'command', catIndex, cmdIndex)"
             @drop.stop="handleDrop($event, 'command', catIndex, cmdIndex)"
-            @click="runCmd(cmd.cmd, cmd.param, cmd.terminal)"
+            @click="runCmd(cmd.path, cmd.cmd, cmd.param, cmd.terminal)"
             @contextmenu.prevent="showContextMenu($event, cmd, index)"
         >
           <div class="image">
@@ -95,7 +95,7 @@
 
     <!-- 右键菜单 -->
     <ul class="context-menu" v-if="contextMenuVisible"
-      :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }">
+        :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }">
       <li v-for="(option, index) in contextMenuOptions" :key="index" @click="option.action">
         <i :class="option.icon"></i> {{ option.label }}
       </li>
@@ -121,32 +121,48 @@
                 @select="handleCategorySelect"
             ></el-autocomplete>
           </el-form-item>
-          <el-form-item label="命令" prop="cmd">
-            <el-input v-model="form.cmd" placeholder="请输入工具命令"></el-input>
-          </el-form-item>
-          <el-form-item label="参数" prop="param">
-            <el-input v-model="form.param" placeholder="请输入工具参数"></el-input>
-          </el-form-item>
-          <el-form-item label="名称" prop="name">
-            <el-input v-model="form.name" placeholder="请输入工具名称"></el-input>
-          </el-form-item>
+
           <el-form-item label="路径" prop="path">
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-              <el-input
-                  v-model="form.path"
-                  placeholder="请输入工具路径"
-                  style="flex: 1;"
-              ></el-input>
-              <el-button
-                  type="primary"
-                  @click="browseForFolder"
-                  style="height: 30px; padding: 0 10px;"
-              >浏览</el-button>
-            </div>
+            <el-tooltip content="指定工具执行文件所在的完整路径(eg: C:\EasyTools\tools\Godzilla)" placement="top">
+              <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <el-input
+                    v-model="form.path"
+                    placeholder="请输入工具路径"
+                    style="flex: 1;"
+                ></el-input>
+                <el-button
+                    type="primary"
+                    @click="browseForFolder"
+                    style="height: 30px; padding: 0 10px;"
+                >浏览</el-button>
+              </div>
+            </el-tooltip>
           </el-form-item>
+
+          <el-form-item label="命令" prop="cmd">
+            <el-tooltip content="输入启动工具需要执行的主命令(eg: java -jar godzilla.jar)" placement="top">
+              <el-input v-model="form.cmd" placeholder="请输入工具命令"></el-input>
+            </el-tooltip>
+          </el-form-item>
+
+          <el-form-item label="参数" prop="param">
+            <el-tooltip content="设置工具运行时的附加参数（可选）" placement="top">
+              <el-input v-model="form.param" placeholder="请输入工具参数"></el-input>
+            </el-tooltip>
+          </el-form-item>
+
+          <el-form-item label="名称" prop="name">
+            <el-tooltip content="输入工具的显示名称（必填）" placement="top">
+              <el-input v-model="form.name" placeholder="请输入工具名称"></el-input>
+            </el-tooltip>
+          </el-form-item>
+
           <el-form-item label="描述" prop="desc">
-            <el-input v-model="form.desc" placeholder="请输入工具描述"></el-input>
+            <el-tooltip content="简要描述工具的功能和用途（可选）" placement="top">
+              <el-input v-model="form.desc" placeholder="请输入工具描述"></el-input>
+            </el-tooltip>
           </el-form-item>
+
           <el-form-item label="图标" prop="icon">
             <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
               <el-input
@@ -161,6 +177,7 @@
               >浏览</el-button>
             </div>
           </el-form-item>
+
           <el-form-item label="终端" prop="terminal">
             <el-switch
                 v-model="form.terminal"
@@ -389,8 +406,8 @@ export default {
     },
 
     // 运行命令
-    runCmd(cmd, param, terminal) {
-      ShellCMD(cmd, param, terminal);
+    runCmd(path, cmd, param, terminal) {
+      ShellCMD(path, cmd, param, terminal);
     },
 
     // 异步加载所有图标
@@ -651,8 +668,8 @@ export default {
       } else {
         // 根据输入内容筛选分类
         const results = this.categories
-          .filter((cat) => cat.title.includes(query))
-          .map((cat) => ({ value: cat.title }));
+            .filter((cat) => cat.title.includes(query))
+            .map((cat) => ({ value: cat.title }));
         callback(results);
       }
     },
