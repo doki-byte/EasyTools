@@ -1,11 +1,11 @@
 {
 	"fixed": {
-		"file_version": " v1.8.6"
+		"file_version": " v1.8.7"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": " v1.8.6",
-			"FileVersion": " v1.8.6",
+			"ProductVersion": " v1.8.7",
+			"FileVersion": " v1.8.7",
 			"CompanyName": "渗透云记",
 			"FileDescription": "EasyTools渗透测试工具箱",
 			"LegalCopyright": "渗透云记",

@@ -892,7 +892,7 @@ export default {
   overflow: hidden; /* 隐藏超出内容 */
   background: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(255, 93, 93, 0.21);
   z-index: 1000;
   transition: max-height 0.3s ease; /* 添加高度过渡动画 */
 }

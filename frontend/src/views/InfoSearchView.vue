@@ -65,7 +65,7 @@
                     <el-button type="primary" @click="handleAVQuery">查询</el-button>
                 </div>
                 <div class="result" v-if="isAvQueried">
-                    <h5>识别结果：</h5>
+                    <h4>识别结果：</h4>
                     <!-- 如果有结果，显示表格 -->
                     <el-table v-if="avResults.length > 0" :data="avResults" border style="width: 100%">
                         <el-table-column prop="program" label="程序名" />
@@ -566,6 +566,36 @@ export default {
     flex: 1;
 }
 
+:deep(h4){
+  display: block;
+  margin-block-start: 1.33em;
+  margin-block-end: 1.33em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(h5){
+  display: block;
+  font-size: 0.83em;
+  margin-block-start: 1.67em;
+  margin-block-end: 1.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(p){
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  unicode-bidi: isolate;
+}
+
 /* 表格 */
 .custom-table {
     flex-grow: 1;
@@ -678,7 +708,7 @@ export default {
     overflow-wrap: break-word;
     /* 防止溢出 */
     color: #5cb85c;
-    
+
 }
 
 .query-item span {

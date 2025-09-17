@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+.manacoEnvFound {
+  font-style: italic !important;
+  border-radius: 6px;
+  color: var(--color-yellow-500) !important;
+  font-weight: bold !important;
+}
+
+.Toastify__toast-theme--dark {
+  background-color: var(--theme-color-brand) !important;
+  border: 1px solid var(--theme-color-accent);
+}
+@theme {
+  --color-brand: var(--theme-color-brand);
+  --color-sec: var(--theme-color-sec);
+  --color-accent: var(--theme-color-accent);
+
+  --color-lines: var(--theme-color-lines);
+  --color-txtprim: var(--theme-color-txtprim);
+  --color-txtsec: var(--theme-color-txtsec);
+  --color-lit: var(--theme-color-lit);
+}
+
+@layer base {
+  :root {
+    --theme-color-brand: #ffffff;
+    --theme-color-sec: #f5f5f5;
+    --theme-color-accent: #cf6871;
+    --theme-color-lines: #637a9b66;
+    --theme-color-txtprim: oklch(0 0 0 / 0.76);
+    --theme-color-txtsec: oklch(0.6 0.06 210.87);
+    --theme-color-lit: #0000008c;
+  }
+}
+
+.szh-menu__item--hover {
+  background-color: var(--color-lines) !important;
+}

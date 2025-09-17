@@ -65,7 +65,7 @@ func ExtractResource(resourcePath, targetDir string) (string, error) {
 // 解压所有嵌入资源
 func ExtractNoteFile() error {
 	baseDir := getAppBaseDir()
-	targetDir := filepath.Join(baseDir, "notes")
+	targetDir := filepath.Join(baseDir, "tools", "notes")
 
 	// 创建目标根目录
 	if err := os.MkdirAll(targetDir, 0755); err != nil {

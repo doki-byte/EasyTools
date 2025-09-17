@@ -78,7 +78,8 @@ export default {
   data() {
     return {
       updates: [
-        {date:'v1.8.6',content: '1. 简化Tools导航添加工具逻辑; 2. 新增site导航自动识别获取站点信息功能; 3. 优化模拟生成身份证时时间选择功能; 4. 新增系统托盘; 5. 新增全局快捷键控制程序的显示与隐藏',isNew:true},
+        {date:'v1.8.7',content: '1. 新增便携发包功能，内置微信公众号/小程序、钉钉、企业微信调用接口; 2. 优化系统目录; ',isNew:true},
+        {date:'v1.8.6',content: '1. 简化Tools导航添加工具逻辑; 2. 新增site导航自动识别获取站点信息功能; 3. 优化模拟生成身份证时时间选择功能; 4. 新增系统托盘; 5. 新增全局快捷键控制程序的显示与隐藏'},
         {date:'v1.8.5',content: '1. 修改Note笔记界面为奶白色; 2. 新增菜单顺序调整功能'},
         {date:'v1.8.4',content: '1. 新增fuzz调用界面'},
         {date:'v1.8.3',content: '1. 新增代理池功能；2. 优化CyberChef、ssh连接功能'},
@@ -140,8 +141,60 @@ export default {
   gap: 1rem;
 }
 
+:deep(h1) {
+  display: block;
+  font-size: 2em;
+  margin-block-start: 0.67em;
+  margin-block-end: 0.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
 
-.header {
+:deep(h2) {
+  display: block;
+  font-size: 1.5em;
+  margin-block-start: 0.83em;
+  margin-block-end: 0.83em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(p) {
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  unicode-bidi: isolate;
+}
+
+:deep(h3) {
+  display: block;
+  font-size: 1.17em;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(li) {
+  display: list-item;
+  text-align: -webkit-match-parent;
+  unicode-bidi: isolate;
+}
+
+:deep(a){
+  color: #102a43;
+}
+
+
+:deep(header) {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -151,7 +204,7 @@ export default {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   margin-bottom: 2rem;
   gap: 1rem;
-  height: 90px;
+  height: 110px;
 }
 
 .header-left {
@@ -209,7 +262,7 @@ export default {
   color: #666;
 }
 
-.content-area {
+:deep(.content-area) {
   display: flex;
   gap: 1rem;
 }
@@ -236,7 +289,7 @@ export default {
   gap: 1.5rem;
 }
 
-.card {
+:deep(.card) {
   background: linear-gradient(35deg, #e4e8f6, #b4bacf);
   border-radius: 12px;
   padding: 1.5rem;
@@ -244,9 +297,9 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 380px;
+  height: 420px;
 }
-.card3 {
+:deep(.card3) {
   background: linear-gradient(35deg, #e4e8f6, #b4bacf);
   border-radius: 12px;
   padding: 1.5rem;
@@ -254,7 +307,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100px;
+  height: 110px;
 }
 
 .card-icon {

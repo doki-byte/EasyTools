@@ -56,9 +56,9 @@ func (s *Server) start(port int) *Server {
 
 		// 添加静态文件服务
 		r.Static("/icon", s.staticDir)
-		cyberDir := filepath.Join(baseDir, "CyberChef")
+		cyberDir := filepath.Join(baseDir, "tools", "CyberChef")
 		r.Static("/CyberChef", cyberDir)
-
+		
 		// 启动ssh服务
 		go ssh.StartWebSSH() // 52868
 		// 启动ftp服务

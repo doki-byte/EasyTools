@@ -113,17 +113,25 @@
 
         <!-- 工具新增/编辑表单 -->
         <template v-else>
-          <el-form-item label="分类" prop="category">
-            <el-autocomplete
-                v-model="form.category"
-                :fetch-suggestions="queryCategories"
-                placeholder="请输入或选择分类"
-                @select="handleCategorySelect"
-            ></el-autocomplete>
+            <el-form-item label="分类" prop="category">
+              <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <el-autocomplete
+                    v-model="form.category"
+                    :fetch-suggestions="queryCategories"
+                    placeholder="请输入或选择分类"
+                    @select="handleCategorySelect"
+                ></el-autocomplete>
+                <el-tooltip
+                    effect="dark"
+                    content="若分类不存在则会自动创建并保存"
+                    placement="bottom-start"
+                >
+                  <el-icon><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </div>
           </el-form-item>
 
           <el-form-item label="路径" prop="path">
-            <el-tooltip content="指定工具执行文件所在的完整路径(eg: C:\EasyTools\tools\Godzilla)" placement="top">
               <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
                 <el-input
                     v-model="form.path"
@@ -135,32 +143,66 @@
                     @click="browseForFolder"
                     style="height: 30px; padding: 0 10px;"
                 >浏览</el-button>
+                <el-tooltip
+                    effect="dark"
+                    content="指定工具执行文件所在的完整路径(eg: C:\EasyTools\tools\Godzilla)"
+                    placement="bottom-start"
+                >
+                  <el-icon><QuestionFilled /></el-icon>
+                </el-tooltip>
               </div>
-            </el-tooltip>
           </el-form-item>
 
           <el-form-item label="命令" prop="cmd">
-            <el-tooltip content="输入启动工具需要执行的主命令(eg: java -jar godzilla.jar)" placement="top">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
               <el-input v-model="form.cmd" placeholder="请输入工具命令"></el-input>
-            </el-tooltip>
+              <el-tooltip
+                  effect="dark"
+                  content="输入启动工具需要执行的主命令(eg: java -jar godzilla.jar)"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </el-form-item>
 
           <el-form-item label="参数" prop="param">
-            <el-tooltip content="设置工具运行时的附加参数（可选）" placement="top">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
               <el-input v-model="form.param" placeholder="请输入工具参数"></el-input>
-            </el-tooltip>
+              <el-tooltip
+                  effect="dark"
+                  content="设置工具运行时的附加参数（可选）"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </el-form-item>
 
           <el-form-item label="名称" prop="name">
-            <el-tooltip content="输入工具的显示名称（必填）" placement="top">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
               <el-input v-model="form.name" placeholder="请输入工具名称"></el-input>
-            </el-tooltip>
+              <el-tooltip
+                  effect="dark"
+                  content="输入工具的显示名称（必填）"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </el-form-item>
 
           <el-form-item label="描述" prop="desc">
-            <el-tooltip content="简要描述工具的功能和用途（可选）" placement="top">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
               <el-input v-model="form.desc" placeholder="请输入工具描述"></el-input>
-            </el-tooltip>
+              <el-tooltip
+                  effect="dark"
+                  content="简要描述工具的功能和用途（可选）"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </el-form-item>
 
           <el-form-item label="图标" prop="icon">
@@ -175,6 +217,13 @@
                   @click="browseForIconFile"
                   style="height: 30px; padding: 0 10px;"
               >浏览</el-button>
+              <el-tooltip
+                  effect="dark"
+                  content="为空即用默认图标"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
             </div>
           </el-form-item>
 
@@ -186,6 +235,13 @@
                 active-text="是"
                 inactive-text="否"
             ></el-switch>
+            <el-tooltip
+                effect="dark"
+                content="开启之后会显示终端运行窗口"
+                placement="bottom-start"
+            >
+              <el-icon><QuestionFilled /></el-icon>
+            </el-tooltip>
           </el-form-item>
         </template>
       </el-form>
@@ -214,12 +270,12 @@ import {
   UpdateTool,
   UpdateToolCategory,
 } from "../../wailsjs/go/controller/Tool";
-import {Search} from "@element-plus/icons-vue";
+import {QuestionFilled, Search} from "@element-plus/icons-vue";
 import {ElNotification, ElTree} from "element-plus";
 
 export default {
   name: "ToolsView",
-  components: { ElTree,Search },
+  components: {QuestionFilled, ElTree,Search },
   data() {
     return {
       toolList: [], // 初始化命令列表

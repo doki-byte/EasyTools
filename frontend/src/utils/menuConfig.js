@@ -10,7 +10,7 @@ import {
     MagicStick,
     Promotion,
     Sugar,
-    ElementPlus
+    ElementPlus, Mouse
 } from '@element-plus/icons-vue';
 
 // 图标映射
@@ -26,7 +26,8 @@ export const iconMap = {
     MagicStick,
     Promotion,
     Sugar,
-    ElementPlus
+    ElementPlus,
+    Mouse
 };
 
 // 默认菜单配置（增加 visible）
@@ -40,8 +41,9 @@ export const defaultMenu = [
     { name: 'randomInfo', icon: 'DataAnalysis', title: '随机生成', defaultOrder: 6, visible: true },
     { name: 'notes', icon: 'Management', title: '备忘笔记', defaultOrder: 7, visible: true },
     { name: 'proxy', icon: 'ElementPlus', title: '便携代理', defaultOrder: 8, visible: true },
-    { name: 'fuzz', icon: 'MagicStick', title: '随心FUZZ', defaultOrder: 9, visible: true },
-    { name: 'about', icon: 'Promotion', title: '关于软件', defaultOrder: 10, visible: true },
+    { name: 'fuzz', icon: 'MagicStick', title: '随心Fuzz', defaultOrder: 9, visible: false },
+    { name: 'restmate', icon: 'Mouse', title: '便携发包', defaultOrder: 10, visible: true },
+    { name: 'about', icon: 'Promotion', title: '关于软件', defaultOrder: 11, visible: true },
 ];
 
 // 加载菜单顺序

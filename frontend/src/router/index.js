@@ -23,7 +23,7 @@ const routes = [
     component: ToolView,
   },
   {
-    path: '/',
+    path: '/website',
     name: 'website',
     component: WebsiteView,
   },
@@ -67,6 +67,12 @@ const routes = [
     path: '/fuzz',
     name: 'fuzz',
     component: FuzzView,
+  },
+  {
+    path: '/restmate',
+    name: 'restmate',
+    component: () =>
+        import('@/views/Restmate.vue'),  // 确保路径正确
   },
   {
     path: '/About',

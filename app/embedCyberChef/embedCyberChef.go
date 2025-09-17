@@ -67,7 +67,7 @@ func ExtractResource(resourcePath, targetDir string) (string, error) {
 
 // 解压所有嵌入资源
 func ExtractAllResources() error {
-	targetDir := filepath.Join(getAppBaseDir(), "CyberChef")
+	targetDir := filepath.Join(getAppBaseDir(), "tools", "CyberChef")
 
 	// 创建目标根目录
 	if err := os.MkdirAll(targetDir, 0755); err != nil {

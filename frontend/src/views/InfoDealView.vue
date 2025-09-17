@@ -154,7 +154,16 @@
 
             <el-form label-width="120px" label-position="left">
               <el-form-item label="选择小程序包">
-                <el-input v-model="wxpackages" readonly placeholder="请选择小程序文件或文件夹，例如：C:\xxxxx\WeChat Files\Applet\wx93fde323axxxxxxxx\xxx" />
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                  <el-input v-model="wxpackages" readonly placeholder="请选择小程序文件或文件夹，旧版微信：C:\xxxxx\WeChat Files\Applet\wx93fde323axxxxxxxx\xxx" />
+                  <el-tooltip
+                      effect="dark"
+                      content="新版微信：C:\Users\用户名\AppData\Roaming\Tencent\xwechat\radium\Applet\packages\wx93fde323axxxxxxxx\xxx"
+                      placement="bottom-start"
+                  >
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </div>
                 <el-button type="primary" class="ml-2" @click="selectPackage">选择</el-button>
               </el-form-item>
 
@@ -296,10 +305,12 @@ import {ElMessage, ElMessageBox} from "element-plus";
 import * as XLSX from "xlsx";
 import {OpenPath,GetConfigDir} from "../../wailsjs/go/controller/System";
 import {EncodeJWTWithAlg, DecodeJWTWithAlg, ChooseJwtFile, BruteForceJWT} from "../../wailsjs/go/controller/JwtCrackController";
+import {QuestionFilled} from "@element-plus/icons-vue";
 
 
 export default {
   name: "InfoDealView",
+  components: {QuestionFilled},
   data() {
     return {
       activeTab: "fscan-deal",
@@ -751,6 +762,35 @@ export default {
   border-radius: 10px 10px 10px 10px;
 }
 
+:deep(h4){
+  display: block;
+  margin-block-start: 1.33em;
+  margin-block-end: 1.33em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(h5){
+  display: block;
+  font-size: 0.83em;
+  margin-block-start: 1.67em;
+  margin-block-end: 1.67em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(p){
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  unicode-bidi: isolate;
+}
 
 
 /* 使用 flex 布局确保按钮和文件路径显示在同一行 */

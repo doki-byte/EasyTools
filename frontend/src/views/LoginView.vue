@@ -1,6 +1,6 @@
 <template>
-  <div class="login" @contextmenu.prevent>
-<!--    <div class="login">-->
+    <div class="login" @keydown.enter="handleLogin" tabindex="0" @contextmenu.prevent>
+<!--  <div class="login" @keydown.enter="handleLogin" tabindex="0">-->
     <div class="left"></div>
     <div class="right">
       <div class="form">
@@ -23,15 +23,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ElNotification } from "element-plus";
 import { setToken } from "@/utils/token";
 import { Login } from "../../wailsjs/go/controller/User";
 
 const router = useRouter();
-
-const isLoggingIn = ref(false); // 防止重复点击
+const isLoggingIn = ref(false);
 
 const loginForm = reactive({
   username: "",
@@ -47,26 +46,21 @@ const loginRules  = {
   ],
 };
 
-// 登录处理逻辑
 const handleLogin = async () => {
+  if (!loginForm.username || !loginForm.password) {
+    ElNotification({
+      title: "温馨提示",
+      message: "进门请说芝麻开门 O(∩_∩)O",
+      type: "error",
+    });
+    return;
+  }
+
+  isLoggingIn.value = true;
+
   try {
-    if (loginForm.username === "" || loginForm.password === ""){
-      ElNotification({
-        title: "温馨提示",
-        message: "进门请说芝麻开门 O(∩_∩)O",
-        type: "error",
-      });
-      return;
-    }
-    isLoggingIn.value = true;
-
-    // 特殊账户硬编码验证
-    const isSpecialAccount =
-        loginForm.username === "muhan" &&
-        loginForm.password === "muhan";
-
+    const isSpecialAccount = loginForm.username === "muhan" && loginForm.password === "muhan";
     if (isSpecialAccount) {
-      // 特殊账户直接登录
       setToken("muhan");
       ElNotification({
         title: "特殊登录",
@@ -74,14 +68,11 @@ const handleLogin = async () => {
         type: "success",
       });
       await router.push({ name: "tool" });
-      return; // 提前返回避免执行后续代码
+      return;
     }
-    try{
-      await Login(
-          loginForm.username,
-          loginForm.password
-      );
-      // 普通账户登录成功处理
+
+    try {
+      await Login(loginForm.username, loginForm.password);
       setToken(loginForm.username);
       ElNotification({
         title: "登录成功",
@@ -89,37 +80,32 @@ const handleLogin = async () => {
         type: "success",
       });
       await router.push({ name: "tool" });
-    } catch (err){
-      // 统一错误提示（包含所有异常情况）
+    } catch (err) {
       ElNotification({
         title: "登录失败",
         message: "主人忘记我了吗 o(╥﹏╥)o",
         type: "error",
-        duration: 3000
-      })
+        duration: 3000,
+      });
     }
-
-  } catch (err) {
   } finally {
     isLoggingIn.value = false;
   }
 };
 
+// 自动让 div 可以接收键盘事件（焦点）
+onMounted(() => {
+  const loginDiv = document.querySelector(".login");
+  if (loginDiv) loginDiv.focus();
+});
 </script>
 
-
 <style lang="scss" scoped>
-/* 确保 html 和 body 填满整个窗口 */
-html,
-body {
+html, body {
   height: 100%;
-  /* 确保高度是100% */
   margin: 0;
-  /* 去除默认的外边距 */
   padding: 0;
-  /* 去除默认的内边距 */
   overflow: hidden;
-  /* 禁止滚动条 */
 }
 
 .login {
@@ -128,14 +114,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ebf4ff;
-  background: url("../assets/loginBackGround.jpg") no-repeat center / cover;
+  background: #ebf4ff url("../assets/loginBackGround.jpg") no-repeat center / cover;
+  outline: none; /* 去掉 focus 时的虚线框 */
 }
 
 .left {
   width: 300px;
   height: 300px;
-  // background: url("../assets/loginBg.png") no-repeat center / cover;
   margin: -15px 35px 34px 23px;
 }
 

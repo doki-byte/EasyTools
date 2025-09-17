@@ -273,12 +273,12 @@ export default {
           // 本地 iframe 会如常加载
         });
   },
-  beforeUnmount() {
-    // 在组件卸载时移除事件监听器，避免潜在的内存泄漏
-    document.removeEventListener('contextmenu', (event) => {
-      event.preventDefault();
-    });
-  },
+  // beforeUnmount() {
+  //   // 在组件卸载时移除事件监听器，避免潜在的内存泄漏
+  //   document.removeEventListener('contextmenu', (event) => {
+  //     event.preventDefault();
+  //   });
+  // },
   methods: {
     flushConnectionList() {
       this.flushFlag = !this.flushFlag;

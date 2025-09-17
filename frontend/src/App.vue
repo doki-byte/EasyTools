@@ -41,7 +41,8 @@ export default {
         'RandomInfoView',
         'BypassAvView',
         'NoteViews',
-        'ProxyView'
+        'ProxyView',
+        'RestMateView'
       ],
       hotkeyReady: false,
       hotkeyReadyTimeout: null,

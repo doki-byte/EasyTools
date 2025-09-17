@@ -5,6 +5,7 @@ package controller
 import (
 	"bufio"
 	"fmt"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"io"
 	"log"
 	"os"
@@ -12,8 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var ansiRegex = regexp.MustCompile(`\x1B\[[0-9;]*[mKJH]`)
