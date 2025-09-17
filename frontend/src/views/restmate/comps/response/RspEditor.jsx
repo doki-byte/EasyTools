@@ -4,9 +4,18 @@ import { toast } from "react-toastify";
 import {LuBraces, LuCopy, LuWrapText} from "react-icons/lu";
 import Tippy from "@tippyjs/react";
 
+// 辅助函数：将3位十六进制颜色转换为6位
+const expandColor = (color) => {
+  if (color && color.startsWith('#') && color.length === 4) {
+    return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+  }
+  return color;
+};
+
 const RspEditor = ({ lang = "JSON", bodyContent }) => {
   const [editorLang, setEditorLang] = useState(lang);
   const [wrap, setWrap] = useState(true);
+  const [themeLoaded, setThemeLoaded] = useState(false); // 新增状态跟踪主题是否加载
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
 
@@ -16,19 +25,27 @@ const RspEditor = ({ lang = "JSON", bodyContent }) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
     setMonacoTheme(monaco);
+    setThemeLoaded(true); // 标记主题已加载
   };
 
   const setMonacoTheme = (monaco) => {
-    const bg = getComputedStyle(document.documentElement).getPropertyValue("--color-brand") || "#1e1e1e";
+    // 获取背景色并确保是6位格式
+    let bg = getComputedStyle(document.documentElement).getPropertyValue("--color-brand") || "#1e1e1e";
+    bg = expandColor(bg); // 处理3位颜色值的情况
+
+    // 使用6位完整格式定义所有颜色
     monaco.editor.defineTheme("restTheme", {
       base: "vs-dark",
       inherit: true,
       rules: [],
       colors: {
         "editor.background": bg,
-        "editorCursor.foreground": "#000",
+        "editorCursor.foreground": "#000000",
         "editor.lineHighlightBackground": "#ffffff",
         "editor.selectionBackground": "#0280fa",
+        // 添加其他可能需要的颜色配置
+        "editorLineNumber.foreground": "#858585",
+        "editorLineNumber.activeForeground": "#cccccc"
       },
     });
     monaco.editor.setTheme("restTheme");
@@ -44,12 +61,15 @@ const RspEditor = ({ lang = "JSON", bodyContent }) => {
       }
     } catch (e) {
       console.warn("格式化失败", e);
+      toast.error("格式化失败，请检查内容格式");
     }
   };
 
   const onCopy = () => {
     if (!safeBody) return;
-    navigator.clipboard.writeText(safeBody).then(() => toast.success("复制到剪贴板！"));
+    navigator.clipboard.writeText(safeBody)
+        .then(() => toast.success("复制到剪贴板！"))
+        .catch(() => toast.error("复制失败，请手动复制"));
   };
 
   return (
@@ -66,7 +86,7 @@ const RspEditor = ({ lang = "JSON", bodyContent }) => {
             </div>
           </Tippy>
           <Tippy content="复制响应">
-            <div className="hover:text-lit cursor-pointer" onClick={() => onCopy(bodyContent)}>
+            <div className="hover:text-lit cursor-pointer" onClick={onCopy}>
               <LuCopy size="16" />
             </div>
           </Tippy>
@@ -78,7 +98,7 @@ const RspEditor = ({ lang = "JSON", bodyContent }) => {
               height="100%"
               value={safeBody}
               language={editorLang.toLowerCase()}
-              theme="restTheme"
+              theme={themeLoaded ? "restTheme" : "vs-dark"} // 主题加载完成前使用默认主题
               options={{
                 readOnly: true,
                 wordWrap: wrap ? "on" : "off",

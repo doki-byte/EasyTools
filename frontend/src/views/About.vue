@@ -78,7 +78,8 @@ export default {
   data() {
     return {
       updates: [
-        {date:'v1.8.7',content: '1. 新增便携发包功能，内置微信公众号/小程序、钉钉、企业微信调用接口; 2. 优化系统目录; ',isNew:true},
+        {date:'v1.8.8',content: '1. 修复便携发包点击send之后白屏或者一直loading的bug',isNew:true},
+        {date:'v1.8.7',content: '1. 新增便携发包功能，内置微信公众号/小程序、钉钉、企业微信调用接口; 2. 优化系统目录; '},
         {date:'v1.8.6',content: '1. 简化Tools导航添加工具逻辑; 2. 新增site导航自动识别获取站点信息功能; 3. 优化模拟生成身份证时时间选择功能; 4. 新增系统托盘; 5. 新增全局快捷键控制程序的显示与隐藏'},
         {date:'v1.8.5',content: '1. 修改Note笔记界面为奶白色; 2. 新增菜单顺序调整功能'},
         {date:'v1.8.4',content: '1. 新增fuzz调用界面'},

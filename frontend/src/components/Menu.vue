@@ -39,7 +39,7 @@
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.7' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.8' }}
         </span>
       </span>
     </div>
