@@ -6,16 +6,14 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
-  "author": {
-    "name": "MuHan",
-    "email": "anquanclub@foxmail.com"
-  },
   "info": {
-    "companyName": "EasyTools",
-    "productName": "EasyTools",
-    "productVersion": "v1.8.8",
-    "copyright": "Copyright © 2025 MuHan",
-    "comments": "EasyTools 渗透测试工具箱"
+    "ProductVersion": "1.8.9",
+    "FileVersion": "1.8.9",
+    "CompanyName": "渗透云记",
+    "FileDescription": "EasyTools渗透测试工具箱",
+    "Copyright": "©渗透云记",
+    "ProductName": "EasyTools渗透测试工具箱",
+    "Comments": "power By Muhan"
   },
   "mac": {
     "bundleID": "com.muhan.easytools",

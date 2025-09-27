@@ -365,3 +365,13 @@ func (u *Util) OpenDir(path string, terminal int) {
 func (u *Util) PathConvert(path string) string {
 	return strings.Replace(path, "\\", "/", -1)
 }
+
+// SetAutoStart 设置开机自启动
+func (u *Util) SetAutoStart(enabled bool) bool {
+	return false
+}
+
+// GetAutoStart 获取开机自启动状态
+func (u *Util) GetAutoStart() bool {
+	return false
+}

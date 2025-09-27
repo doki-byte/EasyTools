@@ -1,16 +1,15 @@
 {
 	"fixed": {
-		"file_version": " v1.8.8"
+		"file_version": "{{.Info.ProductVersion}}"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": " v1.8.8",
-			"FileVersion": " v1.8.8",
-			"CompanyName": "渗透云记",
-			"FileDescription": "EasyTools渗透测试工具箱",
-			"LegalCopyright": "渗透云记",
-			"ProductName": "EasyTools渗透测试工具箱",
-			"Comments": "power By Muhan"
+			"ProductVersion": "{{.Info.ProductVersion}}",
+			"CompanyName": "{{.Info.CompanyName}}",
+			"FileDescription": "{{.Info.ProductName}}",
+			"LegalCopyright": "{{.Info.Copyright}}",
+			"ProductName": "{{.Info.ProductName}}",
+			"Comments": "{{.Info.Comments}}"
 		}
 	}
 }

@@ -144,3 +144,13 @@ func GetAppBaseDir() string {
 	}
 	return filepath.Join(currentPath, "EasyToolsFiles")
 }
+
+// 获取自启动配置
+func (s *System) GetAutoStart() bool {
+	return s.getAutoStart()
+}
+
+// 设置自启动
+func (s *System) SetAutoStart(enabled bool) bool {
+	return s.setAutoStart(enabled)
+}

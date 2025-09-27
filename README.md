@@ -8,11 +8,13 @@
 
 ## 更新说明
 
-###  v1.8.8
+###  v1.8.9
 
 感谢师傅们提供的修改建议，目前已更新一下功能：
 
-1. 修复便携发包点击send之后白屏或者一直loading的bug
+1. 新增程序自启动功能; 
+2. 优化部分功能的bug;
+3. 免杀模块新增白加黑、优化沙箱逻辑、修改免杀加载器等多个模块功能
 
 ## 工具介绍
 
@@ -64,7 +66,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 如果程序有图标的话，烦请放在`EasyToolsFiles\icon`路径下，程序会自动导入，当然直接使用图片url也是可以的
 
-**v1.8.8 更新：**新增自动获取站点信息以及下载ico图标，如果失败请手动配置即可
+**v1.8.9 更新：**新增自动获取站点信息以及下载ico图标，如果失败请手动配置即可
 
 ![image-20250831145232392](images/image-20250831145232392.png)
 
@@ -151,7 +153,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 ### 便携发包
 
 类似于postman，支持环境变量、get、post、del、put等各种常用功能  
-  
+
 ![image-20250917151543513.png](images/image-20250917151543513.png)
 
 ### 免杀生成（已下架）
@@ -164,7 +166,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 ![image-20250826212112948](images/image-20250826212112948.png)
 
-![image-20250831145926678](images/image-20250831145926678.png)
+![image-20250927222442743](images/image-20250927222442743.png)
 
 ## 程序编译
 

@@ -101,3 +101,13 @@ func (b *Base) openDir(path string) {
 func (b *Base) pathConvert(path string) string {
 	return util.NewUtil().PathConvert(path)
 }
+
+// getAutoStart 获取开机自启动状态
+func (b *Base) getAutoStart() bool {
+	return util.NewUtil().GetAutoStart()
+}
+
+// setAutoStart 设置开机自启动
+func (b *Base) setAutoStart(enabled bool) bool {
+	return util.NewUtil().SetAutoStart(enabled)
+}

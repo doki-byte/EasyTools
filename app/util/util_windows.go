@@ -8,6 +8,7 @@ import (
 	restmate "EasyTools/app/restmate/embedRestmate"
 	"EasyTools/app/unwxapp"
 	"fmt"
+	"golang.org/x/sys/windows/registry"
 	"log"
 	"os"
 	"os/exec"
@@ -227,4 +228,85 @@ func (u *Util) OpenDir(path string, terminal int) {
 // PathConvert 路径转换
 func (u *Util) PathConvert(path string) string {
 	return path
+}
+
+// SetAutoStart 设置开机自启动
+func (u *Util) SetAutoStart(enabled bool) bool {
+	// 获取当前可执行文件路径
+	exePath, err := os.Executable()
+	if err != nil {
+		u.Log("获取可执行文件路径失败: " + err.Error())
+		return false
+	}
+
+	// 转换为绝对路径
+	exePath, err = filepath.Abs(exePath)
+	if err != nil {
+		u.Log("获取绝对路径失败: " + err.Error())
+		return false
+	}
+
+	// 打开注册表键
+	key, err := registry.OpenKey(registry.CURRENT_USER,
+		`Software\Microsoft\Windows\CurrentVersion\Run`,
+		registry.SET_VALUE)
+	if err != nil {
+		u.Log("打开注册表键失败: " + err.Error())
+		return false
+	}
+	defer key.Close()
+
+	appName := "EasyTools" // 注册表项名称
+
+	if enabled {
+		// 添加开机自启动
+		// 使用引号包裹路径，防止路径中有空格的问题
+		cmd := fmt.Sprintf(`"%s"`, exePath)
+		err = key.SetStringValue(appName, cmd)
+		if err != nil {
+			u.Log("设置注册表值失败: " + err.Error())
+			return false
+		}
+		u.Log("开机自启动已启用: " + cmd)
+	} else {
+		// 删除开机自启动
+		err = key.DeleteValue(appName)
+		if err != nil {
+			// 如果值不存在，也不认为是错误
+			if err != registry.ErrNotExist {
+				u.Log("删除注册表值失败: " + err.Error())
+				return false
+			}
+		}
+		u.Log("开机自启动已禁用")
+	}
+
+	return true
+}
+
+// GetAutoStart 获取开机自启动状态
+func (u *Util) GetAutoStart() bool {
+	// 打开注册表键
+	key, err := registry.OpenKey(registry.CURRENT_USER,
+		`Software\Microsoft\Windows\CurrentVersion\Run`,
+		registry.QUERY_VALUE)
+	if err != nil {
+		u.Log("打开注册表键失败: " + err.Error())
+		return false
+	}
+	defer key.Close()
+
+	appName := "EasyTools" // 注册表项名称
+
+	// 检查值是否存在
+	_, _, err = key.GetStringValue(appName)
+	if err != nil {
+		if err == registry.ErrNotExist {
+			return false
+		}
+		u.Log("读取注册表值失败: " + err.Error())
+		return false
+	}
+
+	return true
 }

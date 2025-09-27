@@ -4,7 +4,7 @@
     <el-tabs v-model="activeTab" class="tabs">
       <el-tab-pane label="菜单管理" name="menu-manager" />
       <div v-if="OS === 'windows'">
-        <el-tab-pane label="快捷键管理" name="hotkey-manager" />
+        <el-tab-pane label="全局管理" name="hotkey-manager" />
       </div>
     </el-tabs>
 
@@ -77,6 +77,21 @@
           <el-button @click="resetHotkeyToDefault" class="reset-btn">关闭</el-button>
         </div>
 
+        <!-- 开机自启设置 -->
+        <h2>开机自启</h2>
+        <div class="hotkey-item">
+          <div class="auto-start-group">
+            <el-checkbox
+                v-model="autoStartEnabled"
+                @change="handleAutoStartChange"
+                :disabled="autoStartLoading"
+            >
+              {{ autoStartLoading ? '处理中...' : '开机自动启动' }}
+            </el-checkbox>
+            <span class="auto-start-desc">勾选后程序将在开机时自动启动</span>
+          </div>
+        </div>
+
         <div v-if="hotkeyMessage" :class="['message', hotkeyMessageType]">{{ hotkeyMessage }}</div>
       </div>
     </el-main>
@@ -93,7 +108,7 @@ import { ToggleShowHide, SetHotkey } from "../../wailsjs/go/hotkey/HotKey";
 import { EventsOn } from "../../wailsjs/runtime";
 import { globalHotkeyManager } from '@/utils/globalHotkey';
 import { LOCALSTORAGE_KEY, DEFAULT_HOTKEY, normalizeAccelerator, accelFromEvent } from '@/utils/hotkeyUtils';
-import {GetOs} from "../../wailsjs/go/controller/System";
+import {GetAutoStart, GetOs, SetAutoStart} from "../../wailsjs/go/controller/System";
 
 export default {
   name: "SystemManageView",
@@ -114,7 +129,9 @@ export default {
       _hotkeyListenerEnabled: false,
       _globalKeyHandler: null,
       isSaving: false, // 添加保存状态标志
-      OS: ''
+      OS: '',
+      autoStartEnabled: false, // 新增：开机自启状态
+      autoStartLoading: false // 新增：加载状态
     };
   },
   async created() {
@@ -124,6 +141,7 @@ export default {
       if (this.OS === "windows") {
         this.loadHotkeyFromStorage();
         await this.applyHotkeyConfig();
+        await this.loadAutoStartStatus(); // 加载开机自启状态
       }
     } catch (error) {
       console.error('获取操作系统类型失败', error);
@@ -437,7 +455,48 @@ export default {
       setTimeout(() => {
         this.hotkeyMessage = '';
       }, 3000);
-    }
+    },
+
+
+    // 新增：加载开机自启状态
+    async loadAutoStartStatus() {
+      try {
+        this.autoStartEnabled = await GetAutoStart();
+        console.debug('开机自启状态加载成功:', this.autoStartEnabled);
+      } catch (error) {
+        console.error('获取开机自启状态失败:', error);
+        this.autoStartEnabled = false;
+      }
+    },
+
+    // 新增：处理开机自启状态改变
+    async handleAutoStartChange(enabled) {
+      this.autoStartLoading = true;
+      try {
+        const success = await SetAutoStart(enabled);
+        if (success) {
+          this.showHotkeyMessage(
+              enabled ? '已开启开机自启' : '已关闭开机自启',
+              'info'
+          );
+          this.autoStartEnabled = enabled;
+        } else {
+          this.showHotkeyMessage(
+              enabled ? '开启开机自启失败' : '关闭开机自启失败',
+              'error'
+          );
+          // 恢复原状态
+          this.autoStartEnabled = !enabled;
+        }
+      } catch (error) {
+        console.error('设置开机自启失败:', error);
+        this.showHotkeyMessage('设置开机自启失败: ' + error.message, 'error');
+        // 恢复原状态
+        this.autoStartEnabled = !enabled;
+      } finally {
+        this.autoStartLoading = false;
+      }
+    },
   }
 };
 </script>
@@ -527,20 +586,59 @@ export default {
 }
 
 /* 快捷键管理样式 */
+
+:deep(h2) {
+  display: block;
+  font-size: 1.5em;
+  margin-block-start: 0.83em;
+  margin-block-end: 0.83em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
 .hotkey-manager {
   padding: 20px;
   max-width: 500px;
   margin: 0 auto;
 }
 
+/* 新增开机自启样式 */
+.auto-start-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auto-start-desc {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 调整热单项的间距 */
 .hotkey-item {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
 }
 
 .hotkey-item label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #303133;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .auto-start-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 
 .input-group {

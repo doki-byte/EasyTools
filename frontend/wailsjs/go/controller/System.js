@@ -14,6 +14,10 @@ export function ClipboardSetText(arg1) {
   return window['go']['controller']['System']['ClipboardSetText'](arg1);
 }
 
+export function GetAutoStart() {
+  return window['go']['controller']['System']['GetAutoStart']();
+}
+
 export function GetCPUUsage() {
   return window['go']['controller']['System']['GetCPUUsage']();
 }
@@ -48,6 +52,10 @@ export function OpenConfigDir() {
 
 export function OpenPath(arg1) {
   return window['go']['controller']['System']['OpenPath'](arg1);
+}
+
+export function SetAutoStart(arg1) {
+  return window['go']['controller']['System']['SetAutoStart'](arg1);
 }
 
 export function ShellCMD(arg1, arg2, arg3, arg4) {

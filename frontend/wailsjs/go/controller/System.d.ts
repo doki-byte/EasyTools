@@ -7,6 +7,8 @@ export function ClipboardGetText():Promise<string>;
 
 export function ClipboardSetText(arg1:string):Promise<void>;
 
+export function GetAutoStart():Promise<boolean>;
+
 export function GetCPUUsage():Promise<number>;
 
 export function GetConfigDir():Promise<string>;
@@ -24,5 +26,7 @@ export function GetOs():Promise<string>;
 export function OpenConfigDir():Promise<void>;
 
 export function OpenPath(arg1:string):Promise<void>;
+
+export function SetAutoStart(arg1:boolean):Promise<boolean>;
 
 export function ShellCMD(arg1:string,arg2:string,arg3:string,arg4:number):Promise<void>;
