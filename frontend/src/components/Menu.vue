@@ -39,7 +39,7 @@
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.8.9' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.9.0' }}
         </span>
       </span>
     </div>
@@ -464,6 +464,7 @@ const openBrowerToDownload = () => {
 
 .menu {
   height: 100vh;
+  padding: 0 10px;  // 修复点击便携发包之后，左边菜单栏缩小的bug
   // padding: 0 5px;
   background: #f0f5f6;
   color: #26384e;
@@ -481,7 +482,7 @@ const openBrowerToDownload = () => {
 
   .item,
   .logout-btn {
-    padding: 0 10px;
+    //padding: 0 10px;
     margin-top: 15px;
     cursor: pointer;
     width: 100px;

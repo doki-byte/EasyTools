@@ -58,7 +58,7 @@ func (s *Server) start(port int) *Server {
 		r.Static("/icon", s.staticDir)
 		cyberDir := filepath.Join(baseDir, "tools", "CyberChef")
 		r.Static("/CyberChef", cyberDir)
-		
+
 		// 启动ssh服务
 		go ssh.StartWebSSH() // 52868
 		// 启动ftp服务

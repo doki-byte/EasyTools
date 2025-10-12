@@ -4,7 +4,7 @@ import (
 	"EasyTools/app/connect/redis"
 	hotkey2 "EasyTools/app/hotkey"
 	"EasyTools/app/model"
-	proxy "EasyTools/app/proxy/client"
+	"EasyTools/app/proxy/client"
 	"EasyTools/app/restmate"
 	"context"
 	"embed"
@@ -39,7 +39,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 	freeProxy := proxy.NewProxy()
 	hotkey := hotkey2.NewHotKey()
 	systemTp := NewSystemTp()
-	restmate := restmate.NewRestMate()
+	newRestMate := restmate.NewRestMate()
 
 	// 启动 Wails 服务
 	err := wails.Run(&options.App{
@@ -69,7 +69,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 			freeProxy.SetCtx(ctx)
 
 			hotkey.SetContext(ctx)
-			restmate.Startup(ctx)
+			newRestMate.Startup(ctx)
 
 			server.start(port)
 			if runtime2.GOOS == "windows" {
@@ -97,7 +97,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 						memTotal := system.GetMemUsageTotal() // 实现获取总内存使用的方法
 
 						// 格式化标题
-						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.8.9            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
+						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.9.0            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
 							cpuUsage, memSelf, memTotal)
 
 						// 更新窗口标题
@@ -145,7 +145,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 			freeProxy,
 			hotkey,
 			systemTp,
-			restmate,
+			newRestMate,
 		},
 	})
 

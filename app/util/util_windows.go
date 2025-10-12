@@ -191,7 +191,12 @@ func (u *Util) PathExist(path string) string {
 // ShellCMD 以shell方式运行cmd命令，支持终端和无终端两种模式
 func (u *Util) ShellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
 	// 拼接完整命令
-	command := fmt.Sprintf("cd /D %s && %s %s", cmdPath, cmdStr, paramStr)
+	var command string
+	if cmdPath == "" {
+		command = fmt.Sprintf("%s %s", cmdStr, paramStr)
+	} else {
+		command = fmt.Sprintf("cd /D %s && %s %s", cmdPath, cmdStr, paramStr)
+	}
 
 	if terminal == 1 {
 		// 需要终端，保持终端打开

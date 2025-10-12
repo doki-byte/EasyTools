@@ -8,14 +8,17 @@
     <div v-if="isSidebarVisible"  class="file-manager">
       <div class="toolbar">
         <button class="btn" @click="openDirectory">
-          <i class="fas fa-folder-open"></i> 打开
+          打开
         </button>
         <button class="btn btn-secondary" @click="createFile">
-          <i class="fas fa-file"></i> 新建
+          文件
         </button>
         <button class="btn btn-secondary" @click="createFolder">
-          <i class="fas fa-folder-plus"></i> 文件夹
+          文件夹
         </button>
+<!--        <button class="btn btn-secondary" @click="refreshCurrentDirectory">-->
+<!--          刷新-->
+<!--        </button>-->
       </div>
       <div class="tree-container">
         <ul class="tree-list">
@@ -129,6 +132,7 @@
 <script lang="ts">
 import {defineComponent, h} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
+import { EventsOn } from "../../wailsjs/runtime";
 import {marked} from 'marked';
 import {
   CreateFile,
@@ -139,7 +143,8 @@ import {
   OpenDirectory,
   ReadFile,
   RenameItem,
-  SaveFile
+  SaveFile,
+  SaveImage
 } from "../../wailsjs/go/controller/Note";
 import {Expand, Fold} from "@element-plus/icons-vue";
 
@@ -233,13 +238,36 @@ export default defineComponent({
       if (!this.fileContent) {
         return '<p class="empty-preview">输入内容以预览...</p>';
       }
-      return marked.parse(this.fileContent) as string;
+      let content = marked.parse(this.fileContent) as string;
+      // 处理图片路径，确保相对路径能正确显示
+      content = this.processImagePaths(content);
+      return content;
     },
   },
   async mounted() {
     document.addEventListener('click', this.closeContextMenu);
     // 绑定 Ctrl+S 保存快捷键
     window.addEventListener('keydown', this.onKeyDown);
+
+    // 监听文件变化事件，添加更严格的防抖
+    EventsOn('fileChange', (eventData: string) => {
+      try {
+        const event = JSON.parse(eventData);
+        console.log('文件变化:', event);
+
+        // 只处理重要的文件变化，忽略频繁的修改事件
+        if (event.Type === 'modify') {
+          return;
+        }
+
+        // 延迟刷新，避免频繁更新
+        setTimeout(() => {
+          this.refreshCurrentDirectory();
+        }, 1000);
+      } catch (e) {
+        console.error('解析文件变化事件失败:', e);
+      }
+    });
 
     try {
       const dir = await GetNotesDir();
@@ -415,7 +443,6 @@ export default defineComponent({
           this.fileContent = '读取文件失败';
         }
         this.saved = true;
-        console.log('selectedFile set:', this.selectedFile.name);
         return;
       }
 
@@ -504,6 +531,14 @@ export default defineComponent({
         ElMessage.error('重命名失败：' + (error.message || error));
       }
     },
+    // 添加手动刷新方法
+    async refreshCurrentDirectory() {
+      if (this.treeData.length === 0) return;
+
+      const rootNode = this.treeData[0];
+      await this.refreshNode(rootNode);
+      // this.$message.success('目录已刷新');
+    },
 
     toggleEdit() {
       this.showEdit = !this.showEdit;
@@ -515,27 +550,68 @@ export default defineComponent({
       this.isSidebarVisible = !this.isSidebarVisible;
     },
 
-    onPaste(e: ClipboardEvent) {
+    // 修改 onPaste 方法，确保使用统一路径格式
+    async onPaste(e: ClipboardEvent) {
       const items = e.clipboardData?.items;
       if (!items) return;
+
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (item.kind === 'file') {
           const file = item.getAsFile();
           if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onload = () => {
+            reader.onload = async () => {
               const base64 = reader.result as string;
-              const imageMarkdown = `![image](${base64})\n`;
-              const textarea = this.$refs.editor as HTMLTextAreaElement;
-              const start = textarea.selectionStart;
-              this.fileContent = `${this.fileContent.slice(0, start)}${imageMarkdown}${this.fileContent.slice(start)}`;
+
+              if (this.selectedFile) {
+                try {
+                  // 调用后端保存图片方法，返回HTTP URL用于预览
+                  const imageUrl = await SaveImage(this.selectedFile.path, base64);
+                  const imageMarkdown = `![image](${imageUrl})\n`;
+
+                  const textarea = this.$refs.editor as HTMLTextAreaElement;
+                  const start = textarea.selectionStart;
+                  this.fileContent = `${this.fileContent.slice(0, start)}${imageMarkdown}${this.fileContent.slice(start)}`;
+                  this.saved = false;
+                } catch (error) {
+                  console.error('保存图片失败:', error);
+                  // 降级处理
+                  const imageMarkdown = `![image](${base64})\n`;
+                  const textarea = this.$refs.editor as HTMLTextAreaElement;
+                  const start = textarea.selectionStart;
+                  this.fileContent = `${this.fileContent.slice(0, start)}${imageMarkdown}${this.fileContent.slice(start)}`;
+                  this.saved = false;
+                }
+              }
             };
             reader.readAsDataURL(file);
+            break;
           }
         }
       }
     },
+
+    // 处理图片路径，确保能正确显示
+    processImagePaths(html: string): string {
+      // 创建一个临时div来解析HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+
+      // 处理所有图片标签
+      const images = tempDiv.querySelectorAll('img');
+      images.forEach(img => {
+        const src = img.getAttribute('src');
+        if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+          // 对于相对路径图片，我们保持原样
+          // 在Electron/Wails环境中，相对路径应该能正常工作
+          console.log('处理图片路径:', src);
+        }
+      });
+
+      return tempDiv.innerHTML;
+    },
+
     async refreshNode(node: Node) {
       const subs = await GetFiles(node.path);
       node.children = (subs || []).map(f => ({
@@ -695,7 +771,7 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
 
 .toggle-sidebar-btn {
   position: absolute;
-  top: 17px;
+  top: 15px;
   left: 334px;
   z-index: 999;
   background: $light;
@@ -764,7 +840,7 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 3px;
         font-weight: 500;
         font-size: 13px;
         transition: $transition;
@@ -986,12 +1062,10 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
             }
 
             a {
-              color: $primary;
-              text-decoration: none;
-
-              &:hover {
-                text-decoration: underline;
-              }
+              pointer-events: none !important;
+              cursor: default !important;
+              color: $dark-gray !important;
+              text-decoration: none !important;
             }
 
             img {
@@ -1060,6 +1134,12 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
           }
         }
       }
+      .preview-wrapper {
+        img {
+          max-width: 100%;
+          height: auto;
+        }
+      }
 
       .empty-state {
         display: flex;
@@ -1105,6 +1185,7 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
       list-style: none;
       margin: 0;
       padding: 6px 0;
+      background-color: rgba(214, 227, 241, 0.79);
 
       li {
         padding: 8px 16px;
@@ -1113,8 +1194,9 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
         cursor: pointer;
         transition: background 0.2s;
 
+
         &:hover {
-          background-color: $primary-light;
+          background-color: #b8cedf;
           color: $primary;
         }
       }

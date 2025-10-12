@@ -35,6 +35,7 @@
             <el-table-column prop="password" label="PassWord" :min-width="190" show-overflow-tooltip />
             <el-table-column prop="level" label="Level" :min-width="190" show-overflow-tooltip />
             </el-table>
+            <br>
 
             <!-- 修改点3：统一分页按钮间距 -->
             <el-pagination

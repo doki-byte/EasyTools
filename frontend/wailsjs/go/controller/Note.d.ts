@@ -19,3 +19,9 @@ export function ReadFile(arg1:string):Promise<string>;
 export function RenameItem(arg1:string,arg2:string):Promise<void>;
 
 export function SaveFile(arg1:string,arg2:string):Promise<void>;
+
+export function SaveImage(arg1:string,arg2:string):Promise<string>;
+
+export function Shutdown():Promise<void>;
+
+export function WatchDirectory(arg1:string):Promise<void>;

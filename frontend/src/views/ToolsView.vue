@@ -1034,7 +1034,6 @@ export default {
           font-size: 14px;
           overflow: hidden;
           text-overflow: ellipsis;
-          width: 140px;
 
           .title {
             white-space: nowrap;
@@ -1044,12 +1043,14 @@ export default {
           }
 
           .remark {
-            height: 34px;
+            height: 38px;          /* 增加高度以容纳更大的行间距 */
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             color: #b2b0c0;
             font-size: 12px;
+            line-height: 18px;     /* 新增：设置行间距为20px */
+            overflow: hidden;      /* 确保超出部分被隐藏 */
           }
         }
       }

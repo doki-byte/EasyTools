@@ -1,6 +1,6 @@
 <template>
-    <div class="login" @keydown.enter="handleLogin" tabindex="0" @contextmenu.prevent>
-<!--  <div class="login" @keydown.enter="handleLogin" tabindex="0">-->
+<!--    <div class="login" @keydown.enter="handleLogin" tabindex="0" @contextmenu.prevent>-->
+  <div class="login" @keydown.enter="handleLogin" tabindex="0">
     <div class="left"></div>
     <div class="right">
       <div class="form">
@@ -13,7 +13,13 @@
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleLogin" :loading="isLoggingIn">
-              登录
+              登录&nbsp;<el-tooltip
+                effect="dark"
+                content="默认账号密码均为:EasyTools"
+                placement="bottom-start"
+            >
+              <el-icon><QuestionFilled /></el-icon>
+            </el-tooltip>
             </el-button>
           </el-form-item>
         </el-form>
@@ -28,6 +34,7 @@ import { useRouter } from "vue-router";
 import { ElNotification } from "element-plus";
 import { setToken } from "@/utils/token";
 import { Login } from "../../wailsjs/go/controller/User";
+import {QuestionFilled} from "@element-plus/icons-vue";
 
 const router = useRouter();
 const isLoggingIn = ref(false);

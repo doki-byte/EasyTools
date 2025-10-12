@@ -37,3 +37,15 @@ export function RenameItem(arg1, arg2) {
 export function SaveFile(arg1, arg2) {
   return window['go']['controller']['Note']['SaveFile'](arg1, arg2);
 }
+
+export function SaveImage(arg1, arg2) {
+  return window['go']['controller']['Note']['SaveImage'](arg1, arg2);
+}
+
+export function Shutdown() {
+  return window['go']['controller']['Note']['Shutdown']();
+}
+
+export function WatchDirectory(arg1) {
+  return window['go']['controller']['Note']['WatchDirectory'](arg1);
+}
