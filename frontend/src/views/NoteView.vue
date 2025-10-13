@@ -124,6 +124,7 @@
       <ul class="context-menu-list">
         <li @click="onContextMenuCommand('rename')">重命名</li>
         <li @click="onContextMenuCommand('delete')">删除</li>
+        <li @click="onContextMenuCommand('open')">打开文件目录</li>
       </ul>
     </div>
   </div>
@@ -147,6 +148,7 @@ import {
   SaveImage
 } from "../../wailsjs/go/controller/Note";
 import {Expand, Fold} from "@element-plus/icons-vue";
+import {OpenPath} from "../../wailsjs/go/controller/System";
 
 interface Node {
   name: string;
@@ -359,7 +361,36 @@ export default defineComponent({
         } catch (e) {
           console.error('删除弹窗异常:', e);
         }
+      } else if (command === 'open'){
+        try {
+          let pathToOpen = node.path;
+
+          // 如果是文件，获取其所在文件夹路径
+          if (!node.isDir) {
+            pathToOpen = this.getParentDirectory(node.path);
+          }
+
+          console.log(`将打开路径：${pathToOpen}`);
+          OpenPath(pathToOpen);
+        } catch (e){
+          console.error('打开文件所在位置异常:', e);
+        }
       }
+    },
+    // 获取父目录的辅助方法
+    getParentDirectory(filePath: string): string {
+      // 使用字符串处理方法获取父目录
+      const pathSeparator = filePath.includes('/') ? '/' : '\\';
+      const pathParts = filePath.split(pathSeparator);
+
+      // 移除最后一个部分（文件名）
+      if (pathParts.length > 1) {
+        pathParts.pop();
+        return pathParts.join(pathSeparator);
+      }
+
+      // 如果已经是根目录，返回原路径
+      return filePath;
     },
     async openDirectory() {
       const dir = await OpenDirectory();

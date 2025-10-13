@@ -131,6 +131,7 @@ import {defaultMenu, iconMap, loadMenuOrder} from '@/utils/menuConfig';
 import {Menu, Promotion, UserFilled, WarningFilled,} from '@element-plus/icons-vue';
 import {UpdateUser} from "../../wailsjs/go/controller/User";
 import {GetLatestRelease} from '../../wailsjs/go/controller/Update'
+import {BrowserOpenURL} from "../../wailsjs/runtime";
 
 // 当前路由名称
 const routeName = ref('tool');
@@ -157,14 +158,14 @@ const loadMenu = async () => {
 
   // 合并默认菜单和保存的顺序（包含 visible）
   menuList.value = defaultMenu.map(item => {
-      const savedItem = savedOrder.find(i => i.name === item.name);
-      return {
-        ...item,
-        order: savedItem ? savedItem.order : item.defaultOrder,
-        visible: savedItem ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible) : item.visible,
-        icon: markRaw(iconMap[item.icon])
-      };
-    });
+    const savedItem = savedOrder.find(i => i.name === item.name);
+    return {
+      ...item,
+      order: savedItem ? savedItem.order : item.defaultOrder,
+      visible: savedItem ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible) : item.visible,
+      icon: markRaw(iconMap[item.icon])
+    };
+  });
 };
 
 const goToSystemManager = () => {
@@ -349,8 +350,7 @@ const closeNotice = () => {
 }
 
 const openBrowerToDownload = () => {
-  window.open(releaseUrl.value, "_blank");
-  console.log(releaseUrl)
+  BrowserOpenURL(releaseUrl.value);
 }
 </script>
 
