@@ -64,6 +64,7 @@ func NewNote() *Note {
 
 	// 启动监听协程
 	go note.watchFiles()
+	go note.startFileServer(filepath.Join(GetAppBaseDir(), "notes"))
 
 	return note
 }
