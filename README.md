@@ -201,6 +201,12 @@ wails build --trimpath -ldflags="-w -s"
 + fork EasyTools项目
 + 创建release，注意tag设置规则v*，即设置v1.0.0版本号，等待自动编译完成即可
 
+#### （3）MAC用户运行提示
+
+1. 优先查看版本架构是否正确
+2. `sudo spctl --master-disable`,此行代码可以让 Mac 允许安装第三方来源的应用
+3. 尝试`upx -d EasyTools.app\Contents\MacOS\EasyTools`进行upx脱壳
+
 ## 交流反馈
 
 因本人非专业开发，故而程序在使用过程中会出现诸多不可控的bug
