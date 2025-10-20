@@ -39,7 +39,7 @@
           <Promotion />
         </el-icon>
         <span :style="{ color: latestVersion ? '#0062bc' : 'inherit', marginLeft: '5px' }">
-          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.9.1' }}
+          {{ latestVersion ? `New 最新版${latestVersion}` : 'v1.9.2' }}
         </span>
       </span>
     </div>
@@ -158,14 +158,14 @@ const loadMenu = async () => {
 
   // 合并默认菜单和保存的顺序（包含 visible）
   menuList.value = defaultMenu.map(item => {
-    const savedItem = savedOrder.find(i => i.name === item.name);
-    return {
-      ...item,
-      order: savedItem ? savedItem.order : item.defaultOrder,
-      visible: savedItem ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible) : item.visible,
-      icon: markRaw(iconMap[item.icon])
-    };
-  });
+      const savedItem = savedOrder.find(i => i.name === item.name);
+      return {
+        ...item,
+        order: savedItem ? savedItem.order : item.defaultOrder,
+        visible: savedItem ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible) : item.visible,
+        icon: markRaw(iconMap[item.icon])
+      };
+    });
 };
 
 const goToSystemManager = () => {

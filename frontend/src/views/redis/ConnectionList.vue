@@ -121,6 +121,7 @@ function resetSelectedDbInfo() {
 </script>
 
 <style scoped>
+
 #dbs {
   overflow: auto;
   max-height: 75vh;

@@ -12,6 +12,8 @@ export function ConnectionEdit(arg1:define.Connection):Promise<redis.H>;
 
 export function ConnectionList():Promise<redis.H>;
 
+export function ConnectionTest(arg1:define.Connection):Promise<redis.H>;
+
 export function CreateKeyValue(arg1:define.CreateKeyValueRequest):Promise<redis.H>;
 
 export function DbInfo(arg1:string):Promise<redis.H>;
@@ -19,6 +21,10 @@ export function DbInfo(arg1:string):Promise<redis.H>;
 export function DbList(arg1:string):Promise<redis.H>;
 
 export function DeleteKeyValue(arg1:define.KeyValueRequest):Promise<redis.H>;
+
+export function ExecuteCommand(arg1:string,arg2:string):Promise<redis.H>;
+
+export function GetCommandHistory(arg1:string):Promise<redis.H>;
 
 export function GetKeyValue(arg1:define.KeyValueRequest):Promise<redis.H>;
 

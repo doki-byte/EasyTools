@@ -3,12 +3,89 @@ package service
 import (
 	"EasyTools/app/connect/redis/internal/define"
 	"EasyTools/app/connect/redis/internal/helper"
+	"context"
 	"encoding/json"
 	"errors"
-	uuid "github.com/satori/go.uuid"
+	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/ssh"
 )
+
+// ConnectionTest 测试连接
+func ConnectionTest(conn *define.Connection) error {
+	if conn.Addr == "" {
+		return errors.New("连接地址不能为空")
+	}
+	if conn.Port == "" {
+		conn.Port = "6379"
+	}
+
+	// 创建 Redis 客户端配置
+	redisOpts := &redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", conn.Addr, conn.Port),
+		Password: conn.Password,
+		DB:       0, // 默认数据库
+	}
+
+	var rdb *redis.Client
+	var sshClient *ssh.Client
+
+	// 如果是 SSH 连接，先建立 SSH 隧道
+	if conn.Type == "ssh" && conn.SSHAddr != "" {
+		sshConfig := &ssh.ClientConfig{
+			User: conn.SSHUsername,
+			Auth: []ssh.AuthMethod{
+				ssh.Password(conn.SSHPassword),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         10 * time.Second,
+		}
+
+		// 建立 SSH 连接
+		var err error
+		sshClient, err = ssh.Dial("tcp", fmt.Sprintf("%s:%s", conn.SSHAddr, conn.SSHPort), sshConfig)
+		if err != nil {
+			return fmt.Errorf("SSH连接失败: %v", err)
+		}
+		defer sshClient.Close()
+
+		// 通过 SSH 隧道建立 Redis 连接
+		sshConn, err := sshClient.Dial("tcp", fmt.Sprintf("%s:%s", conn.Addr, conn.Port))
+		if err != nil {
+			return fmt.Errorf("通过SSH连接Redis失败: %v", err)
+		}
+		defer sshConn.Close()
+
+		// 使用自定义拨号器
+		redisOpts.Dialer = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return sshClient.Dial(network, addr)
+		}
+		// 重置地址为本地，因为实际连接是通过 SSH 隧道
+		redisOpts.Addr = "127.0.0.1:6379"
+	}
+
+	// 创建 Redis 客户端
+	rdb = redis.NewClient(redisOpts)
+	defer rdb.Close()
+
+	// 测试连接
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 执行 PING 命令测试连接
+	_, err := rdb.Ping(ctx).Result()
+	if err != nil {
+		return fmt.Errorf("Redis连接测试失败: %v", err)
+	}
+
+	return nil
+}
 
 // ConnectionList 连接列表
 func ConnectionList() ([]*define.Connection, error) {

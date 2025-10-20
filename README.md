@@ -8,11 +8,11 @@
 
 ## 更新说明
 
-###  v1.9.1
+###  v1.9.2
 
 感谢师傅们提供的修改建议，目前已更新一下功能：
 
-1. 修复note笔记显示逻辑;;
+1. 新增redis命令执行功能;
 
 ## 工具介绍
 
@@ -113,6 +113,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 #### Redis
 
 ![image-20250706200748776](images/image-20250706200748776.png)
+![image-20251020123650](images/image-20251020123650.png)
 
 ### 编码解码
 
@@ -150,7 +151,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 ### 便携发包
 
-类似于postman，支持环境变量、get、post、del、put等各种常用功能  
+类似于postman，支持环境变量、get、post、del、put等各种常用功能
 
 ![image-20250917151543513.png](images/image-20250917151543513.png)
 

@@ -152,7 +152,7 @@
       <!-- redis -->
       <div v-if="activeTab === 'redis'" class="tab-content">
         <el-row>
-          <el-col :span="5" style="height: 100vh; padding: 12px">
+          <el-col :span="7" style="height: 100vh; padding: 5px">
             <div style="margin-bottom: 12px">
               <ConnectionManage title="新建连接" btn-type="primary" @emit-connection-list="flushConnectionList"/>
             </div>
@@ -160,7 +160,7 @@
           </el-col>
 
           <template v-if="isConnected">
-            <el-col :span="7" style="padding: 12px">
+            <el-col :span="5" style="padding: 12px">
               <Keys
                   :keyDB="keyDB"
                   :keyConnIdentity="keyConnIdentity"

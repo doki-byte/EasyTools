@@ -19,6 +19,57 @@ func (b *Redis) SetCtx(ctx context.Context) {
 	b.ctx = ctx
 }
 
+// ExecuteCommand 执行Redis命令
+func (b *Redis) ExecuteCommand(identity string, commandStr string) H {
+	if identity == "" {
+		return M{
+			"code": -1,
+			"msg":  "连接唯一标识不能为空",
+		}
+	}
+	if commandStr == "" {
+		return M{
+			"code": -1,
+			"msg":  "命令不能为空",
+		}
+	}
+
+	result, err := service.ExecuteCommand(identity, commandStr)
+	if err != nil {
+		return M{
+			"code": -1,
+			"msg":  "ERROR : " + err.Error(),
+		}
+	}
+	return M{
+		"code": 200,
+		"data": result,
+	}
+}
+
+// GetCommandHistory 获取命令历史记录
+func (b *Redis) GetCommandHistory(identity string) H {
+	if identity == "" {
+		return M{
+			"code": -1,
+			"msg":  "连接唯一标识不能为空",
+		}
+	}
+
+	history, err := service.GetCommandHistory(identity)
+	if err != nil {
+		return M{
+			"code": -1,
+			"msg":  "ERROR : " + err.Error(),
+		}
+	}
+	return M{
+		"code": 200,
+		"data": history,
+	}
+}
+
+// 其他现有方法保持不变...
 // ConnectionList 连接列表
 func (b *Redis) ConnectionList() H {
 	conn, err := service.ConnectionList()
@@ -31,6 +82,21 @@ func (b *Redis) ConnectionList() H {
 	return M{
 		"code": 200,
 		"data": conn,
+	}
+}
+
+// ConnectionTest 新建连接
+func (b *Redis) ConnectionTest(connection *define.Connection) H {
+	err := service.ConnectionTest(connection)
+	if err != nil {
+		return M{
+			"code": -1,
+			"msg":  "ERROR : " + err.Error(),
+		}
+	}
+	return M{
+		"code": 200,
+		"msg":  "连接成功",
 	}
 }
 

@@ -20,6 +20,21 @@ type SSHConfig struct {
 	SSHPassword string `json:"ssh_password"`
 }
 
+// CommandResult 命令执行结果
+type CommandResult struct {
+	Success  bool        `json:"success"`  // 是否成功
+	Data     interface{} `json:"data"`     // 执行结果数据
+	Error    string      `json:"error"`    // 错误信息
+	Duration int64       `json:"duration"` // 执行耗时(毫秒)
+}
+
+// CommandHistory 命令历史记录
+type CommandHistory struct {
+	Command   string `json:"command"`   // 命令
+	Success   bool   `json:"success"`   // 是否成功
+	Timestamp int64  `json:"timestamp"` // 执行时间戳
+}
+
 var (
 	// DefaultKeyLen 键列表的默认查询长度
 	DefaultKeyLen int64 = 100

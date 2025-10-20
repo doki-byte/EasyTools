@@ -18,6 +18,10 @@ export function ConnectionList() {
   return window['go']['redis']['Redis']['ConnectionList']();
 }
 
+export function ConnectionTest(arg1) {
+  return window['go']['redis']['Redis']['ConnectionTest'](arg1);
+}
+
 export function CreateKeyValue(arg1) {
   return window['go']['redis']['Redis']['CreateKeyValue'](arg1);
 }
@@ -32,6 +36,14 @@ export function DbList(arg1) {
 
 export function DeleteKeyValue(arg1) {
   return window['go']['redis']['Redis']['DeleteKeyValue'](arg1);
+}
+
+export function ExecuteCommand(arg1, arg2) {
+  return window['go']['redis']['Redis']['ExecuteCommand'](arg1, arg2);
+}
+
+export function GetCommandHistory(arg1) {
+  return window['go']['redis']['Redis']['GetCommandHistory'](arg1);
 }
 
 export function GetKeyValue(arg1) {
