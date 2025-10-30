@@ -8,12 +8,21 @@
           :props="{ children: 'children', label: 'label' }"
           node-key="id"
           @node-click="onTreeNodeClick"
+          @node-contextmenu="onTreeContextMenu"
           :highlight-current="true"
           :default-expand-all="false"
           :expand-on-click-node="true"
           class="small-tree"
       />
     </div>
+
+    <!-- 右键菜单 - 分类树节点 -->
+    <ul class="context-menu" v-if="treeContextMenuVisible"
+        :style="{ top: `${treeContextMenuPosition.y}px`, left: `${treeContextMenuPosition.x}px` }">
+      <li v-for="(option, index) in treeContextMenuOptions" :key="index" @click="option.action">
+        <i :class="option.icon"></i> {{ option.label }}
+      </li>
+    </ul>
 
     <!-- 搜索框：图标/展开切换，支持拖拽 -->
     <div
@@ -155,12 +164,26 @@
 
           <el-form-item label="命令" prop="cmd">
             <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-              <el-input v-model="form.cmd" placeholder="请输入工具命令"></el-input>
+              <el-input
+                  v-model="form.cmd"
+                  placeholder="请输入工具命令"
+                  style="flex: 1;"
+              ></el-input>
+              <el-button
+                  type="primary"
+                  @click="browseForCmdFile"
+                  style="height: 30px; padding: 0 10px;"
+              >选择</el-button>
               <el-tooltip
                   effect="dark"
-                  content="输入启动工具需要执行的主命令(eg: java -jar godzilla.jar)"
                   placement="bottom-start"
               >
+                <template #content>
+                  <div style="text-align: left; line-height: 1.5;">
+                    <div>• 输入启动工具需要执行的主命令(eg: java -jar godzilla.jar)</div>
+                    <div>• 如果直接是可执行文件exe、bat、vbs等可使用'选择'功能直接选取</div>
+                  </div>
+                </template>
                 <el-icon><QuestionFilled /></el-icon>
               </el-tooltip>
             </div>
@@ -219,9 +242,16 @@
               >浏览</el-button>
               <el-tooltip
                   effect="dark"
-                  content="为空即用默认图标"
                   placement="bottom-start"
               >
+                <template #content>
+                  <div style="text-align: left; line-height: 1.5;">
+                    <div>• 为空即用默认图标</div>
+                    <div>• 支持使用http加载图标</div>
+                    <div>• 支持绝对路径加载图标</div>
+                    <div>• 当图标位置存放在(EasyToolsFiles/icon)下时，支持直接输入图片名称即可</div>
+                  </div>
+                </template>
                 <el-icon><QuestionFilled /></el-icon>
               </el-tooltip>
             </div>
@@ -255,7 +285,13 @@
 </template>
 
 <script>
-import {GetOpenDir, GetOpenFilePath, OpenPath, ShellCMD} from "../../wailsjs/go/controller/System";
+import {
+  GetOpenChooseFilePath,
+  GetOpenDir,
+  GetOpenFilePath,
+  OpenPath,
+  ShellCMD
+} from "../../wailsjs/go/controller/System";
 import {
   AddTool,
   DeleteTool,
@@ -294,11 +330,20 @@ export default {
       searchQuery: "",
 
       defaultExpandedKeys: [],
+
+      // 工具项右键菜单
       contextMenuVisible: false,
       contextMenuOptions: [], // 动态右键菜单选项
       contextMenuPosition: { x: 0, y: 0 },
       selectedCmd: null,
       selectedIndex: null,
+
+      // 分类树右键菜单
+      treeContextMenuVisible: false,
+      treeContextMenuOptions: [],
+      treeContextMenuPosition: { x: 0, y: 0 },
+      selectedTreeNode: null,
+
       dialogVisible: false,
       dialogMode: "add", // 'add' or 'edit'
       form: {
@@ -341,12 +386,16 @@ export default {
       };
     },
     treeData() {
-      // 为了实现折叠，引入一个根节点“目录”
+      // 为了实现折叠，引入一个根节点"目录"
       return [
         {
           label: '目录',
           id: 'root',
-          children: this.toolList.map((cat, idx) => ({ label: cat.title, id: idx }))
+          children: this.toolList.map((cat, idx) => ({
+            label: cat.title,
+            id: idx,
+            category: cat.title // 保存分类名称用于操作
+          }))
         }
       ];
     },
@@ -366,6 +415,93 @@ export default {
     },
   },
   methods: {
+    // 树节点点击
+    onTreeNodeClick(node) {
+      if (node.id === 'root') return;
+      const target = document.querySelector(`.cate[data-index=\"${node.id}\"]`);
+      if (target) {
+        target.closest('.nav').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    },
+
+    // 树节点右键菜单
+    onTreeContextMenu(event, node) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      // 排除根节点
+      if (node.id === 'root') return;
+
+      this.selectedTreeNode = node;
+
+      // 设置分类树右键菜单选项
+      this.treeContextMenuOptions = [
+        {
+          label: "重命名",
+          icon: "el-icon-edit",
+          action: () => this.renameCategory(node)
+        },
+        {
+          label: "删除",
+          icon: "el-icon-delete",
+          action: () => this.deleteCategory(node)
+        }
+      ];
+
+      this.treeContextMenuPosition = {
+        x: event.clientX,
+        y: event.clientY
+      };
+      this.treeContextMenuVisible = true;
+    },
+
+    // 重命名分类
+    renameCategory(node) {
+      this.hideTreeContextMenu();
+
+      const categoryTitle = node.category || node.label;
+      this.selectedCategory = categoryTitle;
+
+      // 打开分类编辑对话框
+      this.dialogMode = "cateEdit";
+      this.form = {
+        oldCategory: categoryTitle,
+        category: categoryTitle,
+      };
+
+      this.dialogVisible = true;
+    },
+
+    // 删除分类
+    async deleteCategory(node) {
+      this.hideTreeContextMenu();
+
+      const categoryTitle = node.category || node.label;
+
+      try {
+        await this.$confirm(
+            `是否确认删除分类「${categoryTitle}」？该分类下的所有工具也会被删除！`,
+            '警告',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning',
+            }
+        );
+
+        await this.deleteToolCategory(categoryTitle);
+      } catch (error) {
+        // 用户取消删除
+        console.log('取消删除分类');
+      }
+    },
+
+    // 隐藏树节点右键菜单
+    hideTreeContextMenu() {
+      this.treeContextMenuVisible = false;
+      this.selectedTreeNode = null;
+    },
+
     // 打开并自动调整到边缘
     openSearch() {
       this.searchExpanded = true;
@@ -420,15 +556,6 @@ export default {
       this.searchQuery = val;
       this.handleSearch(); // 调用原来的搜索方法
     },
-
-    onTreeNodeClick(node) {
-      if (node.id === 'root') return;
-      const target = document.querySelector(`.cate[data-index=\"${node.id}\"]`);
-      if (target) {
-        target.closest('.nav').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    },
-
 
     // 加载命令列表
     async loadToolList() {
@@ -561,8 +688,6 @@ export default {
       };
     },
 
-
-
     // 显示右键菜单
     showContextMenu(event, cmd = null, index = null) {
       event.preventDefault();
@@ -651,6 +776,36 @@ export default {
       }
     },
 
+    async browseForCmdFile() {
+      try {
+        // 检查是否设置了路径
+        if (!this.form.path) {
+          this.$message.warning('请先设置工具路径');
+          return;
+        }
+
+        // 使用 Wails 的对话框选择文件，传入路径作为初始目录
+        const cmdFile = await GetOpenChooseFilePath(this.form.path);
+        if (cmdFile) {
+          // 只获取文件名，不包含完整路径
+          this.form.cmd = this.extractFileName(cmdFile);
+        }
+      } catch (err) {
+        this.$message.error('选择命令文件失败: ' + err.message);
+        console.error('浏览命令文件错误:', err);
+      }
+    },
+
+    // 从完整路径中提取文件名
+    extractFileName(fullPath) {
+      // 处理 Windows 路径
+      if (fullPath.includes('\\')) {
+        return fullPath.split('\\').pop();
+      }
+      // 处理 Linux/Mac 路径
+      return fullPath.split('/').pop();
+    },
+
     // 浏览文件夹
     async browseForIconFile() {
       try {
@@ -673,6 +828,13 @@ export default {
     // 全局右键点击处理
     handleGlobalContextMenu(event) {
       const itemElement = event.target.closest(".item");
+      const treeElement = event.target.closest(".cate-tree");
+
+      // 如果点击的是树区域，不显示全局右键菜单
+      if (treeElement) {
+        return;
+      }
+
       if (!itemElement) {
         // 点击的不是 .item 时显示 "新增" 菜单
         this.showContextMenu(event);
@@ -956,11 +1118,14 @@ export default {
     // 监听全局 contextmenu 事件
     document.addEventListener("contextmenu", this.handleGlobalContextMenu);
     document.addEventListener("click", this.hideContextMenu);
+    // 添加树节点右键菜单的隐藏监听
+    document.addEventListener("click", this.hideTreeContextMenu);
   },
   beforeUnmount() {
     // 移除全局 contextmenu 和 click 事件监听
     document.removeEventListener("contextmenu", this.handleGlobalContextMenu);
     document.removeEventListener("click", this.hideContextMenu);
+    document.removeEventListener("click", this.hideTreeContextMenu);
   },
 };
 </script>
@@ -993,7 +1158,6 @@ export default {
   font-size: 12px;
   padding: 2px 0;
 }
-
 
 .system {
   margin: 10px 0 10px 10px;
@@ -1143,7 +1307,6 @@ export default {
     }
   }
 
-
   .context-menu {
     position: absolute;
     z-index: 1000;
@@ -1182,5 +1345,4 @@ export default {
   }
 
 }
-
 </style>

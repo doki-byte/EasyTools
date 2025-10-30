@@ -14,6 +14,10 @@ export function ClipboardSetText(arg1) {
   return window['go']['controller']['System']['ClipboardSetText'](arg1);
 }
 
+export function ExitApp() {
+  return window['go']['controller']['System']['ExitApp']();
+}
+
 export function GetAutoStart() {
   return window['go']['controller']['System']['GetAutoStart']();
 }
@@ -32,6 +36,10 @@ export function GetMemUsageSelf() {
 
 export function GetMemUsageTotal() {
   return window['go']['controller']['System']['GetMemUsageTotal']();
+}
+
+export function GetOpenChooseFilePath(arg1) {
+  return window['go']['controller']['System']['GetOpenChooseFilePath'](arg1);
 }
 
 export function GetOpenDir() {

@@ -7,8 +7,8 @@
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "info": {
-    "ProductVersion": "1.9.0",
-    "FileVersion": "1.9.0",
+    "ProductVersion": "1.9.3",
+    "FileVersion": "1.9.3",
     "CompanyName": "渗透云记",
     "FileDescription": "EasyTools渗透测试工具箱",
     "Copyright": "©渗透云记",

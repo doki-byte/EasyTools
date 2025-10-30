@@ -12,35 +12,53 @@
       <!-- 菜单管理 -->
       <div v-if="activeTab === 'menu-manager'">
         <div class="menu-manager">
-          <p>拖拽调整菜单项顺序，点击保存应用更改（可切换显示/隐藏）</p>
-          <div class="menu-list">
-            <draggable
-                v-model="menuItems"
-                item-key="name"
-                @end="onDragEnd"
-                handle=".drag-handle"
-            >
-              <template #item="{ element, index }">
-                <div class="menu-item">
-                  <el-icon class="drag-handle"><MoreFilled /></el-icon>
-                  <el-icon class="menu-icon">
-                    <component :is="element.icon" />
-                  </el-icon>
-                  <span class="menu-title">{{ element.title }}</span>
-                  <el-tag type="info" size="small">{{ element.name }}</el-tag>
+          <!-- 一级菜单 -->
+          <div class="menu-section">
+            <h3>主菜单管理(左侧支持拖拽)</h3>
+            <div class="menu-list">
+              <draggable
+                  v-model="menuItems"
+                  item-key="name"
+                  @end="onDragEnd"
+                  handle=".drag-handle"
+                  tag="div"
+              >
+                <template #item="{ element }">
+                  <div class="menu-item-container">
+                    <div class="menu-item">
+                      <el-icon class="drag-handle"><MoreFilled /></el-icon>
+                      <el-icon class="menu-icon">
+                        <component :is="element.icon" />
+                      </el-icon>
+                      <span class="menu-title">{{ element.title }}</span>
+                      <el-tag type="info" size="small">{{ element.name }}</el-tag>
 
-                  <!-- 可见性开关 -->
-                  <div class="visibility-switch">
-                    <el-switch
-                        v-model="element.visible"
-                        active-text="显示"
-                        inactive-text="隐藏"
-                        size="small"
-                    />
+                      <!-- 可见性开关 -->
+                      <div class="visibility-switch" @click.stop>
+                        <el-switch
+                            v-model="element.visible"
+                            active-text="显示"
+                            inactive-text="隐藏"
+                            size="small"
+                        />
+                      </div>
+
+                      <!-- 管理模块标签页按钮 -->
+                      <el-button
+                          v-if="hasModuleTabs(element.name)"
+                          @click.stop="openModuleTabsDialog(element)"
+                          class="manage-btn"
+                          size="small"
+                          type="primary"
+                      >
+                        <el-icon><Setting /></el-icon>
+                        管理标签页
+                      </el-button>
+                    </div>
                   </div>
-                </div>
-              </template>
-            </draggable>
+                </template>
+              </draggable>
+            </div>
           </div>
 
           <div class="action-buttons">
@@ -53,6 +71,7 @@
 
       <!-- 快捷键管理 -->
       <div v-if="activeTab === 'hotkey-manager' && OS === 'windows'" class="hotkey-manager">
+        <!-- 快捷键管理代码保持不变 -->
         <h2>快捷键设置</h2>
 
         <div class="hotkey-item">
@@ -95,30 +114,79 @@
         <div v-if="hotkeyMessage" :class="['message', hotkeyMessageType]">{{ hotkeyMessage }}</div>
       </div>
     </el-main>
+
+    <!-- 模块标签页管理对话框 -->
+    <el-dialog
+        v-model="moduleTabsDialogVisible"
+        :title="`${currentModule?.title} - 标签页管理`"
+        width="600px"
+        :close-on-click-modal="false"
+    >
+      <div class="module-tabs-dialog">
+        <p class="dialog-description">拖拽调整标签页顺序，切换显示/隐藏状态</p>
+
+        <div class="module-tabs-list">
+          <draggable
+              v-model="currentModuleTabs"
+              item-key="name"
+              @end="onModuleTabsDragEnd"
+              handle=".drag-handle"
+              tag="div"
+          >
+            <template #item="{ element: tabElement }">
+              <div class="module-tab-item">
+                <el-icon class="drag-handle"><MoreFilled /></el-icon>
+                <span class="module-tab-title">{{ tabElement.title }}</span>
+                <el-tag type="info" size="small">{{ tabElement.name }}</el-tag>
+
+                <!-- 标签页可见性开关 -->
+                <div class="visibility-switch" @click.stop>
+                  <el-switch
+                      v-model="tabElement.visible"
+                      active-text="显示"
+                      inactive-text="隐藏"
+                      size="small"
+                  />
+                </div>
+              </div>
+            </template>
+          </draggable>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeModuleTabsDialog">取消</el-button>
+          <el-button type="primary" @click="saveModuleTabs">保存</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script>
-import { markRaw } from 'vue';
-import { ElMessage } from 'element-plus';
+import {markRaw} from 'vue';
+import {ElMessage} from 'element-plus';
 import draggable from 'vuedraggable';
-import { MoreFilled } from '@element-plus/icons-vue';
-import { defaultMenu, iconMap, loadMenuOrder, saveMenuOrder } from '@/utils/menuConfig';
-import { ToggleShowHide, SetHotkey } from "../../wailsjs/go/hotkey/HotKey";
-import { EventsOn } from "../../wailsjs/runtime";
-import { globalHotkeyManager } from '@/utils/globalHotkey';
-import { LOCALSTORAGE_KEY, DEFAULT_HOTKEY, normalizeAccelerator, accelFromEvent } from '@/utils/hotkeyUtils';
+import {MoreFilled, Setting} from '@element-plus/icons-vue';
+import {defaultMenu, iconMap, loadMenuOrder, moduleTabsConfig, saveMenuOrder} from '@/utils/menuConfig';
+import {SetHotkey, ToggleShowHide} from "../../wailsjs/go/hotkey/HotKey";
+import {EventsOn} from "../../wailsjs/runtime";
+import {globalHotkeyManager} from '@/utils/globalHotkey';
+import {accelFromEvent, DEFAULT_HOTKEY, LOCALSTORAGE_KEY, normalizeAccelerator} from '@/utils/hotkeyUtils';
 import {GetAutoStart, GetOs, SetAutoStart} from "../../wailsjs/go/controller/System";
 
 export default {
   name: "SystemManageView",
   components: {
     draggable,
-    MoreFilled
+    MoreFilled,
+    Setting
   },
   data() {
     return {
       menuItems: [],
+      moduleTabsItems: {},
       activeTab: "menu-manager",
       hotkeyConfig: {
         showHide: globalHotkeyManager.hotkeyConfig.showHide
@@ -128,10 +196,15 @@ export default {
       hotkeyMessageType: 'info',
       _hotkeyListenerEnabled: false,
       _globalKeyHandler: null,
-      isSaving: false, // 添加保存状态标志
+      isSaving: false,
       OS: '',
-      autoStartEnabled: false, // 新增：开机自启状态
-      autoStartLoading: false // 新增：加载状态
+      autoStartEnabled: false,
+      autoStartLoading: false,
+
+      // 模块标签页对话框相关
+      moduleTabsDialogVisible: false,
+      currentModule: null,
+      currentModuleTabs: []
     };
   },
   async created() {
@@ -141,7 +214,7 @@ export default {
       if (this.OS === "windows") {
         this.loadHotkeyFromStorage();
         await this.applyHotkeyConfig();
-        await this.loadAutoStartStatus(); // 加载开机自启状态
+        await this.loadAutoStartStatus();
       }
     } catch (error) {
       console.error('获取操作系统类型失败', error);
@@ -150,14 +223,12 @@ export default {
   },
   mounted() {
     if (this.OS === "windows") {
-      // 启用全局监听的函数（延迟到 hotkey-ready）
       const enableGlobalListener = () => {
         if (this._hotkeyListenerEnabled) return;
 
         this._globalKeyHandler = (e) => {
           if (this.detecting) return;
 
-          // 如果当前元素在输入场景则跳过
           const active = document.activeElement;
           if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
             return;
@@ -186,7 +257,6 @@ export default {
         console.debug('hotkey global listener enabled');
       };
 
-      // helper: 向后端下发当前热键（如果绑定存在）
       const sendHotkeyToBackend = async () => {
         try {
           const current = this.hotkeyConfig.showHide || DEFAULT_HOTKEY;
@@ -201,31 +271,23 @@ export default {
         }
       };
 
-      // 1) 等待后端发 hotkey-ready 事件（后端在 OnStartup 里 emit）
       try {
         EventsOn('hotkey-ready', async () => {
           console.debug('received hotkey-ready from backend, enabling hotkey listener');
           enableGlobalListener();
-
-          // 后端就绪后把当前 hotkey 配置下发一次，确保后端注册系统级热键
           await sendHotkeyToBackend();
         });
       } catch (e) {
         console.warn('EventsOn not available or failed, enabling listener immediately as fallback', e);
         enableGlobalListener();
-
-        // fallback: 直接尝试下发热键（后端若尚未就绪会报错，已在 sendHotkeyToBackend 内处理）
         sendHotkeyToBackend();
       }
 
-      // 2) 保险机制：若事件错过，1s 后自动启用（避免一直等待）
       setTimeout(() => {
         if (!this._hotkeyListenerEnabled) {
           console.debug('fallback: enabling hotkey listener after timeout');
           enableGlobalListener();
         }
-
-        // 再次尝试确保后端注册（防止前面两步都没下发成功）
         sendHotkeyToBackend();
       }, 1000);
     }
@@ -241,20 +303,118 @@ export default {
   },
   methods: {
     async loadMenuData() {
-      const savedOrder = await loadMenuOrder();
-      let fullMenu = defaultMenu.map(item => {
-        const savedItem = savedOrder.find(i => i.name === item.name);
-        return {
-          ...item,
-          order: savedItem ? savedItem.order : item.defaultOrder,
-          visible: savedItem
-              ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible)
-              : item.visible,
-          icon: markRaw(iconMap[item.icon])
-        };
-      });
+      try {
+        const savedData = await loadMenuOrder();
+        const savedOrder = savedData.main || [];
+        const savedTabsOrder = savedData.tabs || {};
 
-      this.menuItems = fullMenu.sort((a, b) => a.order - b.order);
+        // 加载一级菜单
+        let fullMenu = defaultMenu.map(item => {
+          const savedItem = savedOrder.find(i => i.name === item.name);
+          return {
+            ...item,
+            order: savedItem ? savedItem.order : item.defaultOrder,
+            visible: savedItem
+                ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible)
+                : item.visible,
+            icon: markRaw(iconMap[item.icon])
+          };
+        });
+
+        this.menuItems = fullMenu.sort((a, b) => a.order - b.order);
+
+        // 加载模块标签页
+        this.moduleTabsItems = {};
+        Object.keys(moduleTabsConfig).forEach(moduleName => {
+          const moduleTabs = moduleTabsConfig[moduleName];
+          const savedModuleTabsOrder = savedTabsOrder[moduleName] || [];
+
+          this.moduleTabsItems[moduleName] = moduleTabs.map(item => {
+            const savedItem = savedModuleTabsOrder.find(i => i.name === item.name);
+            return {
+              ...item,
+              order: savedItem ? savedItem.order : item.defaultOrder,
+              visible: savedItem
+                  ? (typeof savedItem.visible === 'boolean' ? savedItem.visible : item.visible)
+                  : item.visible
+            };
+          }).sort((a, b) => a.order - b.order);
+        });
+      } catch (error) {
+        console.error('加载菜单数据失败:', error);
+        // 使用默认数据
+        this.menuItems = defaultMenu.map(item => ({
+          ...item,
+          icon: markRaw(iconMap[item.icon])
+        })).sort((a, b) => a.defaultOrder - b.defaultOrder);
+
+        this.moduleTabsItems = {};
+        Object.keys(moduleTabsConfig).forEach(moduleName => {
+          this.moduleTabsItems[moduleName] = moduleTabsConfig[moduleName].map(item => ({
+            ...item
+          })).sort((a, b) => a.defaultOrder - b.defaultOrder);
+        });
+      }
+    },
+
+    hasModuleTabs(menuName) {
+      return this.moduleTabsItems[menuName] && this.moduleTabsItems[menuName].length > 0;
+    },
+
+    // 打开模块标签页管理对话框
+    openModuleTabsDialog(module) {
+      this.currentModule = module;
+
+      // 直接使用原数据的引用，确保响应式
+      this.currentModuleTabs = this.moduleTabsItems[module.name] || []; // 直接引用，不深拷贝
+
+      // console.log('打开对话框时的标签页顺序:', this.currentModuleTabs.map(t => ({name: t.name, order: t.order})));
+
+      this.moduleTabsDialogVisible = true;
+    },
+
+    // 保存模块标签页设置
+    async saveModuleTabs() {
+      if (this.currentModule) {
+        try {
+          // console.log('保存前的标签页顺序:', this.currentModuleTabs.map(t => ({name: t.name, order: t.order})));
+
+          // 直接使用当前数据，不需要额外处理
+          // this.moduleTabsItems[this.currentModule.name] 已经通过引用自动更新
+
+          // 获取当前的主菜单和标签页配置
+          const mainOrderToSave = this.menuItems.map(item => ({
+            name: item.name,
+            order: item.order,
+            visible: typeof item.visible === 'boolean' ? item.visible : true
+          }));
+
+          const tabsOrderToSave = {};
+          Object.keys(this.moduleTabsItems).forEach(moduleName => {
+            tabsOrderToSave[moduleName] = this.moduleTabsItems[moduleName].map(item => ({
+              name: item.name,
+              order: item.order,
+              visible: typeof item.visible === 'boolean' ? item.visible : true
+            }));
+          });
+
+          // console.log('要保存的标签页数据:', tabsOrderToSave[this.currentModule.name]);
+
+          // 保存到本地存储
+          const success = await saveMenuOrder(mainOrderToSave, tabsOrderToSave);
+          if (success) {
+            // 派发更新事件，让其他组件重新加载配置
+            window.dispatchEvent(new CustomEvent('menu-order-updated'));
+            ElMessage.success(`${this.currentModule.title} 标签页设置已保存`);
+            this.closeModuleTabsDialog();
+          } else {
+            ElMessage.error('保存失败，请重试');
+          }
+        } catch (error) {
+          console.error('保存模块标签页失败:', error);
+          ElMessage.error('保存失败: ' + error.message);
+        }
+      }
     },
 
     onDragEnd() {
@@ -263,46 +423,97 @@ export default {
       });
     },
 
-    async saveOrder() {
-      const orderToSave = this.menuItems.map(item => ({
-        name: item.name,
-        order: item.order,
-        visible: typeof item.visible === 'boolean' ? item.visible : true
-      }));
+    // 简化拖拽处理，模仿一级菜单
+    onModuleTabsDragEnd() {
+      // 直接更新 order，就像一级菜单那样
+      this.currentModuleTabs.forEach((item, index) => {
+        item.order = index;
+      });
 
-      const success = await saveMenuOrder(orderToSave);
-      if (success) {
-        ElMessage.success('菜单顺序与可见性已保存');
-        window.dispatchEvent(new CustomEvent('menu-order-updated', { detail: { time: Date.now() } }));
-      } else {
-        ElMessage.error('保存失败，请重试');
+      // console.log('拖拽后的顺序:', this.currentModuleTabs.map(t => ({name: t.name, order: t.order})));
+    },
+
+    // 关闭模块标签页管理对话框
+    closeModuleTabsDialog() {
+      this.moduleTabsDialogVisible = false;
+      this.currentModule = null;
+      this.currentModuleTabs = [];
+    },
+
+
+    async saveOrder() {
+      try {
+        const mainOrderToSave = this.menuItems.map(item => ({
+          name: item.name,
+          order: item.order,
+          visible: typeof item.visible === 'boolean' ? item.visible : true
+        }));
+
+        const tabsOrderToSave = {};
+        Object.keys(this.moduleTabsItems).forEach(moduleName => {
+          tabsOrderToSave[moduleName] = this.moduleTabsItems[moduleName].map(item => ({
+            name: item.name,
+            order: item.order,
+            visible: typeof item.visible === 'boolean' ? item.visible : true
+          }));
+        });
+
+        const success = await saveMenuOrder(mainOrderToSave, tabsOrderToSave);
+        if (success) {
+          window.dispatchEvent(new CustomEvent('menu-order-updated', {
+            detail: {
+              time: Date.now(),
+              type: 'both'
+            }
+          }));
+
+          ElMessage.success('保存成功');
+        } else {
+          ElMessage.error('保存失败，请重试');
+        }
+      } catch (error) {
+        console.error('保存菜单顺序失败:', error);
+        ElMessage.error('保存失败: ' + error.message);
       }
     },
 
     resetOrder() {
-      this.menuItems = this.menuItems
-          .map(item => {
-            const def = defaultMenu.find(i => i.name === item.name);
-            return {
-              ...item,
-              order: def.defaultOrder,
-              visible: def.visible
-            };
-          })
-          .sort((a, b) => a.order - b.order);
+      // 重置一级菜单
+      this.menuItems = defaultMenu.map(item => ({
+        ...item,
+        order: item.defaultOrder,
+        visible: item.visible,
+        icon: markRaw(iconMap[item.icon])
+      })).sort((a, b) => a.defaultOrder - b.defaultOrder);
 
-      window.dispatchEvent(new CustomEvent('menu-order-updated', { detail: { time: Date.now(), reset: true } }));
+      // 重置模块标签页
+      Object.keys(moduleTabsConfig).forEach(moduleName => {
+        this.moduleTabsItems[moduleName] = moduleTabsConfig[moduleName].map(item => ({
+          ...item,
+          order: item.defaultOrder,
+          visible: item.visible
+        })).sort((a, b) => a.defaultOrder - b.defaultOrder);
+      });
+
+      ElMessage.success('已重置为默认顺序');
+      window.dispatchEvent(new CustomEvent('menu-order-updated', {
+        detail: {
+          time: Date.now(),
+          reset: true,
+          type: 'both'
+        }
+      }));
     },
 
     goBack() {
       this.$router.go(-1);
     },
 
+    // 快捷键相关方法保持不变
     loadHotkeyFromStorage() {
       this.hotkeyConfig.showHide = globalHotkeyManager.hotkeyConfig.showHide;
     },
 
-    // 新增：应用热键配置到后端
     async applyHotkeyConfig() {
       const norm = normalizeAccelerator(this.hotkeyConfig.showHide || '');
       if (!norm) return;
@@ -317,7 +528,6 @@ export default {
       }
     },
 
-    // 保存按钮点击 - 添加防抖和状态检查
     async saveHotkeyConfig() {
       if (this.isSaving) return;
       this.isSaving = true;
@@ -332,7 +542,6 @@ export default {
       localStorage.setItem(LOCALSTORAGE_KEY, norm);
       globalHotkeyManager.hotkeyConfig.showHide = norm;
 
-      // 通知后端注册全局热键（系统级）
       try {
         if (typeof SetHotkey === 'function') {
           await SetHotkey(norm);
@@ -352,7 +561,6 @@ export default {
       return true;
     },
 
-    // 恢复默认设置 - 添加防抖和状态检查
     resetHotkeyToDefault() {
       const norm = DEFAULT_HOTKEY;
       this.hotkeyConfig.showHide = norm;
@@ -360,7 +568,6 @@ export default {
       globalHotkeyManager.hotkeyConfig.showHide = norm;
       localStorage.setItem(LOCALSTORAGE_KEY, norm);
 
-      // 通知后端
       try {
         if (typeof SetHotkey === 'function') {
           SetHotkey(norm).catch(err => console.warn('SetHotkey failed:', err));
@@ -390,7 +597,6 @@ export default {
       const accelerator = modifiers.length > 0 ? modifiers.join('+') + '+' + key : key;
       this.hotkeyConfig[field] = normalizeAccelerator(accelerator);
 
-      // 修改后立即生效
       if (field === 'showHide') {
         globalHotkeyManager.hotkeyConfig.showHide = this.hotkeyConfig.showHide;
         localStorage.setItem(LOCALSTORAGE_KEY, this.hotkeyConfig.showHide);
@@ -427,7 +633,6 @@ export default {
         cleanup();
         this.hotkeyConfig[field] = norm;
 
-        // 立即生效
         globalHotkeyManager.hotkeyConfig.showHide = norm;
         localStorage.setItem(LOCALSTORAGE_KEY, norm);
 
@@ -457,8 +662,6 @@ export default {
       }, 3000);
     },
 
-
-    // 新增：加载开机自启状态
     async loadAutoStartStatus() {
       try {
         this.autoStartEnabled = await GetAutoStart();
@@ -469,7 +672,6 @@ export default {
       }
     },
 
-    // 新增：处理开机自启状态改变
     async handleAutoStartChange(enabled) {
       this.autoStartLoading = true;
       try {
@@ -485,13 +687,11 @@ export default {
               enabled ? '开启开机自启失败' : '关闭开机自启失败',
               'error'
           );
-          // 恢复原状态
           this.autoStartEnabled = !enabled;
         }
       } catch (error) {
         console.error('设置开机自启失败:', error);
         this.showHotkeyMessage('设置开机自启失败: ' + error.message, 'error');
-        // 恢复原状态
         this.autoStartEnabled = !enabled;
       } finally {
         this.autoStartLoading = false;
@@ -500,9 +700,6 @@ export default {
   }
 };
 </script>
-
-
-
 
 <style scoped>
 /* 页面容器 */
@@ -519,9 +716,7 @@ export default {
   background-color: #ffffff;
   box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
   margin-bottom: 5px;
-  /* border-bottom: 2px solid #ebeef5; */
   padding-left: 10px;
-  /* 增加左边距 */
   border-radius: 10px 10px 10px 10px;
 }
 
@@ -531,30 +726,45 @@ export default {
 
 .menu-manager {
   padding: 5px;
-  max-width: 700px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
+.menu-section {
+  margin-bottom: 20px;
+}
+
+.menu-section h3 {
+  margin-bottom: 10px;
+  color: #303133;
+  font-size: 16px;
+}
+
 .menu-list {
-  margin: 20px 0;
+  margin: 10px 0;
   border: 1px solid #e6e8eb;
   border-radius: 8px;
   overflow: hidden;
+  user-select: none; /* 防止文字选择 */
+}
+
+/* 菜单项容器 */
+.menu-item-container {
+  background: #fff;
+  border-bottom: 1px solid #e6e8eb;
+}
+
+.menu-item-container:last-child {
+  border-bottom: none;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   padding: 12px 16px;
-  background: #fff;
-  border-bottom: 1px solid #e6e8eb;
-  cursor: move;
 }
 
-.menu-item:last-child {
-  border-bottom: none;
-}
-
+/* 只在拖拽手柄上设置可拖拽光标 */
 .drag-handle {
   margin-right: 12px;
   color: #909399;
@@ -577,16 +787,67 @@ export default {
   align-items: center;
 }
 
+.manage-btn {
+  margin-left: 12px;
+}
+
 /* 按钮区域 */
 .action-buttons {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-top: 12px;
+  margin-top: 20px;
+}
+
+/* 模块标签页对话框样式 */
+.module-tabs-dialog {
+  padding: 10px 0;
+}
+
+.dialog-description {
+  margin-bottom: 20px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.module-tabs-list {
+  border: 1px solid #e6e8eb;
+  border-radius: 8px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.module-tab-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.module-tab-item:last-child {
+  border-bottom: none;
+}
+
+.module-tab-title {
+  flex: 1;
+  font-size: 14px;
+  margin-right: 12px;
+}
+
+.module-tab-item .drag-handle {
+  color: #c0c4cc;
+  margin-right: 10px;
+  cursor: move;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 /* 快捷键管理样式 */
-
 :deep(h2) {
   display: block;
   font-size: 1.5em;
@@ -604,7 +865,6 @@ export default {
   margin: 0 auto;
 }
 
-/* 新增开机自启样式 */
 .auto-start-group {
   display: flex;
   align-items: center;
@@ -616,7 +876,6 @@ export default {
   color: #909399;
 }
 
-/* 调整热单项的间距 */
 .hotkey-item {
   margin-bottom: 24px;
   padding: 16px;
@@ -632,7 +891,6 @@ export default {
   color: #303133;
 }
 
-/* 响应式调整 */
 @media (max-width: 768px) {
   .auto-start-group {
     flex-direction: column;

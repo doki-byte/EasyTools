@@ -10,7 +10,8 @@ import {
     MagicStick,
     Promotion,
     Sugar,
-    ElementPlus, Mouse
+    ElementPlus,
+    Mouse
 } from '@element-plus/icons-vue';
 
 // 图标映射
@@ -30,7 +31,7 @@ export const iconMap = {
     Mouse
 };
 
-// 默认菜单配置（增加 visible）
+// 默认一级菜单配置
 export const defaultMenu = [
     { name: 'tool', icon: 'Suitcase', title: '工具仓库', defaultOrder: 0, visible: true },
     { name: 'website', icon: 'Link', title: '网址导航', defaultOrder: 1, visible: true },
@@ -46,28 +47,95 @@ export const defaultMenu = [
     { name: 'about', icon: 'Promotion', title: '关于软件', defaultOrder: 11, visible: true },
 ];
 
-// 加载菜单顺序
+// 模块内部标签页配置
+export const moduleTabsConfig = {
+    // 信息查询模块的标签页
+    infoSearch: [
+        { name: 'google-syntax', title: 'Google语法', defaultOrder: 0, visible: true },
+        { name: 'password-query', title: '默认密码查询', defaultOrder: 1, visible: true },
+        { name: 'shell-syntax', title: '反弹Shell', defaultOrder: 2, visible: true },
+        { name: 'process-query', title: '杀软进程查询', defaultOrder: 3, visible: true },
+        { name: 'map-query', title: '地图测试', defaultOrder: 4, visible: true }
+    ],
+    // 信息处理模块的标签页
+    infoDeal: [
+        { name: 'unwxapp', title: 'WX小程序反编译', defaultOrder: 0, visible: true },
+        { name: 'jwt_crack', title: 'JWT密钥破解', defaultOrder: 1, visible: true },
+        { name: 'ip-ban-deal', title: '蓝队大批量封禁IP处置', defaultOrder: 2, visible: true },
+        { name: 'oss-list', title: 'OSS存储桶遍历', defaultOrder: 3, visible: true },
+        { name: 'fscan-deal', title: 'Fscan结果处理', defaultOrder: 4, visible: true }
+    ],
+    // 简练助手模块的标签页
+    connect: [
+        { name: 'ssh', title: 'SSH', defaultOrder: 0, visible: true },
+        { name: 'ftp', title: 'FTP', defaultOrder: 1, visible: true },
+        { name: 'redis', title: 'Redis', defaultOrder: 2, visible: true },
+    ],
+
+};
+
+// 加载菜单顺序（包含一级和模块标签页）
 export const loadMenuOrder = async () => {
     try {
         const savedOrder = localStorage.getItem('menuOrder');
+        const savedTabsOrder = localStorage.getItem('moduleTabsOrder');
+
         if (savedOrder) {
-            return JSON.parse(savedOrder);
+            const mainOrder = JSON.parse(savedOrder);
+            const tabsOrder = savedTabsOrder ? JSON.parse(savedTabsOrder) : {};
+
+            return {
+                main: mainOrder,
+                tabs: tabsOrder
+            };
         }
 
-        // 未保存过则返回默认顺序（包含 visible）
-        return defaultMenu.map(item => ({ name: item.name, order: item.defaultOrder, visible: item.visible }));
+        // 未保存过则返回默认顺序
+        const mainOrder = defaultMenu.map(item => ({
+            name: item.name,
+            order: item.defaultOrder,
+            visible: item.visible
+        }));
+
+        const tabsOrder = {};
+        Object.keys(moduleTabsConfig).forEach(moduleName => {
+            tabsOrder[moduleName] = moduleTabsConfig[moduleName].map(item => ({
+                name: item.name,
+                order: item.defaultOrder,
+                visible: item.visible
+            }));
+        });
+
+        return { main: mainOrder, tabs: tabsOrder };
     } catch (error) {
         console.error('加载菜单顺序失败:', error);
-        return defaultMenu.map(item => ({ name: item.name, order: item.defaultOrder, visible: item.visible }));
+
+        const mainOrder = defaultMenu.map(item => ({
+            name: item.name,
+            order: item.defaultOrder,
+            visible: item.visible
+        }));
+
+        const tabsOrder = {};
+        Object.keys(moduleTabsConfig).forEach(moduleName => {
+            tabsOrder[moduleName] = moduleTabsConfig[moduleName].map(item => ({
+                name: item.name,
+                order: item.defaultOrder,
+                visible: item.visible
+            }));
+        });
+
+        return { main: mainOrder, tabs: tabsOrder };
     }
 };
 
-// 保存菜单顺序（并包含 visible）
-// order 参数应为 [{ name, order, visible }]
-export const saveMenuOrder = async (order) => {
+// 保存菜单顺序（包含一级和模块标签页）
+export const saveMenuOrder = async (mainOrder, tabsOrder = null) => {
     try {
-        localStorage.setItem('menuOrder', JSON.stringify(order));
-        // 若有后端持久化可在此处同时保存到后端
+        localStorage.setItem('menuOrder', JSON.stringify(mainOrder));
+        if (tabsOrder) {
+            localStorage.setItem('moduleTabsOrder', JSON.stringify(tabsOrder));
+        }
         return true;
     } catch (error) {
         console.error('保存菜单顺序失败:', error);

@@ -20,6 +20,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/tealeg/xlsx v1.0.5
+	github.com/tidwall/gjson v1.14.2
 	github.com/wailsapp/wails/v2 v2.10.2
 	golang.design/x/hotkey v0.4.1
 )
@@ -65,6 +66,8 @@ require (
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.4 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -75,9 +78,9 @@ require (
 	go.uber.org/mock v0.5.2 // indirect
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/image v0.27.0 // indirect
-	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/tools v0.34.0 // indirect
+	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/errgo.v1 v1.0.1 // indirect
 	gopkg.in/retry.v1 v1.0.3 // indirect
@@ -110,10 +113,10 @@ require (
 	github.com/wailsapp/go-webview2 v1.0.19 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	github.com/xuri/excelize/v2 v2.9.0
-	golang.org/x/crypto v0.39.0
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sys v0.33.0
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/crypto v0.43.0
+	golang.org/x/net v0.45.0 // indirect
+	golang.org/x/sys v0.37.0
+	golang.org/x/text v0.30.0 // indirect
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )

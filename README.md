@@ -8,11 +8,17 @@
 
 ## 更新说明
 
-###  v1.9.2
+###  v1.9.3
 
 感谢师傅们提供的修改建议，目前已更新一下功能：
 
-1. 新增redis命令执行功能;
+1. 优化redis界面，修复连接过多导致的页面无限下拉的bug; 
+2. 新增显示更新详情功能;
+3. 参考fine修改小程序反编译界面; 
+4. tools新建工具的时间添加打开工具文件位置的功能; 
+5. 新增二级菜单的显示/隐藏,位置移动; 
+6. 修改ftp下载方式为浏览器下载，避免EasyTools卡死; 
+7. 优化JwtCreck功能;
 
 ## 工具介绍
 
@@ -94,7 +100,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 ![image-20250826211856564](images/image-20250826211856564.png)
 
-![image-20250826211907568](images/image-20250826211907568.png)
+![image-20250826211907568.png](images/image-20250826211907568.png)
 
 ### 简连助手
 
@@ -228,4 +234,5 @@ https://github.com/gchq/CyberChef
 https://github.com/ZororoZ/fscanOutput
 https://github.com/o8oo8o/WebSSH
 https://github.com/broken5/unveilr
+https://github.com/fasnow/fine
 ~~~

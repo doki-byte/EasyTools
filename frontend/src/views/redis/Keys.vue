@@ -142,7 +142,7 @@ function createKey() {
 <style scoped>
 #keys {
   overflow: auto;
-  max-height: 75vh;
+  max-height: 70vh;
 }
 .item {
   display: flex;

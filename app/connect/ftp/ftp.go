@@ -1,17 +1,46 @@
 package ftp
 
 import (
+	"crypto/md5"
 	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jlaffaye/ftp"
 )
+
+var (
+	downloadTokens = make(map[string]FTPConfig)
+	tokenMutex     sync.RWMutex
+)
+
+type FTPConfig struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	Path     string
+	Created  time.Time
+}
+
+// 清理过期的令牌
+func cleanupTokens() {
+	tokenMutex.Lock()
+	defer tokenMutex.Unlock()
+
+	now := time.Now()
+	for token, config := range downloadTokens {
+		if now.Sub(config.Created) > 10*time.Minute { // 10分钟过期
+			delete(downloadTokens, token)
+		}
+	}
+}
 
 func connectFTP(host string, port int, username, password string) (*ftp.ServerConn, error) {
 	address := fmt.Sprintf("%s:%d", host, port)
@@ -155,6 +184,120 @@ func StartWebFTP() {
 		if err != nil && err != io.EOF {
 			fmt.Println("下载中断:", err)
 		}
+	})
+
+	// 生成下载令牌
+	r.POST("/api/ftp/generate-download-url", func(c *gin.Context) {
+		var req struct {
+			Host     string `json:"host"`
+			Port     int    `json:"port"`
+			Username string `json:"username"`
+			Password string `json:"password"`
+			Path     string `json:"path"`
+		}
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// 验证FTP连接
+		conn, err := connectFTP(req.Host, req.Port, req.Username, req.Password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer conn.Quit()
+
+		// 验证文件存在
+		_, err = conn.FileSize(req.Path)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "文件不存在: " + err.Error()})
+			return
+		}
+
+		// 生成唯一令牌
+		token := fmt.Sprintf("%x", md5.Sum([]byte(fmt.Sprintf("%s%d%s%s%s%d",
+			req.Host, req.Port, req.Username, req.Password, req.Path, time.Now().UnixNano()))))
+
+		// 存储令牌信息
+		tokenMutex.Lock()
+		downloadTokens[token] = FTPConfig{
+			Host:     req.Host,
+			Port:     req.Port,
+			Username: req.Username,
+			Password: req.Password,
+			Path:     req.Path,
+			Created:  time.Now(),
+		}
+		tokenMutex.Unlock()
+
+		// 定期清理令牌
+		go cleanupTokens()
+
+		downloadURL := fmt.Sprintf("http://127.0.0.1:52869/api/ftp/direct-download?token=%s", token)
+
+		c.JSON(http.StatusOK, gin.H{"downloadUrl": downloadURL})
+	})
+
+	// 直接下载接口
+	r.GET("/api/ftp/direct-download", func(c *gin.Context) {
+		token := c.Query("token")
+		if token == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "缺少下载令牌"})
+			return
+		}
+
+		// 获取令牌对应的配置
+		tokenMutex.RLock()
+		config, exists := downloadTokens[token]
+		tokenMutex.RUnlock()
+
+		if !exists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "下载令牌无效或已过期"})
+			return
+		}
+
+		// 连接FTP
+		conn, err := connectFTP(config.Host, config.Port, config.Username, config.Password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer conn.Quit()
+
+		// 获取文件信息
+		size, err := conn.FileSize(config.Path)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "获取文件大小失败: " + err.Error()})
+			return
+		}
+
+		// 开始下载
+		resp, err := conn.Retr(config.Path)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer resp.Close()
+
+		// 设置响应头
+		filename := filepath.Base(config.Path)
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		c.Header("Content-Type", "application/octet-stream")
+		c.Header("Content-Length", fmt.Sprintf("%d", size))
+		c.Status(http.StatusOK)
+
+		// 流式传输
+		buf := make([]byte, 32*1024)
+		_, err = io.CopyBuffer(c.Writer, io.LimitReader(resp, size), buf)
+		if err != nil && err != io.EOF {
+			fmt.Println("下载中断:", err)
+		}
+
+		// 下载完成后删除令牌（可选）
+		tokenMutex.Lock()
+		delete(downloadTokens, token)
+		tokenMutex.Unlock()
 	})
 
 	// 删除文件或目录

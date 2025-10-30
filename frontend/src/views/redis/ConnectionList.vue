@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main class="connection-main">
     <div class="demo-collapse">
       <el-collapse accordion>
         <el-collapse-item v-for="item in list" :name="item.identity" @click="getInfo(item.identity)">
@@ -25,7 +25,7 @@
               </div>
             </div>
           </template>
-          <div id="dbs">
+          <div class="dbs-container">
             <div v-for="db in infoDbList" @click.stop="selectDB(db.key, item.identity)">
               <div v-if="db.key !== selectDbKey" class="my-item">{{db.key}} ( {{db.number}} )</div>
               <div v-else class="my-select-item">{{db.key}} ( {{db.number}} )</div>
@@ -121,11 +121,28 @@ function resetSelectedDbInfo() {
 </script>
 
 <style scoped>
-
-#dbs {
-  overflow: auto;
-  max-height: 75vh;
+.connection-main {
+  height: 100%;
+  overflow: hidden;
 }
+
+.demo-collapse {
+  height: 100%;
+  overflow: auto;
+}
+
+:deep(.el-collapse) {
+  height: 80vh;
+
+}
+
+
+:deep(.el-collapse-item__content) {
+  max-height: 200px; /* 限制内容区域的最大高度 */
+  overflow-y: auto; /* 允许垂直滚动 */
+  padding-bottom: 0;
+}
+
 
 .item {
   display: flex;
@@ -138,6 +155,7 @@ function resetSelectedDbInfo() {
   background-color: #ecf5ff;
   padding: 5px 12px;
   margin-bottom: 5px;
+  cursor: pointer;
 }
 
 .my-select-item {
@@ -145,5 +163,6 @@ function resetSelectedDbInfo() {
   background-color: #f0f9eb;
   padding: 5px 12px;
   margin-bottom: 5px;
+  cursor: pointer;
 }
 </style>

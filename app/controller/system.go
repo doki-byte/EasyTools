@@ -34,9 +34,22 @@ func (s System) GetOpenDir() string {
 	return path
 }
 
-// GetOpenDir 获取选择的目录路径
+// GetOpenFilePath 获取选择的目录路径
 func (s System) GetOpenFilePath() string {
 	path, _ := OpenFileDialog(s.ctx, OpenDialogOptions{})
+	return path
+}
+
+// GetOpenChooseFilePath 获取选择的目录路径
+func (s System) GetOpenChooseFilePath(initialDir string) string {
+	options := OpenDialogOptions{}
+
+	// 如果传入了初始目录，设置初始目录
+	if initialDir != "" {
+		options.DefaultDirectory = initialDir
+	}
+
+	path, _ := OpenFileDialog(s.ctx, options)
 	return path
 }
 
@@ -153,4 +166,8 @@ func (s *System) GetAutoStart() bool {
 // 设置自启动
 func (s *System) SetAutoStart(enabled bool) bool {
 	return s.setAutoStart(enabled)
+}
+
+func (s *System) ExitApp() {
+	os.Exit(0)
 }

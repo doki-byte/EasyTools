@@ -7,6 +7,8 @@ export function ClipboardGetText():Promise<string>;
 
 export function ClipboardSetText(arg1:string):Promise<void>;
 
+export function ExitApp():Promise<void>;
+
 export function GetAutoStart():Promise<boolean>;
 
 export function GetCPUUsage():Promise<number>;
@@ -16,6 +18,8 @@ export function GetConfigDir():Promise<string>;
 export function GetMemUsageSelf():Promise<number>;
 
 export function GetMemUsageTotal():Promise<number>;
+
+export function GetOpenChooseFilePath(arg1:string):Promise<string>;
 
 export function GetOpenDir():Promise<string>;
 

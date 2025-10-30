@@ -17,3 +17,7 @@ export function DecodeJWTWithAlg(arg1, arg2, arg3) {
 export function EncodeJWTWithAlg(arg1, arg2, arg3) {
   return window['go']['controller']['JwtCrackController']['EncodeJWTWithAlg'](arg1, arg2, arg3);
 }
+
+export function GetDefaultDictPath() {
+  return window['go']['controller']['JwtCrackController']['GetDefaultDictPath']();
+}

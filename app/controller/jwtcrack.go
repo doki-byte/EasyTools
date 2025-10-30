@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -208,8 +209,6 @@ func (j *JwtCrackController) BruteForceJWT(tokenStr string, alg string, filepath
 		}
 	}
 
-	var lastErr error
-
 	for _, key := range keyList {
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 			if token.Method.Alg() != alg {
@@ -218,7 +217,7 @@ func (j *JwtCrackController) BruteForceJWT(tokenStr string, alg string, filepath
 			return []byte(key), nil
 		})
 		if err != nil {
-			lastErr = err
+			_ = err
 			continue
 		}
 
@@ -243,7 +242,7 @@ func (j *JwtCrackController) BruteForceJWT(tokenStr string, alg string, filepath
 
 	// 所有密钥都尝试失败
 	return JwtResult{
-		Error: "所有密钥尝试失败: " + lastErr.Error()}
+		Error: "所有密钥尝试失败"}
 }
 
 // 从文件读取密钥列表
@@ -453,4 +452,42 @@ func loadEd25519PublicKeyFromPEM(path string) (ed25519.PublicKey, error) {
 	}
 
 	return edKey, nil
+}
+
+// 获取默认字典路径
+func (j *JwtCrackController) GetDefaultDictPath() string {
+	appPath := j.getAppPath()
+	defaultDictPath := filepath.Join(appPath, "tools", "dict", "jwtdict.txt")
+
+	// 检查文件是否存在
+	if _, err := os.Stat(defaultDictPath); os.IsNotExist(err) {
+		// 如果文件不存在，创建目录和默认字典文件
+		configDir := filepath.Dir(defaultDictPath)
+		if err := os.MkdirAll(configDir, 0755); err != nil {
+			return ""
+		}
+
+		// 创建默认字典文件，包含一些常见密钥
+		defaultDictContent := `secret
+key
+password
+123456
+admin
+token
+jwt
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+0123456789
+supersecret
+verysecret
+muchsecret
+wowsecret
+suchsecret`
+
+		if err := os.WriteFile(defaultDictPath, []byte(defaultDictContent), 0644); err != nil {
+			return ""
+		}
+	}
+
+	return defaultDictPath
 }

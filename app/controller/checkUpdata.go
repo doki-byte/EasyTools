@@ -17,6 +17,7 @@ type Update struct {
 type GitHubRelease struct {
 	TagName string `json:"tag_name"`
 	HTMLURL string `json:"html_url"`
+	Body    string `json:"body"` // 添加更新内容字段
 }
 
 type CheckResult struct {
@@ -32,7 +33,7 @@ func CheckVersion() *Update {
 func (u *Update) GetLatestRelease() (*CheckResult, error) {
 	owner := "doki-byte"
 	repo := "EasyTools"
-	currentVersion := "v1.9.2" // 请确保与前端保持一致
+	currentVersion := "v1.9.3" // 请确保与前端保持一致
 
 	latest, err := CheckLatestRelease(owner, repo)
 	if err != nil {
@@ -73,6 +74,7 @@ func CheckLatestRelease(owner, repo string) (*GitHubRelease, error) {
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -80,11 +82,15 @@ func CheckLatestRelease(owner, repo string) (*GitHubRelease, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GitHub API 返回错误状态码: %d", resp.StatusCode)
+	}
+
 	var release GitHubRelease
 	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
 		return nil, fmt.Errorf("解析响应失败: %s", err)
 	}
 
-	fmt.Println("最新版本信息:", release)
+	fmt.Printf("最新版本信息: %s - %s\n", release.TagName, release.HTMLURL)
 	return &release, nil
 }

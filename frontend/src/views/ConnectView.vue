@@ -1,10 +1,13 @@
 <template>
   <el-container class="container">
     <!-- 标签栏 -->
-    <el-tabs v-model="activeTab" class="tabs">
-      <el-tab-pane label="SSH" name="ssh" />
-      <el-tab-pane label="FTP" name="ftp" />
-      <el-tab-pane label="Redis" name="redis" />
+    <el-tabs v-model="activeTab" class="tabs" :key="tabsKey">
+      <el-tab-pane
+          v-for="tab in visibleTabs"
+          :key="tab.name"
+          :label="tab.title"
+          :name="tab.name"
+      />
     </el-tabs>
 
     <!-- 内容区域 -->
@@ -84,10 +87,12 @@
                   v-model="showNewFolderDialog"
               >
                 <el-input v-model="newFolderName" placeholder="请输入文件夹名称" />
-                <span slot="footer" class="dialog-footer">
-                  <el-button @click="showNewFolderDialog = false">取 消</el-button>
-                  <el-button type="primary" @click="createFolder">确 认</el-button>
-                </span>
+                <div style="padding: 10px 0">
+                      <span slot="footer" class="dialog-footer">
+                        <el-button @click="showNewFolderDialog = false">取 消</el-button>
+                        <el-button type="primary" @click="createFolder">确 认</el-button>
+                      </span>
+                </div>
               </el-dialog>
             </div>
           </template>
@@ -150,9 +155,9 @@
       </div>
 
       <!-- redis -->
-      <div v-if="activeTab === 'redis'" class="tab-content">
-        <el-row>
-          <el-col :span="7" style="height: 100vh; padding: 5px">
+      <div v-if="activeTab === 'redis'" class="tab-content redis-container">
+        <el-row class="redis-row">
+          <el-col :span="7" class="redis-col">
             <div style="margin-bottom: 12px">
               <ConnectionManage title="新建连接" btn-type="primary" @emit-connection-list="flushConnectionList"/>
             </div>
@@ -160,14 +165,14 @@
           </el-col>
 
           <template v-if="isConnected">
-            <el-col :span="5" style="padding: 12px">
+            <el-col :span="5" class="redis-col">
               <Keys
                   :keyDB="keyDB"
                   :keyConnIdentity="keyConnIdentity"
                   @emit-select-key="selectKey"
               />
             </el-col>
-            <el-col :span="12" style="padding: 12px">
+            <el-col :span="12" class="redis-col">
               <KeyValue
                   :keyDB="keyDB"
                   :keyConnIdentity="keyConnIdentity"
@@ -175,7 +180,6 @@
               />
             </el-col>
           </template>
-
         </el-row>
       </div>
     </el-main>
@@ -191,6 +195,7 @@ import KeyValue from "./redis/KeyValue.vue";
 import axios from 'axios'
 import { ElMessage,ElMessageBox } from 'element-plus'
 import { Folder, Document, Upload } from '@element-plus/icons-vue'
+import { loadMenuOrder, moduleTabsConfig } from '@/utils/menuConfig';
 
 export default {
   name: "ConnectView",
@@ -206,7 +211,10 @@ export default {
   },
   data() {
     return {
-      activeTab: "ssh",  // 默认选中的 Tab
+      activeTab: "", // 初始为空，等配置加载后设置
+      moduleTabs: [], // 模块标签页配置
+      tabsKey: Date.now(),
+
       flushFlag: true,
       keyDB: null,
       keyConnIdentity: null,
@@ -244,12 +252,42 @@ export default {
     isConnected() {
       return this.keyConnIdentity !== null;
     },
+    // 计算可见的标签页 - 模仿 menu.vue 的实现
+    visibleTabs() {
+      if (!this.moduleTabs || this.moduleTabs.length === 0) {
+        return [];
+      }
+
+      // 先过滤可见的，再排序
+      const visible = this.moduleTabs.filter(tab => tab.visible !== false);
+      return visible.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
   },
-  mounted() {
-    // 禁用右键菜单
-    document.addEventListener('contextmenu', (event) => {
-      event.preventDefault();
-    });
+
+  watch: {
+    // 监听 visibleTabs 变化，确保 activeTab 始终有效
+    visibleTabs: {
+      handler(newTabs) {
+        if (newTabs.length > 0 && this.configLoaded) {
+          this.ensureActiveTabValid();
+        }
+      },
+      immediate: false
+    },
+
+    activeSheet() {
+      this.paginatedData = this.getActiveSheetData(); // 更新分页数据
+      this.currentPage = 1; // 每次切换表格时重置为第一页
+    }
+  },
+  async mounted() {
+    // 加载标签页配置
+    await this.loadTabsConfig();
+    this.configLoaded = true;
+
+    // 监听菜单更新事件
+    window.addEventListener('menu-order-updated', this.handleMenuOrderUpdated);
+
     // 只有第一次打开才弹窗：可以根据需要改成持久化判断（如 localStorage）
     ElMessageBox.confirm(
         '温馨提示，该功能还存在 bug，在您切换页面之后，无法保存已加载的编码选项，是否在浏览器中打开网页呢？',
@@ -273,13 +311,122 @@ export default {
           // 本地 iframe 会如常加载
         });
   },
-  // beforeUnmount() {
-  //   // 在组件卸载时移除事件监听器，避免潜在的内存泄漏
-  //   document.removeEventListener('contextmenu', (event) => {
-  //     event.preventDefault();
-  //   });
-  // },
+
+  beforeUnmount() {
+    // 在组件卸载时移除事件监听器
+    window.removeEventListener('menu-order-updated', this.handleMenuOrderUpdated);
+  },
+
   methods: {
+    // 处理菜单顺序更新事件
+    async handleMenuOrderUpdated(event) {
+      // console.log('收到菜单配置更新事件:', event.detail);
+
+      // 重新加载标签页配置
+      await this.loadTabsConfig();
+
+      // 强制重新渲染 el-tabs
+      this.forceTabsRerender();
+    },
+
+    // 强制重新渲染 el-tabs 组件
+    forceTabsRerender() {
+      // 方法1: 使用 key 强制重新渲染
+      this.tabsKey = Date.now();
+
+      // 方法2: 临时改变 activeTab 再改回来
+      const currentActiveTab = this.activeTab;
+      this.activeTab = '';
+
+      this.$nextTick(() => {
+        this.activeTab = currentActiveTab;
+      });
+    },
+
+    // 加载标签页配置
+    async loadTabsConfig() {
+      try {
+        const savedData = await loadMenuOrder();
+        // console.log('加载的标签页数据:', savedData);
+
+        const savedTabsOrder = savedData.tabs || {};
+        const connectTabs = savedTabsOrder.connect || [];
+
+        // 获取默认配置
+        const defaultTabs = moduleTabsConfig.connect || [];
+
+        // 创建标签页映射
+        const tabMap = {};
+        defaultTabs.forEach(tab => {
+          tabMap[tab.name] = {
+            ...tab,
+            order: tab.defaultOrder,
+            visible: tab.visible
+          };
+        });
+
+        // 应用保存的配置
+        connectTabs.forEach(savedTab => {
+          if (tabMap[savedTab.name]) {
+            tabMap[savedTab.name].order = savedTab.order;
+            tabMap[savedTab.name].visible = savedTab.visible;
+          }
+        });
+
+        // 转换为数组并排序
+        this.moduleTabs = Object.values(tabMap)
+            .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        console.log('处理后的标签页:', this.moduleTabs);
+
+        // 设置默认激活的标签页
+        this.setDefaultActiveTab();
+
+      } catch (error) {
+        console.error('加载标签页配置失败:', error);
+        this.setDefaultTabs();
+      }
+    },
+
+    // 确保当前激活的标签页有效
+    ensureActiveTabValid() {
+      const visibleTabs = this.visibleTabs;
+      if (visibleTabs.length === 0) {
+        this.activeTab = '';
+        return;
+      }
+
+      // 检查当前激活的标签页是否在可见标签页中
+      const currentTabExists = visibleTabs.some(tab => tab.name === this.activeTab);
+      if (!currentTabExists) {
+        // 如果当前激活标签不存在，设置为第一个可见标签
+        this.activeTab = visibleTabs[0].name;
+      }
+    },
+
+    setDefaultActiveTab() {
+      const visibleTabs = this.visibleTabs;
+      if (visibleTabs.length > 0) {
+        // 如果当前没有激活标签或者当前激活标签不可见，则设置为第一个可见标签
+        if (!this.activeTab || !visibleTabs.some(tab => tab.name === this.activeTab)) {
+          this.activeTab = visibleTabs[0].name;
+        }
+      } else {
+        // 如果没有可见标签页，设置一个默认值
+        this.activeTab = '';
+      }
+    },
+
+    setDefaultTabs() {
+      // 直接使用默认配置
+      this.moduleTabs = moduleTabsConfig.connect.map(tab => ({
+        ...tab,
+        order: tab.defaultOrder
+      }));
+      this.setDefaultActiveTab();
+    },
+
+    // 正常业务开始
     flushConnectionList() {
       this.flushFlag = !this.flushFlag;
     },
@@ -338,26 +485,25 @@ export default {
     },
     async FtpDownloadFile(name) {
       this.downloadingFile = name;
-      this.downloadProgress = 0;
       try {
+        // 1. 先获取下载链接
         const res = await axios.post(
-            'http://127.0.0.1:52869/api/ftp/download',
-            { ...this.ftpConfig, path: `${this.currentPath}/${name}` },
-            { responseType: 'blob', onDownloadProgress: e => {
-                this.downloadProgress = Math.floor(e.loaded / e.total * 100);
-              }}
+            'http://127.0.0.1:52869/api/ftp/generate-download-url',
+            { ...this.ftpConfig, path: `${this.currentPath}/${name}` }
         );
-        const url = URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a'); link.href = url; link.download = name;
-        document.body.appendChild(link); link.click(); link.remove();
-        ElMessage.success('下载完成');
+
+        // 2. 在浏览器中打开下载链接
+        const downloadUrl = res.data.downloadUrl;
+        BrowserOpenURL(downloadUrl);
+
+        ElMessage.success('已在浏览器中开始下载');
       } catch (err) {
         ElMessage.error('下载失败: ' + err.message);
       } finally {
         this.downloadingFile = '';
-        this.downloadProgress = 0;
       }
     },
+    
     // 文件选中后触发
     onFileSelected(event) {
       const file = event.target.files[0];
@@ -443,7 +589,6 @@ export default {
 .container {
   height: 100vh;
   display: flex;
-
   flex-direction: column;
   background-color: #f8f9fb;
 }
@@ -453,45 +598,25 @@ export default {
   background-color: #ffffff;
   box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
   margin-bottom: 5px;
-  /* border-bottom: 2px solid #ebeef5; */
   padding-left: 10px;
-  /* 增加左边距 */
   border-radius: 10px 10px 10px 10px;
 }
 
-/*   顶部样式 注释  */
-/* :deep(.el-tabs__item) { */
-/*   font-weight: 700; */
-  /* 加粗字体 */
-/*   font-size: 16px; */
-  /* 设置字体大小 */
-/*   transition: all 0.3s; */
-/* } */
-
 /* iframe 容器样式 */
 .iframe-container {
-  /* margin: 0 auto; */
   max-width: 100%;
-  /* 控制 iframe 的最大宽度 */
   overflow: hidden;
   border-radius: 8px;
-  /* 圆角处理 */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  /* 增加阴影效果 */
 }
 
 /* iframe 样式 */
 .iframe-container iframe {
   width: 100%;
-  /* 保持 iframe 宽度填充父容器 */
   height: 90vh;
-  /* 高度占视口的 98% */
   border: none;
-  /* 去掉默认边框 */
   border-radius: 8px;
-  /* 与父容器一致的圆角 */
 }
-
 
 /* FTP 样式 */
 .connection-card {
@@ -527,5 +652,55 @@ export default {
   &:hover {
     color: var(--el-color-primary);
   }
+}
+
+/* Redis 容器样式 */
+.tab-content.redis-container {
+  height: calc(100vh - 75px);
+  overflow: hidden;
+}
+
+.redis-row {
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.redis-col {
+  height: 100%;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 连接列表列的特殊处理 */
+.redis-col:nth-child(1) {
+  flex: 0 0 29.1667%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 其他列 */
+.redis-col:nth-child(2) {
+  flex: 0 0 20.8333%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.redis-col:nth-child(3) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 确保 ConnectionList 组件填满其容器 */
+:deep(.connection-main) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 </style>

@@ -2,6 +2,7 @@
   <div class="id-generator" @contextmenu.prevent>
     <header class="header">
       <h1>信息生成</h1>
+      <span style="color: yellow">以下信息均为随机生成,请仔细甄别。</span>
     </header>
 
     <main class="main-content">
@@ -122,7 +123,7 @@
                 <!-- 出生日期：支持选择器或手动输入 -->
                 <el-form-item label="出生日期">
                   <div style="display:flex;gap:8px;align-items:center;">
-                    <el-radio-group v-model="formID.birthdayMode" size="mini" style="margin-right: 8px;">
+                    <el-radio-group v-model="formID.birthdayMode" size="small" style="margin-right: 8px;">
                       <el-radio-button label="picker">选择</el-radio-button>
                       <el-radio-button label="manual">手动输入</el-radio-button>
                     </el-radio-group>

@@ -4,7 +4,7 @@ import (
 	"EasyTools/app/connect/redis"
 	hotkey2 "EasyTools/app/hotkey"
 	"EasyTools/app/model"
-	proxy "EasyTools/app/proxy/client"
+	"EasyTools/app/proxy/client"
 	"EasyTools/app/restmate"
 	"context"
 	"embed"
@@ -44,13 +44,17 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 	// 启动 Wails 服务
 	err := wails.Run(&options.App{
 		Title:  "EasyTools：一款实用的渗透测试工具箱 ",
-		Width:  1200,
-		Height: 800,
+		Width:  1220,
+		Height: 850,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		Frameless:        false,
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
+		OnBeforeClose: func(ctx context.Context) (prevent bool) {
+			runtime.EventsEmit(ctx, "app-exit")
+			return true
+		},
 		OnStartup: func(ctx context.Context) {
 			// 设置 context 对象
 			system.setCtx(ctx)
@@ -74,11 +78,11 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 			server.start(port)
 			if runtime2.GOOS == "windows" {
 				// 优先初始化数据库表结构
-				server.schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{})
+				server.schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{}, &model.WechatConfig{}, &model.MiniAppInfo{}, &model.VersionTask{})
 				// 异步执行文件释放（防止阻塞主流程）
 				go server.initFile().initMianSha()
 			} else {
-				server.schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{})
+				server.schema(&model.User{}, &model.Sites{}, &model.Tools{}, &model.Password_data{}, &model.Google_query{}, &model.Antivirus_list{}, &model.WechatConfig{}, &model.MiniAppInfo{}, &model.VersionTask{})
 				go server.initFile()
 			}
 			// 启动监控协程
@@ -97,7 +101,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 						memTotal := system.GetMemUsageTotal() // 实现获取总内存使用的方法
 
 						// 格式化标题
-						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.9.2            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
+						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.9.3            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
 							cpuUsage, memSelf, memTotal)
 
 						// 更新窗口标题
@@ -112,6 +116,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 			WebviewIsTransparent:              false,
 			WindowIsTranslucent:               false,
 			DisableFramelessWindowDecorations: true,
+			Theme:                             windows.Light,
 		},
 		Mac: &mac.Options{
 			TitleBar: mac.TitleBarDefault(),

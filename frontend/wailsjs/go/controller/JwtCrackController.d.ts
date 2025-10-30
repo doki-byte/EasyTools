@@ -9,3 +9,5 @@ export function ChooseJwtFile():Promise<string>;
 export function DecodeJWTWithAlg(arg1:string,arg2:string,arg3:string):Promise<controller.JwtResult>;
 
 export function EncodeJWTWithAlg(arg1:string,arg2:string,arg3:Record<string, any>):Promise<controller.JwtResult>;
+
+export function GetDefaultDictPath():Promise<string>;

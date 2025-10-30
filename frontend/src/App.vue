@@ -12,6 +12,46 @@
         </keep-alive>
       </router-view>
     </div>
+
+    <!-- 毛玻璃效果退出确认弹框 -->
+    <a-modal
+        v-model:visible="exitModalVisible"
+        :footer="null"
+        :closable="false"
+        :maskClosable="false"
+        width="320px"
+        class="glass-exit-modal"
+        :body-style="{ padding: '0' }"
+    >
+      <div class="glass-dialog">
+        <div class="glass-header">
+          <div class="app-icon">
+            <!-- 这里可以放您的应用图标 -->
+            <div><img style="width: 50px; height: 50px; " src="/assets/system/appicon.png" alt=""/></div>
+          </div>
+          <h3 class="app-name">EasyTools😘</h3>
+        </div>
+
+        <div class="glass-content">
+          <p class="question">确定要退出吗？🙃( ´･ω･)ﾉ(._.`)摸摸头</p>
+        </div>
+
+        <div class="glass-actions">
+          <a-button
+              class="glass-cancel"
+              @click="cancelExit"
+          >
+            再想想
+          </a-button>
+          <a-button
+              class="glass-confirm"
+              @click="confirmExit"
+          >
+            退出
+          </a-button>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -20,8 +60,7 @@ import Menu from './components/Menu.vue'
 import { globalHotkeyManager } from '@/utils/globalHotkey';
 import { ToggleShowHide, SetHotkey } from "../wailsjs/go/hotkey/HotKey";
 import { EventsOn, EventsOff } from "../wailsjs/runtime";
-import {GetOs} from "../wailsjs/go/controller/System";
-import {getToken} from "@/utils/token";
+import { GetOs, ExitApp } from "../wailsjs/go/controller/System";
 
 export default {
   name: 'App',
@@ -46,7 +85,8 @@ export default {
       ],
       hotkeyReady: false,
       hotkeyReadyTimeout: null,
-      OS:''
+      OS: '',
+      exitModalVisible: false // 控制退出确认弹框显示
     }
   },
   async created() {
@@ -77,9 +117,11 @@ export default {
       // 设置热键到后端
       await this.setHotkeyToBackend();
     }
+
+    // 设置窗口关闭监听
+    this.setupWindowCloseListener();
   },
   beforeUnmount() {
-    this.OS = GetOs();
     if (this.OS === "windows") {
       // 移除监听器
       globalHotkeyManager.removeListener(this.handleShowHideHotkey);
@@ -97,6 +139,9 @@ export default {
         console.warn('EventsOff not available');
       }
     }
+
+    // 移除窗口关闭事件监听
+    this.removeWindowCloseListener();
   },
   methods: {
     async handleShowHideHotkey() {
@@ -131,6 +176,59 @@ export default {
       clearTimeout(this.hotkeyReadyTimeout);
       const hotkey = globalHotkeyManager.hotkeyConfig.showHide;
       SetHotkey(hotkey).catch(console.error);
+    },
+
+    // 设置窗口关闭监听
+    setupWindowCloseListener() {
+      // 监听键盘 ESC 键
+      window.addEventListener('keydown', this.handleKeydown);
+
+      // 监听 Wails 的退出事件
+      try {
+        EventsOn('app-exit', this.handleAppExit);
+      } catch (error) {
+        console.warn('Wails EventsOn not available for exit events');
+      }
+    },
+
+    // 移除窗口关闭监听
+    removeWindowCloseListener() {
+      window.removeEventListener('keydown', this.handleKeydown);
+
+      try {
+        EventsOff('app-exit', this.handleAppExit);
+      } catch (error) {
+        console.warn('Wails EventsOff not available for exit events');
+      }
+    },
+
+    // 处理键盘事件
+    handleKeydown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        this.exitModalVisible = true;
+      }
+    },
+
+    // 处理 Wails 退出事件
+    handleAppExit() {
+      this.exitModalVisible = true;
+    },
+
+    // 取消退出
+    cancelExit() {
+      this.exitModalVisible = false;
+    },
+
+    // 确认退出
+    confirmExit() {
+      this.exitModalVisible = false;
+      // 调用 Wails 退出函数
+      try {
+        ExitApp();
+      } catch (error) {
+        console.error('Exit function not available:', error);
+      }
     }
   },
   computed: {
@@ -174,5 +272,113 @@ body {
     overflow: auto;
     flex: 1;
   }
+}
+
+/* 毛玻璃效果弹框样式 */
+.glass-dialog {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-header {
+  padding: 24px 24px 16px;
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.app-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+.app-name {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.glass-content {
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.question {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.sub-text {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.glass-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px 24px;
+}
+
+.glass-cancel {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  background: transparent;
+  height: 36px;
+}
+
+.glass-confirm {
+  flex: 1;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border: none;
+  color: white;
+  height: 36px;
+}
+
+.glass-cancel:hover {
+  border-color: #4096ff;
+  color: #4096ff;
+  background: rgba(64, 150, 255, 0.1);
+}
+
+.glass-confirm:hover {
+  background: linear-gradient(135deg, #ff8787 0%, #f76707 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+</style>
+
+<style>
+/* 全局样式，美化 Modal */
+.glass-exit-modal .ant-modal-content {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 16px;
+}
+
+.glass-exit-modal .ant-modal-body {
+  padding: 0 !important;
+}
+
+.glass-exit-modal .ant-modal-wrap {
+  backdrop-filter: blur(4px);
+}
+
+.glass-exit-modal .ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.3);
 }
 </style>

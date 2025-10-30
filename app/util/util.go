@@ -3,6 +3,7 @@
 package util
 
 import (
+	extractor "EasyTools/app/embed"
 	"fmt"
 	"log"
 	"os"
@@ -13,10 +14,6 @@ import (
 	"strings"
 	"time"
 
-	cyberchef "EasyTools/app/embedCyberChef"
-	"EasyTools/app/note"
-	restmate "EasyTools/app/restmate/embedRestmate"
-	"EasyTools/app/unwxapp"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -37,76 +34,26 @@ func (u *Util) Db() *gorm.DB {
 	return db
 }
 
-// 初始化免杀模块
-func (u *Util) InitMianSha() *Util {
-	_ = u.PathExist(fmt.Sprintf("%s/icon", u.GetAppPath()))
-	_ = u.PathExist(fmt.Sprintf("%s/tools", u.GetAppPath()))
-	_ = u.PathExist(fmt.Sprintf("%s/file", u.GetAppPath()))
-
+func (u *Util) InitFile() *Util {
+	baseDir := extractor.GetExtractor().GetAppBaseDir()
+	_ = u.PathExist(filepath.Join(baseDir, "icon"))
+	_ = u.PathExist(filepath.Join(baseDir, "tools"))
+	_ = u.PathExist(filepath.Join(baseDir, "file"))
 	return u
 }
 
-func (u *Util) InitFile() *Util {
-	_ = u.PathExist(fmt.Sprintf("%s/icon", u.GetAppPath()))
-	_ = u.PathExist(fmt.Sprintf("%s/tools", u.GetAppPath()))
-	_ = u.PathExist(fmt.Sprintf("%s/file", u.GetAppPath()))
+// 初始化免杀模块
+func (u *Util) InitMianSha() *Util {
+	// 先初始化目录结构
+	u.InitFile()
 
-	// 定义目标解压目录
-	targetNoteDir := filepath.Join(u.GetAppPath(), "notes")
-	if _, err := os.Stat(targetNoteDir); os.IsNotExist(err) {
-		// 如果目标目录不存在，执行资源解压
-		fmt.Println("目标文件夹不存在，正在解压资源...")
-		err := note.ExtractNoteFile() // 调用解压逻辑
-		if err != nil {
-			log.Printf("notes解压资源失败: %w", err)
-		}
-		fmt.Println("notes资源解压完成")
-	} else {
-		// 如果目标目录已存在
-		fmt.Println("notes资源文件夹已存在，跳过解压。")
-	}
+	// 初始化解压器配置
+	extractor.InitExtractor()
 
-	targetUnwxappDir := filepath.Join(u.GetAppPath(), "tools", "Unwxapp")
-	if _, err := os.Stat(targetUnwxappDir); os.IsNotExist(err) {
-		// 如果目标目录不存在，执行资源解压
-		fmt.Println("目标文件夹不存在，正在解压资源...")
-		err := unwxapp.ExtractAllResources() // 调用解压逻辑
-		if err != nil {
-			log.Printf("Unwxapp解压资源失败: %w", err)
-		}
-		fmt.Println("Unwxapp资源解压完成")
-	} else {
-		// 如果目标目录已存在
-		fmt.Println("Unwxapp资源文件夹已存在，跳过解压。")
+	// 解压所有资源
+	if err := extractor.GetExtractor().ExtractAll(); err != nil {
+		log.Printf("资源解压失败: %v", err)
 	}
-
-	targetCyberChefDir := filepath.Join(u.GetAppPath(), "tools", "CyberChef")
-	if _, err := os.Stat(targetCyberChefDir); os.IsNotExist(err) {
-		// 如果目标目录不存在，执行资源解压
-		fmt.Println("目标文件夹不存在，正在解压资源...")
-		err := cyberchef.ExtractAllResources() // 调用解压逻辑
-		if err != nil {
-			log.Printf("CyberChef解压资源失败: %w", err)
-		}
-		fmt.Println("CyberChef资源解压完成")
-	} else {
-		// 如果目标目录已存在
-		fmt.Println("CyberChef资源文件夹已存在，跳过解压。")
-	}
-	targetRestMateDir := filepath.Join(u.GetAppPath(), "tools", "restmate")
-	if _, err := os.Stat(targetRestMateDir); os.IsNotExist(err) {
-		// 如果目标目录不存在，执行资源解压
-		fmt.Println("目标文件夹不存在，正在解压资源...")
-		err := restmate.ExtractAllResources() // 调用解压逻辑
-		if err != nil {
-			log.Printf("restmate解压资源失败: %w", err)
-		}
-		fmt.Println("restmate资源解压完成")
-	} else {
-		// 如果目标目录已存在
-		fmt.Println("restmate资源文件夹已存在，跳过解压。")
-	}
-	return u
 
 	return u
 }

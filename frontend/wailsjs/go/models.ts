@@ -52,6 +52,7 @@ export namespace controller {
 	export class GitHubRelease {
 	    tag_name: string;
 	    html_url: string;
+	    body: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GitHubRelease(source);
@@ -61,6 +62,7 @@ export namespace controller {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.tag_name = source["tag_name"];
 	        this.html_url = source["html_url"];
+	        this.body = source["body"];
 	    }
 	}
 	export class CheckResult {
@@ -139,6 +141,110 @@ export namespace controller {
 		}
 	}
 	
+	export class VersionTaskStatus {
+	    Number: string;
+	    DecompileStatus: string;
+	    MatchStatus: string;
+	    Message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VersionTaskStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Number = source["Number"];
+	        this.DecompileStatus = source["DecompileStatus"];
+	        this.MatchStatus = source["MatchStatus"];
+	        this.Message = source["Message"];
+	    }
+	}
+	export class MiniAppInfo {
+	    id: number;
+	    app_id: string;
+	    nickname: string;
+	    username: string;
+	    description: string;
+	    avatar: string;
+	    uses_count: string;
+	    principal_name: string;
+	    // Go type: time
+	    created_at: any;
+	    // Go type: time
+	    updated_at: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new MiniAppInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.app_id = source["app_id"];
+	        this.nickname = source["nickname"];
+	        this.username = source["username"];
+	        this.description = source["description"];
+	        this.avatar = source["avatar"];
+	        this.uses_count = source["uses_count"];
+	        this.principal_name = source["principal_name"];
+	        this.created_at = this.convertValues(source["created_at"], null);
+	        this.updated_at = this.convertValues(source["updated_at"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class InfoToFront {
+	    AppID: string;
+	    UpdateDate: string;
+	    Info?: MiniAppInfo;
+	    Versions: VersionTaskStatus[];
+	
+	    static createFrom(source: any = {}) {
+	        return new InfoToFront(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.AppID = source["AppID"];
+	        this.UpdateDate = source["UpdateDate"];
+	        this.Info = this.convertValues(source["Info"], MiniAppInfo);
+	        this.Versions = this.convertValues(source["Versions"], VersionTaskStatus);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class JwtResult {
 	    jwt_token: string;
 	    header: Record<string, any>;
@@ -163,6 +269,7 @@ export namespace controller {
 	        this.error = source["error"];
 	    }
 	}
+	
 	export class PasswordData {
 	    id: number;
 	    name: string;
@@ -678,23 +785,6 @@ export namespace restmate {
 		    }
 		    return a;
 		}
-	}
-
-}
-
-export namespace struct {} {
-	
-	export class  {
-	
-	
-	    static createFrom(source: any = {}) {
-	        return new (source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	
-	    }
 	}
 
 }
