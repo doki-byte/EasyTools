@@ -1039,7 +1039,28 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 	}
 	args = append(args, "-f") // 启用格式化
 
-	cmd := exec.Command("node", args...)
+	nodePath, err := exec.LookPath("node")
+	if err != nil {
+		// 方法2: 使用常见路径
+		possiblePaths := []string{
+			"/usr/local/bin/node",
+			"/opt/homebrew/bin/node", // Apple Silicon Homebrew路径
+			"/usr/bin/node",
+		}
+
+		for _, path := range possiblePaths {
+			if _, err := os.Stat(path); err == nil {
+				nodePath = path
+				break
+			}
+		}
+
+		if nodePath == "" {
+			return nil, fmt.Errorf("无法找到node可执行文件")
+		}
+	}
+
+	cmd := exec.Command(nodePath, args...)
 	cmd.Dir = unwxappDir
 
 	//log.Printf("执行命令: node %s", strings.Join(args, " "))
