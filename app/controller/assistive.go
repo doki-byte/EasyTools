@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"fmt"
 	"strings"
 )
 
 // Antivirus 控制器
-type InfoSearch struct {
-	Base
+type Assistive struct {
+	system.Base
 }
 
 // AntivirusItem 杀软表结构体
@@ -51,13 +52,13 @@ func (GoogleQuery) TableName() string {
 }
 
 // NewAntivirus 创建新的 Antivirus 控制器
-func NewInfoSearch() *InfoSearch {
-	return &InfoSearch{}
+func NewAssistive() *Assistive {
+	return &Assistive{}
 }
 
 // QueryAntivirusProcesses 根据用户输入查询杀软进程（去重优化版）
-func (a *InfoSearch) QueryAntivirusProcesses(tasklistOutput string) ([]map[string]string, error) {
-	db := a.db()
+func (a *Assistive) QueryAntivirusProcesses(tasklistOutput string) ([]map[string]string, error) {
+	db := a.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -117,12 +118,12 @@ func (a *InfoSearch) QueryAntivirusProcesses(tasklistOutput string) ([]map[strin
 }
 
 // QueryGoogleQueries 根据域名生成查询语法
-func (a *InfoSearch) QueryGoogleQueries(googleDomain string) ([]map[string]interface{}, error) {
+func (a *Assistive) QueryGoogleQueries(googleDomain string) ([]map[string]interface{}, error) {
 	// 定义返回结果
 	var results []map[string]interface{}
 
 	// 获取数据库连接
-	db := a.db()
+	db := a.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -152,9 +153,9 @@ func (a *InfoSearch) QueryGoogleQueries(googleDomain string) ([]map[string]inter
 }
 
 // QueryPasswords 分页查询全部数据
-func (a *InfoSearch) QueryPasswords(page, pageSize int) ([]PasswordData, int64, error) {
+func (a *Assistive) QueryPasswords(page, pageSize int) ([]PasswordData, int64, error) {
 	// 获取数据库连接
-	db := a.db()
+	db := a.Db()
 	if db == nil {
 		return nil, 0, fmt.Errorf("数据库连接未初始化")
 	}
@@ -177,9 +178,9 @@ func (a *InfoSearch) QueryPasswords(page, pageSize int) ([]PasswordData, int64, 
 }
 
 // QueryPasswordsWithQuery 分页查询带查询条件的数据
-func (a *InfoSearch) QueryPasswordsWithQuery(page, pageSize int, query string) ([]PasswordData, int64, error) {
+func (a *Assistive) QueryPasswordsWithQuery(page, pageSize int, query string) ([]PasswordData, int64, error) {
 	// 获取数据库连接
-	db := a.db()
+	db := a.Db()
 	if db == nil {
 		return nil, 0, fmt.Errorf("数据库连接未初始化")
 	}
@@ -207,7 +208,7 @@ func (a *InfoSearch) QueryPasswordsWithQuery(page, pageSize int, query string) (
 }
 
 // QueryPasswordsAPI 分页查询接口
-func (a *InfoSearch) QueryPasswordsAPI(page, pageSize int, query string) (map[string]interface{}, error) {
+func (a *Assistive) QueryPasswordsAPI(page, pageSize int, query string) (map[string]interface{}, error) {
 	var data []PasswordData
 	var total int64
 	var err error

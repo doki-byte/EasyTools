@@ -6,6 +6,10 @@ export function AddSite(arg1) {
   return window['go']['controller']['Site']['AddSite'](arg1);
 }
 
+export function Db() {
+  return window['go']['controller']['Site']['Db']();
+}
+
 export function DeleteSite(arg1) {
   return window['go']['controller']['Site']['DeleteSite'](arg1);
 }
@@ -22,6 +26,10 @@ export function GetAllSites() {
   return window['go']['controller']['Site']['GetAllSites']();
 }
 
+export function GetAppPath() {
+  return window['go']['controller']['Site']['GetAppPath']();
+}
+
 export function GetCategoryList() {
   return window['go']['controller']['Site']['GetCategoryList']();
 }
@@ -30,8 +38,24 @@ export function GetSearchSites(arg1) {
   return window['go']['controller']['Site']['GetSearchSites'](arg1);
 }
 
+export function InitMianSha() {
+  return window['go']['controller']['Site']['InitMianSha']();
+}
+
+export function Log(arg1) {
+  return window['go']['controller']['Site']['Log'](arg1);
+}
+
 export function MoveCommandToCategory(arg1) {
   return window['go']['controller']['Site']['MoveCommandToCategory'](arg1);
+}
+
+export function Schema(arg1) {
+  return window['go']['controller']['Site']['Schema'](arg1);
+}
+
+export function SetCtx(arg1) {
+  return window['go']['controller']['Site']['SetCtx'](arg1);
 }
 
 export function UpdateCategorySorts(arg1) {

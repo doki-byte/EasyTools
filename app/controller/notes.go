@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
@@ -21,7 +22,7 @@ import (
 )
 
 type Note struct {
-	Base
+	system.Base
 	watcher   *fsnotify.Watcher
 	server    *http.Server
 	notesDir  string
@@ -64,7 +65,7 @@ func NewNote() *Note {
 
 	// 启动监听协程
 	go note.watchFiles()
-	go note.startFileServer(filepath.Join(GetAppBaseDir(), "notes"))
+	go note.startFileServer(filepath.Join(system.GetAppBaseDir(), "notes"))
 
 	return note
 }
@@ -431,7 +432,7 @@ func (n *Note) OpenDirectory() (string, error) {
 		dir = ""
 	}
 
-	result, err := runtime.OpenDirectoryDialog(n.ctx, runtime.OpenDialogOptions{
+	result, err := runtime.OpenDirectoryDialog(n.Ctx, runtime.OpenDialogOptions{
 		Title:            "选择备忘录文件夹",
 		DefaultDirectory: dir,
 	})
@@ -457,7 +458,7 @@ func (n *Note) OpenDirectory() (string, error) {
 
 // GetNotesDir 返回笔记根目录
 func (n *Note) GetNotesDir() (string, error) {
-	baseDir := n.getAppPath()
+	baseDir := n.GetAppPath()
 	notes := filepath.Join(baseDir, "notes")
 	if err := os.MkdirAll(notes, 0755); err != nil {
 		return "", err
@@ -559,14 +560,14 @@ func (n *Note) watchFiles() {
 			}
 
 			// 发送事件到前端
-			if n.ctx != nil {
+			if n.Ctx != nil {
 				fileEvent := FileChangeEvent{
 					Type: changeType,
 					Path: event.Name,
 					Name: filepath.Base(event.Name),
 				}
 				eventData, _ := json.Marshal(fileEvent)
-				runtime.EventsEmit(n.ctx, "fileChange", string(eventData))
+				runtime.EventsEmit(n.Ctx, "fileChange", string(eventData))
 			}
 
 		case err, ok := <-n.watcher.Errors:

@@ -35,22 +35,22 @@ export const iconMap = {
 export const defaultMenu = [
     { name: 'tool', icon: 'Suitcase', title: '工具仓库', defaultOrder: 0, visible: true },
     { name: 'website', icon: 'Link', title: '网址导航', defaultOrder: 1, visible: true },
-    { name: 'infoSearch', icon: 'Connection', title: '信息查询', defaultOrder: 2, visible: true },
-    { name: 'infoDeal', icon: 'Edit', title: '信息处理', defaultOrder: 3, visible: true },
-    { name: 'connect', icon: 'SetUp', title: '简连助手', defaultOrder: 4, visible: true },
-    { name: 'cyberchef', icon: 'WindPower', title: '编码解码', defaultOrder: 5, visible: true },
-    { name: 'randomInfo', icon: 'DataAnalysis', title: '随机生成', defaultOrder: 6, visible: true },
-    { name: 'notes', icon: 'Management', title: '备忘笔记', defaultOrder: 7, visible: true },
-    { name: 'proxy', icon: 'ElementPlus', title: '便携代理', defaultOrder: 8, visible: true },
-    { name: 'fuzz', icon: 'MagicStick', title: '随心Fuzz', defaultOrder: 9, visible: false },
-    { name: 'restmate', icon: 'Mouse', title: '便携发包', defaultOrder: 10, visible: true },
+    { name: 'infoDeal', icon: 'Edit', title: '信息处理', defaultOrder: 2, visible: true },
+    { name: 'connect', icon: 'SetUp', title: '简连助手', defaultOrder: 3, visible: true },
+    { name: 'cyberchef', icon: 'WindPower', title: '编码解码', defaultOrder: 4, visible: true },
+    { name: 'randomInfo', icon: 'DataAnalysis', title: '随机生成', defaultOrder: 5, visible: true },
+    { name: 'notes', icon: 'Management', title: '备忘笔记', defaultOrder: 6, visible: true },
+    { name: 'proxy', icon: 'ElementPlus', title: '便携代理', defaultOrder: 7, visible: true },
+    { name: 'fuzz', icon: 'MagicStick', title: '随心Fuzz', defaultOrder: 8, visible: false },
+    { name: 'restmate', icon: 'Mouse', title: '便携发包', defaultOrder: 9, visible: true },
+    { name: 'assistive', icon: 'Connection', title: '辅助工具', defaultOrder: 10, visible: true },
     { name: 'about', icon: 'Promotion', title: '关于软件', defaultOrder: 11, visible: true },
 ];
 
 // 模块内部标签页配置
 export const moduleTabsConfig = {
-    // 信息查询模块的标签页
-    infoSearch: [
+    // 辅助工具模块的标签页
+    assistive: [
         { name: 'google-syntax', title: 'Google语法', defaultOrder: 0, visible: true },
         { name: 'password-query', title: '默认密码查询', defaultOrder: 1, visible: true },
         { name: 'shell-syntax', title: '反弹Shell', defaultOrder: 2, visible: true },

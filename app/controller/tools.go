@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"EasyTools/app/model"
 	"encoding/base64"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 
 // Tool 系统API
 type Tool struct {
-	Base
+	system.Base
 }
 
 // ToolsItem 工具结构体
@@ -45,7 +46,7 @@ func (ToolsItem) TableName() string {
 
 // 获取分类
 func (s *Tool) GetCategoryList() ([]map[string]interface{}, error) {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -85,7 +86,7 @@ func (s *Tool) GetCategoryList() ([]map[string]interface{}, error) {
 func (s *Tool) GetAllTools() ([]ToolsCategory, error) {
 	var toolsCategories []ToolsCategory
 
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -141,7 +142,7 @@ func (s *Tool) GetSearchTools(name string) ([]ToolsCategory, error) {
 	var categories []ToolsCategory
 
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		// s.log("数据库连接未初始化")
 		return nil, fmt.Errorf("数据库连接未初始化")
@@ -173,7 +174,7 @@ func (s *Tool) GetSearchTools(name string) ([]ToolsCategory, error) {
 			continue
 		}
 
-		s.log(fmt.Sprintf("分类 '%s' 查询到 %d 个工具", categoryName, len(tools)))
+		s.Log(fmt.Sprintf("分类 '%s' 查询到 %d 个工具", categoryName, len(tools)))
 
 		// 添加到返回结构
 		categories = append(categories, ToolsCategory{
@@ -194,7 +195,7 @@ func (s *Tool) GetSearchTools(name string) ([]ToolsCategory, error) {
 // 新增工具
 func (s *Tool) AddTool(tool ToolsItem) (int, error) {
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		// s.log("数据库连接未初始化")
 		return 0, fmt.Errorf("数据库连接未初始化")
@@ -214,7 +215,7 @@ func (s *Tool) AddTool(tool ToolsItem) (int, error) {
 // 修改工具
 func (s *Tool) UpdateTool(id int, updatedTool ToolsItem) error {
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		// s.log("数据库连接未初始化")
 		return fmt.Errorf("数据库连接未初始化")
@@ -233,7 +234,7 @@ func (s *Tool) UpdateTool(id int, updatedTool ToolsItem) error {
 // 删除工具
 func (s *Tool) DeleteTool(id int) error {
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		// s.log("数据库连接未初始化")
 		return fmt.Errorf("数据库连接未初始化")
@@ -251,7 +252,7 @@ func (s *Tool) DeleteTool(id int) error {
 
 // 修改分类名称（将所有属于 oldCategory 的工具改为 newCategory）
 func (s *Tool) UpdateToolCategory(oldCategory, newCategory string) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -266,7 +267,7 @@ func (s *Tool) UpdateToolCategory(oldCategory, newCategory string) error {
 
 // 删除分类及其下所有工具
 func (s *Tool) DeleteToolCategory(category string) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -283,7 +284,7 @@ func (s *Tool) DeleteToolCategory(category string) error {
 func (s *Tool) UpdateCategorySorts(sorts []map[string]interface{}) error {
 	//fmt.Printf("调试信息 - 收到排序请求: %+v\n", sorts) // 添加详细日志
 
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -350,7 +351,7 @@ func (s *Tool) UpdateCategorySorts(sorts []map[string]interface{}) error {
 func (s *Tool) UpdateCommandSorts(sorts []map[string]interface{}) error {
 	//fmt.Printf("[DEBUG] 收到命令排序请求: %+v\n", sorts)
 
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -426,7 +427,7 @@ func GetUint(value interface{}) (uint, error) {
 
 // 在Tool结构体中添加以下方法
 func (s *Tool) MoveCommandToCategory(request map[string]interface{}) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}

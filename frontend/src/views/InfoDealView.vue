@@ -128,25 +128,432 @@
         </div>
       </div>
 
-      <!--oss存储桶遍历-->
+      <!-- OSS存储桶功能部分 -->
       <div v-if="activeTab === 'oss-list'" class="tab-content">
         <div class="oss-content">
+          <!-- 功能选择 -->
           <div class="oss-header-card">
-            <h4>选择 Oss资源桶 文件</h4>
-            <div class="form-group">
-              <el-input v-model="OsslistInput" placeholder="请输入Oss资源桶链接" class="input" />
-              <el-button type="primary" @click="generateOssListQueries">获取数据</el-button>
+            <h4>OSS 存储桶功能</h4>
+            <div class="function-select">
+              <el-radio-group v-model="ossFunction" @change="onOssFunctionChange">
+                <el-radio label="vuln-scan">漏洞扫描</el-radio>
+                <el-radio label="file-list">文件遍历</el-radio>
+                <el-radio label="batch-scan">批量扫描</el-radio>
+              </el-radio-group>
             </div>
           </div>
 
-          <!-- 操作按钮 -->
-          <div class="oss-result-card" v-if="OssListSuccess">
-            <p> 文件保存位置：
-              <span style="color: #4dcd31">{{ OssListSavePath }}</span>
-            </p>
-            <el-button type="success" @click="openXlsxFileDir">
-              打开文件夹
-            </el-button>
+          <!-- 公共URL输入区域 -->
+          <div class="oss-url-section" v-if="ossFunction !== 'batch-scan'">
+            <div class="url-input-card">
+              <div class="url-input-header">
+                <h5>存储桶URL配置</h5>
+                <el-button
+                    v-if="ossFunction === 'vuln-scan'"
+                    @click="autoDetectCloudProvider"
+                    :loading="detecting"
+                    size="small"
+                    type="primary"
+                >
+                  {{ detecting ? '识别中...' : '智能识别' }}
+                </el-button>
+              </div>
+
+              <div class="url-input-group">
+                <el-input
+                    v-model="ossBucketURL"
+                    placeholder="请输入OSS存储桶链接，系统将自动识别云厂商和区域"
+                    class="url-input"
+                    clearable
+                >
+                  <template #append>
+                    <el-button
+                        v-if="ossFunction === 'file-list'"
+                        type="primary"
+                        @click="generateOssListQueries"
+                        :loading="fileListLoading"
+                    >
+                      {{ fileListLoading ? '获取中...' : '获取数据' }}
+                    </el-button>
+                    <el-button
+                        v-else
+                        type="primary"
+                        @click="startVulnScan"
+                        :loading="scanLoading"
+                    >
+                      {{ scanLoading ? '扫描中...' : '开始扫描' }}
+                    </el-button>
+                  </template>
+                </el-input>
+              </div>
+
+              <!-- 识别结果展示 -->
+              <div class="detection-result" v-if="detectionResult.identified && ossFunction === 'vuln-scan'">
+                <el-alert
+                    :title="`已识别为: ${detectionResult.cloudName} | 区域: ${detectionResult.region} | Bucket: ${detectionResult.bucket}`"
+                    type="success"
+                    :closable="false"
+                    show-icon
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 批量扫描功能 -->
+          <div v-if="ossFunction === 'batch-scan'" class="batch-scan-section">
+            <div class="batch-url-input-card">
+              <div class="url-input-header">
+                <h5>批量URL扫描</h5>
+                <div class="batch-actions">
+                  <el-button
+                      @click="clearBatchUrls"
+                      size="small"
+                  >
+                    清空
+                  </el-button>
+                  <el-button
+                      type="primary"
+                      @click="startBatchScan"
+                      :loading="batchScanLoading"
+                      size="small"
+                  >
+                    {{ batchScanLoading ? '批量扫描中...' : '开始批量扫描' }}
+                  </el-button>
+                </div>
+              </div>
+
+              <div class="batch-input-group">
+                <el-input
+                    v-model="batchUrls"
+                    type="textarea"
+                    placeholder="请输入多个OSS存储桶链接，每行一个URL"
+                    :rows="8"
+                    class="batch-textarea"
+                    resize="none"
+                />
+              </div>
+
+              <div class="batch-stats">
+                <span class="stat-item">URL数量: {{ urlCount }}</span>
+                <span class="stat-item">已完成: {{ completedCount }}</span>
+                <span class="stat-item">成功: {{ successCount }}</span>
+                <span class="stat-item">失败: {{ failedCount }}</span>
+              </div>
+
+              <!-- 批量扫描进度 -->
+              <div class="batch-progress" v-if="batchScanLoading">
+                <el-progress
+                    :percentage="batchProgress"
+                    :status="batchProgress === 100 ? 'success' : ''"
+                    :show-text="true"
+                />
+                <p class="progress-text">批量扫描进度: {{ batchProgress }}% ({{ completedCount }}/{{ urlCount }})</p>
+              </div>
+            </div>
+
+            <!-- 批量扫描结果 -->
+            <div class="batch-results" v-if="batchResults.length > 0">
+              <div class="results-header">
+                <h5>批量扫描结果 (共 {{ batchResults.length }} 个URL)</h5>
+                <div class="batch-result-actions">
+                  <el-button type="success" @click="exportBatchResults" size="small" :loading="exportLoading">
+                    {{ exportLoading ? '导出中...' : '导出结果' }}
+                  </el-button>
+                  <el-button @click="clearBatchResults" size="small">
+                    清空结果
+                  </el-button>
+                </div>
+              </div>
+
+              <!-- 添加导出配置对话框 -->
+              <el-dialog
+                  v-model="exportDialogVisible"
+                  title="导出配置"
+                  width="500px"
+                  :close-on-click-modal="false"
+              >
+                <div class="export-config">
+                  <el-form label-width="120px">
+                    <el-form-item label="导出格式">
+                      <el-radio-group v-model="exportConfig.format">
+                        <el-radio label="excel">Excel文件 (.xlsx)</el-radio>
+                        <el-radio label="csv">CSV文件 (.csv)</el-radio>
+                      </el-radio-group>
+                    </el-form-item>
+
+                    <el-form-item label="文件名">
+                      <el-input
+                          v-model="exportConfig.filename"
+                          placeholder="请输入文件名"
+                          clearable
+                      >
+                        <template #append>
+                          <span class="file-extension">.{{ exportConfig.format }}</span>
+                        </template>
+                      </el-input>
+                    </el-form-item>
+
+                    <el-form-item label="包含内容">
+                      <el-checkbox-group v-model="exportConfig.include">
+                        <el-checkbox label="summary">风险摘要</el-checkbox>
+                        <el-checkbox label="details">详细结果</el-checkbox>
+                        <el-checkbox label="failed">失败记录</el-checkbox>
+                      </el-checkbox-group>
+                    </el-form-item>
+
+                    <el-form-item label="时间范围">
+                      <el-date-picker
+                          v-model="exportConfig.dateRange"
+                          type="daterange"
+                          range-separator="至"
+                          start-placeholder="开始日期"
+                          end-placeholder="结束日期"
+                          value-format="YYYY-MM-DD"
+                      />
+                    </el-form-item>
+                  </el-form>
+
+                  <div class="export-preview">
+                    <h5>导出预览 (共 {{ exportDataCount }} 条记录)</h5>
+                    <div class="preview-stats">
+                      <span>成功扫描: {{ exportSuccessCount }} 个URL</span>
+                      <span>风险项: {{ exportRiskCount }} 个</span>
+                      <span>失败扫描: {{ exportFailedCount }} 个</span>
+                    </div>
+                  </div>
+                </div>
+
+                <template #footer>
+                  <el-button @click="exportDialogVisible = false">取消</el-button>
+                  <el-button type="primary" @click="confirmExport" :loading="exportLoading">
+                    确认导出
+                  </el-button>
+                </template>
+              </el-dialog>
+
+              <!-- 批量结果摘要 -->
+              <div class="batch-summary">
+                <div class="summary-card" v-for="(count, level) in batchRiskSummary" :key="level"
+                     :class="['summary-item', getRiskClass(level)]">
+                  <div class="summary-count">{{ count }}</div>
+                  <div class="summary-label">{{ getRiskLabel(level) }}</div>
+                </div>
+              </div>
+
+              <!-- 批量结果列表 -->
+              <div class="batch-results-list">
+                <div v-for="(result, index) in batchResults" :key="index"
+                     class="batch-result-item" :class="getRiskClass(result.highestRisk)">
+                  <div class="batch-result-header">
+                    <div class="result-url">
+                      <span class="url-label">URL:</span>
+                      <span class="url-text" @click="openResultURL(result.url)">{{ result.url }}</span>
+                    </div>
+                    <div class="result-status">
+                      <el-tag :type="getStatusType(result.status)" size="small">
+                        {{ result.status }}
+                      </el-tag>
+                      <span class="result-counts">
+                  风险: {{ result.riskCount }} 项
+                </span>
+                    </div>
+                  </div>
+
+                  <div class="batch-result-details" v-if="result.results && result.results.length > 0">
+                    <div v-for="(item, itemIndex) in result.results.slice(0, 3)" :key="itemIndex"
+                         class="detail-item" :class="getRiskClass(item.risk)">
+                      <span class="risk-badge">{{ getRiskLabel(item.risk) }}</span>
+                      <span class="risk-msg">{{ item.msg }}</span>
+                    </div>
+                    <div v-if="result.results.length > 3" class="more-results">
+                      还有 {{ result.results.length - 3 }} 个风险项...
+                    </div>
+                  </div>
+
+                  <div class="batch-result-details" v-else-if="result.error">
+                    <div class="error-item">
+                      <span class="error-msg">{{ result.error }}</span>
+                    </div>
+                  </div>
+
+                  <div class="result-actions">
+                    <el-button size="small" @click="viewDetailedResult(result)">
+                      查看详情
+                    </el-button>
+                    <el-button size="small" type="primary" @click="openResultURL(result.url)">
+                      打开URL
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 文件遍历功能结果 -->
+          <div v-if="ossFunction === 'file-list'" class="oss-function-section">
+            <div class="oss-result-card" v-if="OssListSuccess">
+              <div class="result-content">
+                <div class="result-info">
+                  <span class="result-label">文件保存位置：</span>
+                  <span class="result-path">{{ OssListSavePath }}</span>
+                </div>
+                <el-button type="success" @click="openXlsxFileDir" class="open-folder-btn">
+                  打开文件夹
+                </el-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 漏洞扫描功能配置 -->
+          <div v-if="ossFunction === 'vuln-scan'" class="oss-function-section">
+            <div class="vuln-scan-config">
+              <!-- 自动填充的基础配置 -->
+              <div class="config-section">
+                <h5>基础配置</h5>
+                <div class="config-grid">
+                  <div class="config-item">
+                    <label>云厂商：</label>
+                    <el-select v-model="scanConfig.cloud" placeholder="自动识别或手动选择" class="config-input">
+                      <el-option label="阿里云" value="aliyun"></el-option>
+                      <el-option label="腾讯云" value="tencent"></el-option>
+                      <el-option label="华为云" value="huawei"></el-option>
+                      <el-option label="AWS" value="aws"></el-option>
+                      <el-option label="谷歌云" value="gcp"></el-option>
+                      <el-option label="Azure" value="azure"></el-option>
+                    </el-select>
+                  </div>
+                  <div class="config-item">
+                    <label>区域：</label>
+                    <el-input v-model="scanConfig.region" placeholder="自动识别区域" class="config-input"></el-input>
+                  </div>
+                  <div class="config-item">
+                    <label>Bucket名称：</label>
+                    <el-input v-model="scanConfig.bucket" placeholder="自动识别存储桶名称" class="config-input"></el-input>
+                  </div>
+                  <div class="config-item" v-if="scanConfig.cloud === 'tencent'">
+                    <label>腾讯云APPID：</label>
+                    <el-input v-model="scanConfig.tencentAppid" placeholder="腾讯云需要APPID" class="config-input"></el-input>
+                  </div>
+                  <div class="config-item" v-if="scanConfig.cloud === 'azure'">
+                    <label>Azure账户名：</label>
+                    <el-input v-model="scanConfig.azureAccount" placeholder="Azure存储账户名" class="config-input"></el-input>
+                  </div>
+                  <div class="config-item">
+                    <label>线程数：</label>
+                    <el-input-number v-model="scanConfig.threads" :min="1" :max="20" class="config-input"></el-input-number>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 扫描选项 - 修改为横向排列 -->
+              <div class="config-section">
+                <h5>扫描选项</h5>
+                <div class="scan-options-horizontal">
+                  <el-checkbox-group v-model="scanConfig.scanOptions">
+                    <div class="scan-options-row">
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_put_upload">PUT上传漏洞</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_post_upload">POST上传漏洞</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_delete_perm">DELETE权限漏洞</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_cors">CORS配置漏洞</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_logs">访问日志泄露</el-checkbox>
+                      </div>
+                    </div>
+                    <div class="scan-options-row">
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_directory_traversal">目录遍历漏洞</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_sensitive_headers">敏感头泄露</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_bucket_policy">Bucket策略漏洞</el-checkbox>
+                      </div>
+                      <div class="scan-option-item">
+                        <el-checkbox label="scan_kms_encryption">KMS加密配置</el-checkbox>
+                      </div>
+                    </div>
+                  </el-checkbox-group>
+                </div>
+              </div>
+
+              <!-- 操作按钮 -->
+              <div class="action-buttons">
+                <el-button type="primary" @click="startVulnScan" :loading="scanLoading" class="scan-btn">
+                  {{ scanLoading ? '扫描中...' : '开始扫描' }}
+                </el-button>
+                <el-button @click="resetScanConfig" class="reset-btn">重置配置</el-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 漏洞扫描功能配置 -->
+          <div v-if="ossFunction === 'vuln-scan'" class="oss-function-section">
+
+            <!-- 扫描结果显示部分 -->
+            <div class="scan-results-section" v-if="scanResults && scanResults.length > 0">
+              <div class="results-header">
+                <h5>扫描结果 (共 {{ scanResults.length }} 项) &nbsp;
+                    <el-button type="success" @click="exportSingleResult" size="small">
+                      导出结果
+                    </el-button>
+                </h5>
+                <!-- 风险摘要 -->
+                <div class="results-summary">
+                  <div class="summary-item" v-for="(count, level) in riskSummary" :key="level"
+                       :class="['risk-item', getRiskClass(level)]">
+                    <span class="summary-label">{{ getRiskLabel(level) }}:</span>
+                    <span class="summary-count">{{ count }} 项</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 详细结果列表 -->
+              <div class="results-list">
+                <div v-for="(result, index) in scanResults" :key="index"
+                     :class="['result-item', getRiskClass(result.risk)]">
+                  <div class="result-header">
+                    <div class="risk-info">
+                      <span class="risk-level">{{ getRiskLabel(result.risk) }}</span>
+                      <span class="risk-code">{{ result.risk }}</span>
+                    </div>
+                    <span class="result-time">{{ formatTime(result.timestamp) }}</span>
+                  </div>
+                  <div class="risk-msg">{{ result.msg }}</div>
+                  <div class="risk-url" v-if="result.url">
+                    <span class="url-label">URL: </span>
+                    <span class="url-link" @click="openResultURL(result.url)">{{ result.url }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 无结果提示 -->
+            <div class="no-results" v-else-if="scanCompleted && scanResults.length === 0">
+              <el-alert
+                  title="未发现风险项"
+                  type="success"
+                  description="扫描完成，未发现安全风险。"
+                  show-icon
+                  :closable="false"
+              />
+            </div>
+
+            <!-- 扫描中状态 -->
+            <div class="scanning" v-else-if="scanLoading">
+              <div class="scan-progress">
+                <el-progress :percentage="scanProgress" :status="scanProgress === 100 ? 'success' : ''" />
+                <p class="progress-text">正在扫描中... {{ scanProgress }}%</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -741,26 +1148,55 @@
 </template>
 
 <script>
-import {DealOssList, FscanResultDeal, GetExcelContent, UploadFile} from "../../wailsjs/go/controller/InfoDeal";
-import {AutoDecompile, ClearApplet, ClearDecompiled, Decompile, ExtractSensitiveInfo, GetAllMiniApp, GetAppletPath, GetMatchedString, GetWechatRules, InitCheck, SaveWechatRules, SelectDirectory, SetAppletPath} from "../../wailsjs/go/controller/UnWxapp";
+import {
+  DealOssList,
+  DetectCloudProvider,
+  FscanResultDeal,
+  GetExcelContent,
+  StartVulnScan,
+  UploadFile
+} from "../../wailsjs/go/controller/InfoDeal";
+import {
+  AutoDecompile,
+  ClearApplet,
+  ClearDecompiled,
+  Decompile,
+  ExtractSensitiveInfo,
+  GetAllMiniApp,
+  GetAppletPath,
+  GetMatchedString,
+  GetWechatRules,
+  InitCheck,
+  SaveWechatRules,
+  SelectDirectory,
+  SetAppletPath
+} from "../../wailsjs/go/unwxapp/UnWxapp";
 import {ElMessage, ElMessageBox} from "element-plus";
 import * as XLSX from "xlsx";
-import {GetConfigDir, OpenPath} from "../../wailsjs/go/controller/System";
-import {BruteForceJWT, ChooseJwtFile, DecodeJWTWithAlg, EncodeJWTWithAlg, GetDefaultDictPath} from "../../wailsjs/go/controller/JwtCrackController";
-import {BrowserOpenURL} from "../../wailsjs/runtime";
-import { loadMenuOrder, moduleTabsConfig } from '@/utils/menuConfig';
+import {GetConfigDir, GetOs, OpenPath} from "../../wailsjs/go/system/System";
 import {
-  CopyDocument,
-  Delete,
+  BruteForceJWT,
+  ChooseJwtFile,
+  DecodeJWTWithAlg,
+  EncodeJWTWithAlg,
+  GetDefaultDictPath
+} from "../../wailsjs/go/controller/JwtCrackController";
+import {BrowserOpenURL} from "../../wailsjs/runtime";
+import {loadMenuOrder, moduleTabsConfig} from '@/utils/menuConfig';
+import {
   Close,
   Collection,
+  CopyDocument,
+  Delete,
+  Document,
+  Edit,
+  Files,
+  FolderOpened,
   MagicStick,
   QuestionFilled,
   Refresh,
   Search,
-  Files,
-  FolderOpened,
-  Unlock, Edit, Document
+  Unlock
 } from '@element-plus/icons-vue'
 
 
@@ -802,9 +1238,77 @@ export default {
       pageSize: 10, // 每页显示的行数
       paginatedData: [], // 分页后的数据
 
-      OsslistInput: "", //oss资源桶路径
-      OssListSuccess: false, //oss处理结果
-      OssListSavePath: "", //oss处理结果文件保存位置
+      // OSS存储桶相关数据
+      ossFunction: 'vuln-scan',
+      ossBucketURL: '', // 共用的URL输入
+      fileListLoading: false, // 文件遍历加载状态
+
+      // 文件遍历结果
+      OssListSuccess: false,
+      OssListSavePath: "",
+
+      // 漏洞扫描相关
+      scanLoading: false,
+      scanCompleted: false,
+      scanProgress: 0,
+      scanResults: [],
+      detecting: false,
+      detectionResult: {
+        identified: false,
+        cloudName: '',
+        region: '',
+        bucket: '',
+        cloudProvider: ''
+      },
+      scanConfig: {
+        cloud: '',
+        region: '',
+        bucket: '',
+        tencentAppid: '',
+        azureAccount: '',
+        threads: 5,
+        scanOptions: [
+          'scan_put_upload',
+          'scan_post_upload',
+          'scan_delete_perm',
+          'scan_cors',
+          'scan_logs',
+          'scan_directory_traversal',
+          'scan_sensitive_headers',
+          'scan_bucket_policy',
+          'scan_kms_encryption'
+        ]
+      },
+      // OSS存储桶缓存
+      ossCache: {
+        bucketURL: '',
+        function: 'file-list',
+        scanConfig: null,
+        detectionResult: null
+      },
+      // 批量扫描相关
+      batchUrls: '',
+      batchScanLoading: false,
+      batchProgress: 0,
+      batchResults: [],
+      urlCount: 0,
+      completedCount: 0,
+      successCount: 0,
+      failedCount: 0,
+
+      // 详细结果对话框
+      detailDialogVisible: false,
+      currentDetailResult: null,
+      // 导出相关
+      exportLoading: false,
+      exportDialogVisible: false,
+      exportConfig: {
+        format: 'excel',
+        filename: '',
+        include: ['summary', 'details', 'failed'],
+        dateRange: []
+      },
+
 
       // 小程序反编译配置相关
       appletPath: "",
@@ -857,7 +1361,7 @@ export default {
   },
 
   computed: {
-    // 计算可见的标签页 - 模仿 menu.vue 的实现
+    // 计算可见的标签页
     visibleTabs() {
       if (!this.moduleTabs || this.moduleTabs.length === 0) {
         return [];
@@ -866,6 +1370,85 @@ export default {
       // 先过滤可见的，再排序
       const visible = this.moduleTabs.filter(tab => tab.visible !== false);
       return visible.sort((a, b) => (a.order || 0) - (b.order || 0));
+    },
+
+    // OSS存储桶
+    riskSummary() {
+      const summary = {
+        CRITICAL: 0,
+        HIGH: 0,
+        MEDIUM: 0,
+        LOW: 0,
+        ERROR: 0,
+        UNKNOWN: 0 // 添加未知类型
+      };
+
+      if (!this.scanResults || !Array.isArray(this.scanResults)) {
+        return summary;
+      }
+
+      this.scanResults.forEach(result => {
+        if (!result || !result.risk) {
+          summary.UNKNOWN++;
+          return;
+        }
+
+        const riskStr = String(result.risk).toUpperCase();
+
+        // 更灵活的风险等级匹配
+        if (riskStr.includes('CRITICAL')) {
+          summary.CRITICAL++;
+        } else if (riskStr.includes('HIGH')) {
+          summary.HIGH++;
+        } else if (riskStr.includes('MEDIUM')) {
+          summary.MEDIUM++;
+        } else if (riskStr.includes('LOW')) {
+          summary.LOW++;
+        } else if (riskStr.includes('ERROR')) {
+          summary.ERROR++;
+        } else {
+          summary.UNKNOWN++;
+          console.warn('未知风险等级:', result.risk, '完整结果:', result);
+        }
+      });
+
+      return summary;
+    },
+    // 导出数据统计
+    exportDataCount() {
+      let count = 0;
+      this.batchResults.forEach(result => {
+        if (this.shouldIncludeResult(result)) {
+          if (result.results && result.results.length > 0) {
+            count += result.results.length;
+          } else {
+            count += 1; // 失败记录算一条
+          }
+        }
+      });
+      return count;
+    },
+
+    exportSuccessCount() {
+      return this.batchResults.filter(result =>
+          result.status === '成功' && this.shouldIncludeResult(result)
+      ).length;
+    },
+
+    exportFailedCount() {
+      return this.batchResults.filter(result =>
+          result.status === '失败' && this.shouldIncludeResult(result)
+      ).length;
+    },
+
+    exportRiskCount() {
+      let count = 0;
+      this.batchResults.forEach(result => {
+        if (result.status === '成功' && this.shouldIncludeResult(result)) {
+          count += result.results?.length || 0;
+        }
+      });
+      return count;
     }
   },
 
@@ -883,6 +1466,16 @@ export default {
     activeSheet() {
       this.paginatedData = this.getActiveSheetData(); // 更新分页数据
       this.currentPage = 1; // 每次切换表格时重置为第一页
+    },
+
+    ossBucketURL() {
+      this.saveOssCache();
+    },
+    scanConfig: {
+      handler() {
+        this.saveOssCache();
+      },
+      deep: true
     }
   },
 
@@ -893,6 +1486,9 @@ export default {
     // 加载标签页配置
     await this.loadTabsConfig();
     this.configLoaded = true;
+
+    // 恢复OSS缓存
+    this.restoreOssCache();
 
     // 监听菜单更新事件
     window.addEventListener('menu-order-updated', this.handleMenuOrderUpdated);
@@ -1129,16 +1725,53 @@ export default {
       });
     },
 
+    // 恢复OSS缓存
+    restoreOssCache() {
+      const cached = sessionStorage.getItem('ossStorageCache');
+      if (cached) {
+        try {
+          const cacheData = JSON.parse(cached);
+          this.ossBucketURL = cacheData.bucketURL || '';
+          this.ossFunction = cacheData.function || 'file-list';
+          if (cacheData.scanConfig) {
+            this.scanConfig = { ...this.scanConfig, ...cacheData.scanConfig };
+          }
+          if (cacheData.detectionResult) {
+            this.detectionResult = cacheData.detectionResult;
+          }
+        } catch (e) {
+          console.error('恢复OSS缓存失败:', e);
+        }
+      }
+    },
 
-    // Oss存储桶遍历
+    // 保存OSS缓存
+    saveOssCache() {
+      const cacheData = {
+        bucketURL: this.ossBucketURL,
+        function: this.ossFunction,
+        scanConfig: this.scanConfig,
+        detectionResult: this.detectionResult
+      };
+      sessionStorage.setItem('ossStorageCache', JSON.stringify(cacheData));
+    },
+
+    // OSS功能切换
+    onOssFunctionChange() {
+      this.scanResults = [];
+      this.OssListSuccess = false;
+      // 切换功能时不清空URL，保持共用
+    },
+
+    // 文件遍历功能
     async generateOssListQueries() {
-      // 如果用户输入为空，返回错误提示
-      if (!this.OsslistInput.trim()) {
-        this.$message.warning('请输入Oss资源桶链接！');
+      if (!this.ossBucketURL.trim()) {
+        this.$message.warning('请输入OSS存储桶链接！');
         return;
       }
 
-      const OsslistInput = this.OsslistInput.trim();
+      this.fileListLoading = true;
+
       try {
         ElMessageBox({
           title: "提示",
@@ -1148,24 +1781,734 @@ export default {
           closeOnClickModal: false,
           closeOnPressEscape: false,
         });
-        // 调用后端接口处理
-        this.OssListSavePath = await DealOssList(OsslistInput)
 
-        this.OssListSuccess = true
-        this.$message.success('文件生成成功：' + this.OssListSavePath)
-        ElMessageBox.close()
-
+        this.OssListSavePath = await DealOssList(this.ossBucketURL.trim());
+        this.OssListSuccess = true;
+        this.$message.success('文件生成成功：' + this.OssListSavePath);
+        ElMessageBox.close();
       } catch (err) {
-        ElMessageBox.close()
+        ElMessageBox.close();
         this.$message.warning("请检查链接，只有存在信息泄露的链接才可以爬取哦");
+      } finally {
+        this.fileListLoading = false;
       }
     },
+
+    // 漏洞扫描方法
+    async startVulnScan() {
+      if (!this.ossBucketURL.trim()) {
+        this.$message.warning('请输入存储桶URL');
+        return;
+      }
+
+      this.scanLoading = true;
+      this.scanCompleted = false;
+      this.scanProgress = 0;
+      this.scanResults = [];
+
+      try {
+        // 构建扫描配置
+        const scanConfig = {
+          scanOptions: this.scanConfig.scanOptions,
+          threads: this.scanConfig.threads || 5,
+          timeout: 10,
+          cloud: this.scanConfig.cloud,
+          region: this.scanConfig.region,
+          bucket: this.scanConfig.bucket
+        };
+
+        // 模拟进度更新
+        const progressInterval = setInterval(() => {
+          if (this.scanProgress < 90) {
+            this.scanProgress += 10;
+          }
+        }, 500);
+
+        // 调用后端扫描接口
+        const result = await StartVulnScan(
+            this.ossBucketURL.trim(),
+            JSON.stringify(scanConfig)
+        );
+
+        clearInterval(progressInterval);
+        this.scanProgress = 100;
+
+        if (result && result.success) {
+          let results = result.results || [];
+          if (!Array.isArray(results)) {
+            console.warn('扫描结果不是数组格式:', results);
+            results = [];
+          }
+
+          // 为每个结果添加时间戳
+          results = results.map(item => ({
+            ...item,
+            timestamp: new Date().toISOString()
+          }));
+
+          this.scanResults = results;
+          this.$message.success(`扫描完成，发现 ${this.scanResults.length} 个风险项`);
+        } else {
+          const errorMsg = result?.error || '扫描失败';
+          this.$message.error(`扫描失败: ${errorMsg}`);
+        }
+      } catch (error) {
+        console.error('扫描出错:', error);
+        this.$message.error(`扫描出错: ${error.message}`);
+      } finally {
+        this.scanLoading = false;
+        this.scanCompleted = true;
+
+        setTimeout(() => {
+          this.scanProgress = 0;
+        }, 1000);
+      }
+    },
+
+    // 智能识别云厂商
+    async autoDetectCloudProvider() {
+      const url = this.ossBucketURL?.trim();
+      if (!url) {
+        this.$message.warning('请输入存储桶URL');
+        return;
+      }
+
+      this.detecting = true;
+
+      try {
+        const result = await DetectCloudProvider(url);
+
+        if (result.success) {
+          this.detectionResult = {
+            identified: true,
+            cloudName: this.getCloudName(result.cloudProvider),
+            region: result.region || '未知',
+            bucket: result.bucket || '未知',
+            cloudProvider: result.cloudProvider
+          };
+
+          // 自动填充表单
+          this.scanConfig.cloud = result.cloudProvider;
+          this.scanConfig.region = result.region || '';
+          this.scanConfig.bucket = result.bucket || '';
+
+          if (result.cloudProvider === 'tencent' && result.appid) {
+            this.scanConfig.tencentAppid = result.appid;
+          }
+
+          if (result.cloudProvider === 'azure' && result.account) {
+            this.scanConfig.azureAccount = result.account;
+          }
+
+          this.$message.success('云厂商识别成功！');
+          this.saveOssCache(); // 保存缓存
+        } else {
+          this.$message.warning('无法自动识别云厂商，请手动选择');
+        }
+      } catch (error) {
+        console.error('识别云厂商失败:', error);
+        this.$message.error('识别失败，请检查URL格式');
+      } finally {
+        this.detecting = false;
+      }
+    },
+
+    getCloudName(provider) {
+      const names = {
+        aliyun: '阿里云',
+        tencent: '腾讯云',
+        huawei: '华为云',
+        aws: 'AWS',
+        gcp: '谷歌云',
+        azure: 'Azure'
+      };
+      return names[provider] || '未知';
+    },
+
+    // 重置配置
+    resetScanConfig() {
+      this.scanConfig = {
+        cloud: '',
+        region: '',
+        bucket: '',
+        tencentAppid: '',
+        azureAccount: '',
+        threads: 5,
+        scanOptions: [
+          'scan_put_upload',
+          'scan_post_upload',
+          'scan_delete_perm',
+          'scan_cors',
+          'scan_logs',
+          'scan_directory_traversal',
+          'scan_sensitive_headers',
+          'scan_bucket_policy',
+          'scan_kms_encryption'
+        ]
+      };
+      this.detectionResult = { identified: false };
+      this.scanResults = [];
+
+      // 清除缓存
+      sessionStorage.removeItem('ossStorageCache');
+      this.$message.success('配置已重置');
+    },
+
+    // 风险相关方法保持不变
+    riskSummary() {
+      const summary = {
+        CRITICAL: 0,
+        HIGH: 0,
+        MEDIUM: 0,
+        LOW: 0,
+        ERROR: 0
+      };
+
+      this.scanResults.forEach(result => {
+        const level = result.risk.split('_')[0];
+        if (summary.hasOwnProperty(level)) {
+          summary[level]++;
+        }
+      });
+
+      return summary;
+    },
+
+    getRiskLabel(riskLevel) {
+      if (!riskLevel) return '未知';
+      const level = String(riskLevel).toUpperCase();
+      const labels = {
+        'CRITICAL1': '严重 - 密钥泄露',
+        'CRITICAL2': '严重 - 数据库泄露',
+        'CRITICAL3': '严重 - 上传漏洞',
+        'CRITICAL4': '严重 - 删除漏洞',
+        'HIGH1': '高危 - 目录遍历',
+        'HIGH2': '高危 - 日志泄露',
+        'MEDIUM1': '中危 - 配置泄露',
+        'MEDIUM2': '中危 - CORS漏洞',
+        'MEDIUM3': '中危 - 遍历漏洞',
+        'LOW1': '低危 - 文件泄露',
+        'LOW2': '低危 - 访问异常',
+        'LOW3': '低危 - 头信息泄露',
+        'ERROR': '错误'
+      };
+      return labels[level] || level;
+    },
+
+    getRiskClass(riskLevel) {
+      if (!riskLevel) return 'risk-unknown';
+      const level = String(riskLevel).toUpperCase();
+      if (level.includes('CRITICAL')) return 'risk-critical';
+      if (level.includes('HIGH')) return 'risk-high';
+      if (level.includes('MEDIUM')) return 'risk-medium';
+      if (level.includes('LOW')) return 'risk-low';
+      if (level.includes('ERROR')) return 'risk-error';
+      return 'risk-unknown';
+    },
+
+    formatTime(timestamp) {
+      if (!timestamp) return '';
+      return new Date(timestamp).toLocaleString();
+    },
+
+    // 批量扫描风险统计
+    batchRiskSummary() {
+      const summary = {
+        CRITICAL: 0,
+        HIGH: 0,
+        MEDIUM: 0,
+        LOW: 0,
+        ERROR: 0,
+        UNKNOWN: 0
+      };
+
+      this.batchResults.forEach(result => {
+        if (result.results && Array.isArray(result.results)) {
+          result.results.forEach(item => {
+            const riskStr = String(item.risk).toUpperCase();
+            if (riskStr.includes('CRITICAL')) summary.CRITICAL++;
+            else if (riskStr.includes('HIGH')) summary.HIGH++;
+            else if (riskStr.includes('MEDIUM')) summary.MEDIUM++;
+            else if (riskStr.includes('LOW')) summary.LOW++;
+            else if (riskStr.includes('ERROR')) summary.ERROR++;
+            else summary.UNKNOWN++;
+          });
+        }
+      });
+
+      return summary;
+    },
+
+    // 打开URL的函数
+    openResultURL(url) {
+      if (url && url.startsWith('http')) {
+        BrowserOpenURL(url);
+      } else {
+        this.$message.warning('URL格式不正确');
+      }
+    },
+
+    // 批量扫描方法
+    async startBatchScan() {
+      const urls = this.batchUrls.split('\n')
+          .map(url => url.trim())
+          .filter(url => url && url.startsWith('http'));
+
+      if (urls.length === 0) {
+        this.$message.warning('请输入有效的URL，每行一个');
+        return;
+      }
+
+      if (urls.length > 50) {
+        this.$message.warning('单次批量扫描最多支持50个URL');
+        return;
+      }
+
+      this.batchScanLoading = true;
+      this.batchResults = [];
+      this.urlCount = urls.length;
+      this.completedCount = 0;
+      this.successCount = 0;
+      this.failedCount = 0;
+      this.batchProgress = 0;
+
+      // 使用Promise.all进行并发扫描，限制并发数为3
+      const concurrency = 3;
+      const batches = [];
+
+      for (let i = 0; i < urls.length; i += concurrency) {
+        batches.push(urls.slice(i, i + concurrency));
+      }
+
+      for (const batch of batches) {
+        const promises = batch.map(url => this.scanSingleURL(url));
+        await Promise.all(promises);
+      }
+
+      this.batchScanLoading = false;
+      this.$message.success(`批量扫描完成！成功: ${this.successCount}, 失败: ${this.failedCount}`);
+    },
+
+    // 单个URL扫描
+    async scanSingleURL(url) {
+      const scanConfig = {
+        scanOptions: this.scanConfig.scanOptions,
+        threads: this.scanConfig.threads || 5,
+        timeout: 10,
+        cloud: '',
+        region: '',
+        bucket: ''
+      };
+
+      try {
+        const result = await StartVulnScan(url, JSON.stringify(scanConfig));
+
+        let results = [];
+        let highestRisk = 'UNKNOWN';
+        let riskCount = 0;
+
+        if (result && result.success) {
+          results = result.results || [];
+          if (!Array.isArray(results)) {
+            results = [];
+          }
+
+          // 计算最高风险等级和风险数量
+          if (results.length > 0) {
+            riskCount = results.length;
+            const riskLevels = results.map(item => {
+              const riskStr = String(item.risk).toUpperCase();
+              if (riskStr.includes('CRITICAL')) return 5;
+              if (riskStr.includes('HIGH')) return 4;
+              if (riskStr.includes('MEDIUM')) return 3;
+              if (riskStr.includes('LOW')) return 2;
+              if (riskStr.includes('ERROR')) return 1;
+              return 0;
+            });
+            const maxRiskLevel = Math.max(...riskLevels);
+            highestRisk = this.getRiskLevelFromScore(maxRiskLevel);
+          }
+
+          this.successCount++;
+        } else {
+          throw new Error(result?.error || '扫描失败');
+        }
+
+        this.batchResults.push({
+          url,
+          results,
+          status: '成功',
+          highestRisk,
+          riskCount,
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        console.error(`扫描URL失败: ${url}`, error);
+        this.failedCount++;
+
+        this.batchResults.push({
+          url,
+          results: [],
+          status: '失败',
+          highestRisk: 'ERROR',
+          riskCount: 0,
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      this.completedCount++;
+      this.batchProgress = Math.round((this.completedCount / this.urlCount) * 100);
+    },
+
+    // 根据风险分数获取风险等级
+    getRiskLevelFromScore(score) {
+      switch (score) {
+        case 5: return 'CRITICAL';
+        case 4: return 'HIGH';
+        case 3: return 'MEDIUM';
+        case 2: return 'LOW';
+        case 1: return 'ERROR';
+        default: return 'UNKNOWN';
+      }
+    },
+
+    // 获取状态类型
+    getStatusType(status) {
+      switch (status) {
+        case '成功': return 'success';
+        case '失败': return 'danger';
+        default: return 'info';
+      }
+    },
+
+    // 查看详细结果
+    viewDetailedResult(result) {
+      this.currentDetailResult = result;
+      this.detailDialogVisible = true;
+    },
+
+    // 清空批量URL
+    clearBatchUrls() {
+      this.batchUrls = '';
+    },
+
+    // 清空批量结果
+    clearBatchResults() {
+      this.batchResults = [];
+      this.$message.info('已清空批量扫描结果');
+    },
+
     // 打开文件夹
     async openXlsxFileDir() {
       const baseDir = await GetConfigDir()
       const fileDir = baseDir + "/file"; // 拼接file子目录
       await OpenPath(fileDir)
     },
+
+    // 导出批量结果
+    async exportBatchResults() {
+      if (this.batchResults.length === 0) {
+        this.$message.warning('没有可导出的结果数据');
+        return;
+      }
+
+      // 设置默认文件名
+      if (!this.exportConfig.filename) {
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        this.exportConfig.filename = `OSS扫描结果_${timestamp}`;
+      }
+
+      this.exportDialogVisible = true;
+    },
+
+    // 确认导出
+    async confirmExport() {
+      this.exportLoading = true;
+
+      try {
+        const exportData = this.prepareExportData();
+
+        if (this.exportConfig.format === 'excel') {
+          await this.exportToExcel(exportData);
+        } else {
+          await this.exportToCSV(exportData);
+        }
+
+        this.exportDialogVisible = false;
+        this.$message.success('导出成功！');
+      } catch (error) {
+        console.error('导出失败:', error);
+        this.$message.error('导出失败: ' + error.message);
+      } finally {
+        this.exportLoading = false;
+      }
+    },
+
+    // 准备导出数据
+    prepareExportData() {
+      const data = {
+        summary: this.getExportSummary(),
+        results: [],
+        timestamp: new Date().toISOString(),
+        config: { ...this.exportConfig }
+      };
+
+      // 过滤要导出的结果
+      this.batchResults.forEach(result => {
+        if (this.shouldIncludeResult(result)) {
+          if (result.status === '成功' && result.results && result.results.length > 0) {
+            result.results.forEach(item => {
+              data.results.push({
+                url: result.url,
+                status: result.status,
+                scanTime: result.timestamp,
+                riskLevel: item.risk,
+                riskDescription: this.getRiskLabel(item.risk),
+                message: item.msg,
+                riskUrl: item.url || '',
+                riskType: this.getRiskType(item.risk)
+              });
+            });
+          } else {
+            // 失败记录或无风险记录
+            data.results.push({
+              url: result.url,
+              status: result.status,
+              scanTime: result.timestamp,
+              riskLevel: result.highestRisk,
+              riskDescription: result.status === '失败' ? '扫描失败' : '无风险',
+              message: result.error || '未发现安全风险',
+              riskUrl: '',
+              riskType: result.status === '失败' ? 'ERROR' : 'SAFE'
+            });
+          }
+        }
+      });
+
+      return data;
+    },
+
+    // 判断是否包含该结果
+    shouldIncludeResult(result) {
+      // 日期过滤
+      if (this.exportConfig.dateRange && this.exportConfig.dateRange.length === 2) {
+        const [start, end] = this.exportConfig.dateRange;
+        const scanDate = result.timestamp.split('T')[0];
+        if (scanDate < start || scanDate > end) {
+          return false;
+        }
+      }
+
+      // 内容过滤
+      if (result.status === '失败' && !this.exportConfig.include.includes('failed')) {
+        return false;
+      }
+
+      return true;
+    },
+
+    // 获取导出摘要
+    getExportSummary() {
+      return {
+        totalUrls: this.batchResults.length,
+        successUrls: this.batchResults.filter(r => r.status === '成功').length,
+        failedUrls: this.batchResults.filter(r => r.status === '失败').length,
+        totalRisks: this.batchResults.reduce((sum, r) => sum + (r.results?.length || 0), 0),
+        riskDistribution: {...this.batchRiskSummary},
+        exportTime: new Date().toLocaleString('zh-CN'),
+        scanConfig: {
+          threads: this.scanConfig.threads,
+          scanOptions: this.scanConfig.scanOptions
+        }
+      };
+    },
+
+    // 获取风险类型
+    getRiskType(riskLevel) {
+      const level = String(riskLevel).toUpperCase();
+      if (level.includes('CRITICAL')) return '严重风险';
+      if (level.includes('HIGH')) return '高危风险';
+      if (level.includes('MEDIUM')) return '中危风险';
+      if (level.includes('LOW')) return '低危风险';
+      if (level.includes('ERROR')) return '错误信息';
+      return '未知风险';
+    },
+
+    // 导出到Excel
+    async exportToExcel(exportData) {
+      const XLSX = await import('xlsx');
+
+      // 创建工作簿
+      const wb = XLSX.utils.book_new();
+
+      // 创建摘要工作表
+      const summaryData = [
+        ['OSS存储桶安全扫描报告'],
+        ['导出时间', exportData.summary.exportTime],
+        ['扫描URL总数', exportData.summary.totalUrls],
+        ['成功扫描', exportData.summary.successUrls],
+        ['失败扫描', exportData.summary.failedUrls],
+        ['发现风险总数', exportData.summary.totalRisks],
+        [],
+        ['风险分布'],
+        ['严重风险', exportData.summary.riskDistribution.CRITICAL || 0],
+        ['高危风险', exportData.summary.riskDistribution.HIGH || 0],
+        ['中危风险', exportData.summary.riskDistribution.MEDIUM || 0],
+        ['低危风险', exportData.summary.riskDistribution.LOW || 0],
+        ['错误信息', exportData.summary.riskDistribution.ERROR || 0],
+        [],
+        ['扫描配置'],
+        ['线程数', exportData.summary.scanConfig.threads],
+        ['扫描选项', exportData.summary.scanConfig.scanOptions.join(', ')]
+      ];
+
+      const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, summaryWs, '扫描摘要');
+
+      // 创建详细结果工作表
+      const resultsData = [
+        ['URL', '状态', '扫描时间', '风险等级', '风险描述', '风险类型', '详细信息', '风险URL']
+      ];
+
+      exportData.results.forEach(item => {
+        resultsData.push([
+          item.url,
+          item.status,
+          new Date(item.scanTime).toLocaleString('zh-CN'),
+          item.riskLevel,
+          item.riskDescription,
+          item.riskType,
+          item.message,
+          item.riskUrl
+        ]);
+      });
+
+      const resultsWs = XLSX.utils.aoa_to_sheet(resultsData);
+      XLSX.utils.book_append_sheet(wb, resultsWs, '详细结果');
+
+      // 生成文件并下载
+      const filename = `${this.exportConfig.filename}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    },
+
+    // 导出到CSV
+    async exportToCSV(exportData) {
+      let csvContent = 'OSS存储桶安全扫描报告\n';
+      csvContent += `导出时间,${exportData.summary.exportTime}\n`;
+      csvContent += `扫描URL总数,${exportData.summary.totalUrls}\n`;
+      csvContent += `成功扫描,${exportData.summary.successUrls}\n`;
+      csvContent += `失败扫描,${exportData.summary.failedUrls}\n`;
+      csvContent += `发现风险总数,${exportData.summary.totalRisks}\n\n`;
+
+      csvContent += '风险分布\n';
+      csvContent += `严重风险,${exportData.summary.riskDistribution.CRITICAL || 0}\n`;
+      csvContent += `高危风险,${exportData.summary.riskDistribution.HIGH || 0}\n`;
+      csvContent += `中危风险,${exportData.summary.riskDistribution.MEDIUM || 0}\n`;
+      csvContent += `低危风险,${exportData.summary.riskDistribution.LOW || 0}\n`;
+      csvContent += `错误信息,${exportData.summary.riskDistribution.ERROR || 0}\n\n`;
+
+      csvContent += 'URL,状态,扫描时间,风险等级,风险描述,风险类型,详细信息,风险URL\n';
+
+      exportData.results.forEach(item => {
+        const row = [
+          `"${item.url}"`,
+          item.status,
+          new Date(item.scanTime).toLocaleString('zh-CN'),
+          item.riskLevel,
+          item.riskDescription,
+          item.riskType,
+          `"${item.message.replace(/"/g, '""')}"`,
+          item.riskUrl
+        ].join(',');
+        csvContent += row + '\n';
+      });
+
+      // 创建Blob并下载
+      const blob = new Blob(['\uFEFF' + csvContent], {
+        type: 'text/csv;charset=utf-8;'
+      });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${this.exportConfig.filename}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
+
+    // 导出单个扫描结果
+    async exportSingleResult() {
+      if (this.scanResults.length === 0) {
+        this.$message.warning('没有可导出的扫描结果');
+        return;
+      }
+
+      this.exportLoading = true;
+
+      try {
+        const XLSX = await import('xlsx');
+        const wb = XLSX.utils.book_new();
+
+        // 单个扫描的摘要
+        const summaryData = [
+          ['单个OSS存储桶安全扫描报告'],
+          ['目标URL', this.ossBucketURL],
+          ['扫描时间', new Date().toLocaleString('zh-CN')],
+          ['发现风险项', this.scanResults.length],
+          [],
+          ['风险项详情']
+        ];
+
+        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, summaryWs, '扫描摘要');
+
+        // 详细结果
+        const resultsData = [
+          ['风险等级', '风险描述', '详细信息', '相关URL', '发现时间']
+        ];
+
+        this.scanResults.forEach(item => {
+          resultsData.push([
+            item.risk,
+            this.getRiskLabel(item.risk),
+            item.msg,
+            item.url || '',
+            new Date(item.timestamp).toLocaleString('zh-CN')
+          ]);
+        });
+
+        const resultsWs = XLSX.utils.aoa_to_sheet(resultsData);
+        XLSX.utils.book_append_sheet(wb, resultsWs, '风险详情');
+
+        // 生成文件名并下载
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        const filename = `单个OSS扫描_${timestamp}.xlsx`;
+        XLSX.writeFile(wb, filename);
+
+        this.$message.success('导出成功！');
+      } catch (error) {
+        console.error('导出失败:', error);
+        this.$message.error('导出失败: ' + error.message);
+      } finally {
+        this.exportLoading = false;
+      }
+    },
+
+    // 重置导出配置
+    resetExportConfig() {
+      this.exportConfig = {
+        format: 'excel',
+        filename: '',
+        include: ['summary', 'details', 'failed'],
+        dateRange: []
+      };
+    },
+
+
+
 
     // 小程序反编译
     async initUnwxAppData() {
@@ -1499,14 +2842,19 @@ export default {
           this.$message.error("请先设置微信小程序路径");
           return;
         }
+        let OS = await GetOs();
+        let outputPath;
+        let packagePath;
 
-        // 构建包路径
-        const packagePath = `${this.appletPath}\\${app.AppID}\\${version.Number}`;
-
-        // 构建输出路径
-        const isWin = navigator.platform.toLowerCase().startsWith('win');
-        const sep = isWin ? '\\' : '/';
-        const outputPath = `${packagePath}`;
+        if (OS === "windows"){
+            // 构建包路径
+            packagePath = `${this.appletPath}\\${app.AppID}\\${version.Number}`;
+            outputPath = `${packagePath}`;
+        } else{
+          // 构建包路径
+          packagePath = `${this.appletPath}/${app.AppID}/${version.Number}`;
+          outputPath = `${packagePath}`;
+        }
 
         // console.log("打开文件夹:", outputPath);
 
@@ -1540,15 +2888,13 @@ export default {
 
         if (result && result.length > 0) {
           // 如果有统计信息，可以特殊显示
-          const formattedResult = result.map(line => {
+          this.matchedResult = result.map(line => {
             if (line.includes(" -> ")) {
               const [file, content] = line.split(" -> ");
               return `📄 ${file}\n   🔍 ${content}`;
             }
             return line;
           }).join("\n\n");
-
-          this.matchedResult = formattedResult;
         } else {
           this.matchedResult = "未找到匹配的敏感信息";
         }
@@ -1896,7 +3242,7 @@ export default {
 <style scoped>
 /* 页面容器 - 修复撑满屏幕问题 */
 .container {
-  min-height: 100vh;
+  min-height: 96vh;
   display: flex;
   flex-direction: column;
   background-color: #f8f9fb;
@@ -2120,13 +3466,730 @@ export default {
   background-color: #5cb85c;
 }
 
-/* oss存储桶遍历 */
-.form-group {
+
+/* ============ OSS存储桶样式 ============ */
+/* OSS存储桶功能样式 */
+.oss-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+}
+
+.oss-header-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.function-select {
+  margin-bottom: 16px;
+}
+
+/* 公共URL输入区域 */
+.oss-url-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.url-input-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.url-input-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.url-input-header h5 {
+  margin: 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.url-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.url-input {
+  flex: 1;
+}
+
+:deep(.url-input .el-input-group__append) {
+  background-color: #409eff;
+  border-color: #409eff;
+  color: white;
+}
+
+:deep(.url-input .el-input-group__append .el-button) {
+  color: white;
+  border: none;
+}
+
+.detection-result {
+  margin-top: 8px;
+}
+
+/* 文件遍历结果 */
+.oss-result-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #67c23a;
+}
+
+.result-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-info {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.result-label {
+  color: #606266;
+  font-weight: 500;
+}
+
+.result-path {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.open-folder-btn {
+  flex-shrink: 0;
+}
+
+/* 漏洞扫描配置 */
+.vuln-scan-config {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.config-section {
+  margin-bottom: 24px;
+}
+
+.config-section h5 {
+  margin: 0 0 16px 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 6px;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.config-item label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.config-input {
+  width: 100%;
+}
+
+.scan-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.scan-option-item {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.scan-option-item .el-checkbox) {
+  width: 100%;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e4e7ed;
+}
+
+.scan-btn {
+  min-width: 120px;
+}
+
+.reset-btn {
+  min-width: 100px;
+}
+
+/* 扫描结果区域 */
+.scan-results-section {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.results-header {
+  margin-bottom: 20px;
+}
+
+.results-header h5 {
+  margin: 0 0 16px 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.results-summary {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.summary-label {
+  font-weight: 600;
+}
+
+.summary-count {
+  font-weight: 700;
+}
+
+/* 扫描选项横向排列样式 */
+.scan-options-horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scan-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.scan-option-item {
+  flex: 0 0 auto;
+  margin-bottom: 8px;
+}
+
+:deep(.scan-option-item .el-checkbox) {
+  margin-right: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .scan-options-row {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .scan-options-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .scan-option-item {
+    width: 100%;
+  }
+}
+
+/* 风险项样式 */
+.risk-critical {
+  background-color: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fbc4c4;
+}
+
+.risk-high {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #f5dab1;
+}
+
+.risk-medium {
+  background-color: #f4f4f5;
+  color: #909399;
+  border: 1px solid #d3d4d6;
+}
+
+.risk-low {
+  background-color: #f0f9ff;
+  color: #409eff;
+  border: 1px solid #b3d8ff;
+}
+
+.risk-error {
+  background-color: #fdf4ff;
+  color: #c456d6;
+  border: 1px solid #e8c5f0;
+}
+
+.risk-unknown {
+  background-color: #f4f4f5;
+  color: #909399;
+  border: 1px solid #d3d4d6;
+}
+
+/* 结果列表 */
+.results-list {
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-item {
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.result-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.result-item.risk-critical {
+  border-left-color: #f56c6c;
+}
+
+.result-item.risk-high {
+  border-left-color: #e6a23c;
+}
+
+.result-item.risk-medium {
+  border-left-color: #909399;
+}
+
+.result-item.risk-low {
+  border-left-color: #409eff;
+}
+
+.result-item.risk-error {
+  border-left-color: #c456d6;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.risk-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-level {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.risk-code {
+  font-size: 12px;
+  color: #909399;
+  background: #f4f4f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.result-time {
+  font-size: 12px;
+  color: #c0c4cc;
+}
+
+.risk-msg {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  color: #606266;
+}
+
+.risk-url {
+  margin-bottom: 8px;
+}
+
+.url-label {
+  font-weight: 500;
+  color: #909399;
+}
+
+.url-link {
+  color: #409eff;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.url-link:hover {
+  text-decoration: underline;
+}
+
+/* 无结果状态 */
+.no-results {
+  margin-top: 16px;
+}
+
+/* 扫描进度 */
+.scanning {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.scan-progress {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.progress-text {
+  margin-top: 12px;
+  color: #909399;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .url-input-group {
+    flex-direction: column;
+  }
+
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scan-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .result-content {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .results-summary {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .oss-header-card,
+  .oss-url-section,
+  .vuln-scan-config,
+  .scan-results-section {
+    padding: 16px;
+  }
+
+  .url-input-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* 批量扫描样式 */
+.batch-scan-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.batch-url-input-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-input-group {
+  margin-bottom: 16px;
+}
+
+.batch-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+}
+
+.batch-stats {
+  display: flex;
+  gap: 20px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.batch-progress {
+  margin-top: 16px;
+}
+
+.progress-text {
+  text-align: center;
+  margin-top: 8px;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 批量结果样式 */
+.batch-results {
+  margin-top: 24px;
+}
+
+.batch-result-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-summary {
+  display: flex;
+  gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 10px;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  border-radius: 8px;
+  min-width: 100px;
+  text-align: center;
+}
+
+.summary-card .summary-count {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.summary-card .summary-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 批量结果列表 */
+.batch-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.batch-result-item {
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.batch-result-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.batch-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.result-url {
+  flex: 1;
+  min-width: 300px;
+}
+
+.url-label {
+  font-weight: 600;
+  color: #606266;
+  margin-right: 8px;
+}
+
+.url-text {
+  color: #409eff;
+  cursor: pointer;
+  word-break: break-all;
+}
+
+.url-text:hover {
+  text-decoration: underline;
+}
+
+.result-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.result-counts {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 批量结果详情 */
+.batch-result-details {
+  margin-bottom: 12px;
+}
+
+.detail-item {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-badge {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.risk-msg {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.error-item {
+  padding: 8px 12px;
+  background: #fef0f0;
+  border: 1px solid #fbc4c4;
+  border-radius: 4px;
+  color: #f56c6c;
+}
+
+.error-msg {
+  font-size: 13px;
+}
+
+.more-results {
+  text-align: center;
+  color: #909399;
+  font-size: 12px;
+  padding: 4px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .batch-result-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .result-status {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .batch-stats {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .batch-summary {
+    justify-content: center;
+  }
+
+  .summary-card {
+    min-width: 80px;
+    padding: 12px;
+  }
 }
 
 /* ============ 小程序反编译样式 ============ */
@@ -2408,7 +4471,7 @@ export default {
 .oss-header-card {
   background: white;
   border-radius: 6px;
-  padding: 20px;
+  padding: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
 }

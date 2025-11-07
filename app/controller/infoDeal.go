@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"bufio"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,7 +18,7 @@ import (
 
 // InfoDeal 控制器
 type InfoDeal struct {
-	Base
+	system.Base
 }
 
 // NewInfoDeal 创建新的 InfoDeal 控制器
@@ -27,7 +29,7 @@ func NewInfoDeal() *InfoDeal {
 // 上传文件
 func (i *InfoDeal) UploadFile(fileName, content string) error {
 	// 确保目录存在
-	baseDir := i.getAppPath()
+	baseDir := i.GetAppPath()
 	// 创建文件子目录
 	fileDir := filepath.Join(baseDir, "file")
 
@@ -47,7 +49,7 @@ func (i *InfoDeal) UploadFile(fileName, content string) error {
 // FscanResultDeal 处理文件并生成 Excel
 func (i *InfoDeal) FscanResultDeal(fileName string) (string, error) {
 	// 确保目录存在
-	baseDir := i.getAppPath()
+	baseDir := i.GetAppPath()
 	// 创建文件子目录
 	fileDir := filepath.Join(baseDir, "file")
 	// 构造文件路径
@@ -488,4 +490,74 @@ func (i *InfoDeal) DealOssList(ossURL string) (string, error) {
 		return "", fmt.Errorf("处理失败：%v", err)
 	}
 	return excelPath, nil
+}
+
+func (i *InfoDeal) StartVulnScan(urlStr string, configJSON string) map[string]interface{} {
+	scanner := NewScanner(urlStr)
+
+	var config VulnScanConfig
+	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "配置解析失败: " + err.Error(),
+		}
+	}
+
+	results, err := scanner.VulnScan(configJSON)
+	if err != nil {
+		return map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		}
+	}
+
+	return map[string]interface{}{
+		"success":       true,
+		"results":       results,
+		"cloudProvider": scanner.baseURL, // 返回检测到的云服务商信息
+	}
+}
+
+func (i *InfoDeal) DetectCloudProvider(urlStr string) map[string]interface{} {
+	detector := &CloudDetector{}
+	cloudProvider := detector.DetectCloudProvider(urlStr)
+
+	if cloudProvider == "unknown" {
+		return map[string]interface{}{
+			"success": false,
+			"error":   "无法识别的云服务商URL格式",
+		}
+	}
+
+	bucket, region := detector.ExtractBucketInfo(urlStr, cloudProvider)
+
+	result := map[string]interface{}{
+		"success":       true,
+		"cloudProvider": cloudProvider,
+		"bucket":        bucket,
+		"region":        region,
+	}
+
+	// 特殊处理腾讯云APPID
+	if cloudProvider == "tencent" && strings.Contains(bucket, "-") {
+		parts := strings.Split(bucket, "-")
+		if len(parts) > 1 {
+			result["appid"] = parts[len(parts)-1]
+			result["bucket"] = strings.Join(parts[:len(parts)-1], "-")
+		}
+	}
+
+	// 特殊处理Azure账户名
+	if cloudProvider == "azure" {
+		// Azure URL格式: https://account.blob.core.windows.net/container
+		if re := regexp.MustCompile(`https?://([^.]+)\.blob\.core\.windows\.net/([^/]+)`); re.MatchString(urlStr) {
+			matches := re.FindStringSubmatch(urlStr)
+			if len(matches) == 3 {
+				result["account"] = matches[1]
+				result["bucket"] = matches[2]
+			}
+		}
+	}
+
+	return result
 }

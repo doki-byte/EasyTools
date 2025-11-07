@@ -10,8 +10,16 @@ export function CreateFolder(arg1, arg2) {
   return window['go']['controller']['Note']['CreateFolder'](arg1, arg2);
 }
 
+export function Db() {
+  return window['go']['controller']['Note']['Db']();
+}
+
 export function DeleteItem(arg1) {
   return window['go']['controller']['Note']['DeleteItem'](arg1);
+}
+
+export function GetAppPath() {
+  return window['go']['controller']['Note']['GetAppPath']();
 }
 
 export function GetFiles(arg1) {
@@ -20,6 +28,14 @@ export function GetFiles(arg1) {
 
 export function GetNotesDir() {
   return window['go']['controller']['Note']['GetNotesDir']();
+}
+
+export function InitMianSha() {
+  return window['go']['controller']['Note']['InitMianSha']();
+}
+
+export function Log(arg1) {
+  return window['go']['controller']['Note']['Log'](arg1);
 }
 
 export function OpenDirectory() {
@@ -40,6 +56,14 @@ export function SaveFile(arg1, arg2) {
 
 export function SaveImage(arg1, arg2) {
   return window['go']['controller']['Note']['SaveImage'](arg1, arg2);
+}
+
+export function Schema(arg1) {
+  return window['go']['controller']['Note']['Schema'](arg1);
+}
+
+export function SetCtx(arg1) {
+  return window['go']['controller']['Note']['SetCtx'](arg1);
 }
 
 export function Shutdown() {

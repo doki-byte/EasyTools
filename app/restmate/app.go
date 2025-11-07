@@ -1,6 +1,7 @@
 package restmate
 
 import (
+	"EasyTools/app/proxy"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -196,7 +197,13 @@ func (a *RestMate) InvokeRequest(r Request) (resp JSResp) {
 		return
 	}
 	var result Result
-	cli := http.Client{Jar: jar}
+	client := proxy.GlobalProxyManager.GetHTTPClient()
+	cli := &http.Client{
+		Jar:           jar,                  // 使用自定义 Cookie Jar
+		Transport:     client.Transport,     // 使用代理客户端的 Transport
+		Timeout:       client.Timeout,       // 使用代理客户端的超时设置
+		CheckRedirect: client.CheckRedirect, // 继承重定向策略
+	}
 	startTime := time.Now()
 	response, err := cli.Do(req)
 	if err != nil {

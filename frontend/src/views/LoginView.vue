@@ -102,7 +102,7 @@ import { ElNotification, ElMessageBox } from "element-plus";
 import { setToken } from "@/utils/token";
 import { Login } from "../../wailsjs/go/controller/User";
 import { QuestionFilled, Warning } from "@element-plus/icons-vue";
-import {ExitApp} from "../../wailsjs/go/controller/System";
+import {ExitApp} from "../../wailsjs/go/system/System";
 
 const router = useRouter();
 const isLoggingIn = ref(false);

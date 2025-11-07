@@ -23,7 +23,7 @@
         </el-icon>
         <el-badge :is-dot="hasUpdate" style="margin-left: 5px;">
           <span :style="{ color: hasUpdate ? '#0062bc' : 'inherit' }">
-            {{ hasUpdate ? `New ${latestVersion}` : 'v1.9.3' }}
+            {{ hasUpdate ? `New ${latestVersion}` : 'v1.9.4' }}
           </span>
         </el-badge>
       </span>
@@ -39,7 +39,7 @@
       <span><el-icon><WarningFilled /></el-icon>&nbsp;退出登录</span>
     </div>
 
-    <!-- 毛玻璃效果更新检查对话框 -->
+    <!-- 更新对话框 -->
     <el-dialog
         v-model="updateDialogVisible"
         title="检查更新"
@@ -76,6 +76,20 @@
             </div>
           </div>
 
+          <!-- 下载进度 -->
+          <div v-if="isDownloading" class="progress-section">
+            <span class="section-label">下载进度:</span>
+            <div class="progress-content">
+              <el-progress
+                  :percentage="downloadProgress"
+                  :stroke-width="8"
+                  :show-text="true"
+                  status="success"
+              />
+              <div class="progress-text">{{ downloadStatus }}</div>
+            </div>
+          </div>
+
           <div class="url-section">
             <span class="section-label">下载地址:</span>
             <div class="url-text">
@@ -99,6 +113,7 @@
               class="footer-btn skip-btn"
               size="small"
               @click="handleSkipToday"
+              :disabled="isDownloading"
           >
             今日不再提示
           </el-button>
@@ -106,17 +121,18 @@
               class="footer-btn cancel-btn"
               size="small"
               @click="updateDialogVisible = false"
+              :disabled="isDownloading"
           >
             取消
           </el-button>
           <el-button
-              class="footer-btn download-btn"
-              size="small"
               @click="handleDownloadUpdate"
-              :disabled="!releaseUrl"
+              :disabled="isDownloading"
+              :loading="isDownloading"
+              type="success"
           >
             <el-icon style="margin-right: 4px;"><Download /></el-icon>
-            下载更新
+            {{ isDownloading ? `下载中...` : '自动下载更新' }}
           </el-button>
         </div>
       </template>
@@ -202,15 +218,16 @@
 </template>
 
 <script setup>
-import {computed, markRaw, onMounted, onUnmounted, reactive, ref} from 'vue';
-import {useRouter} from 'vue-router';
-import {ElMessageBox, ElNotification} from 'element-plus';
-import {removeToken} from '@/utils/token';
-import {defaultMenu, iconMap, loadMenuOrder} from '@/utils/menuConfig';
-import {Menu, Promotion, UserFilled, WarningFilled, Download} from '@element-plus/icons-vue';
-import {UpdateUser} from "../../wailsjs/go/controller/User";
-import {GetLatestRelease} from '../../wailsjs/go/controller/Update'
-import {BrowserOpenURL} from "../../wailsjs/runtime";
+import {computed, markRaw, nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessageBox, ElNotification } from 'element-plus';
+import { removeToken } from '@/utils/token';
+import { defaultMenu, iconMap, loadMenuOrder } from '@/utils/menuConfig';
+import { Menu, Promotion, UserFilled, WarningFilled, Download } from '@element-plus/icons-vue';
+import { UpdateUser } from "../../wailsjs/go/controller/User";
+import { GetLatestRelease, DownloadAndUpdate, RestartApplication } from '../../wailsjs/go/system/Update';
+import { BrowserOpenURL } from "../../wailsjs/runtime";
+import { EventsOn, EventsOff } from '../../wailsjs/runtime';
 
 // 当前路由名称
 const routeName = ref('tool');
@@ -224,8 +241,41 @@ const releaseUrl = ref('');
 const releaseDescription = ref('');
 const loading = ref(false);
 
+// 下载状态
+const isDownloading = ref(false);
+const downloadProgress = ref(0);
+const downloadStatus = ref('');
+
 // 响应式菜单项
 const menuList = ref([]);
+
+onMounted(() => {
+  if (!routeName.value) {
+    routeName.value = 'tool'
+    router.push({ name: 'tool' }).catch(() => {})
+  }
+  loadMenu()
+  autoCheckUpdate()
+
+  // 注册下载进度监听器
+  EventsOn('downloadProgress', (progress) => {
+    downloadProgress.value = Math.round(progress)
+    // console.log('下载进度:', progress, '四舍五入后:', downloadProgress.value)
+
+    // 如果正在下载且对话框未打开，自动打开对话框显示进度
+    if (progress > 0 && progress < 100 && !updateDialogVisible.value) {
+      updateDialogVisible.value = true
+    }
+  })
+
+  window.addEventListener('menu-order-updated', handleMenuUpdated)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('menu-order-updated', handleMenuUpdated);
+  // 组件卸载时移除事件监听器
+  EventsOff('downloadProgress');
+});
 
 // 计算属性
 const sortedMenuList = computed(() => {
@@ -278,7 +328,6 @@ const pwdForm = reactive({
 
 // 事件处理
 const handleMenuUpdated = (ev) => {
-  // console.log('menu-order-updated event received', ev?.detail);
   loadMenu();
 };
 
@@ -296,6 +345,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('menu-order-updated', handleMenuUpdated);
+  // 确保移除事件监听器
+  EventsOff('downloadProgress')
 });
 
 // 页面导航
@@ -428,8 +479,8 @@ const checkUpdate = async () => {
   }
 }
 
+// 自动检查更新
 const autoCheckUpdate = async () => {
-  // 检查是否今日不再提示
   const skipTodayKey = 'EasyTools-SkipUpdateToday';
   const skipDate = localStorage.getItem(skipTodayKey);
   const today = new Date().toDateString();
@@ -442,10 +493,9 @@ const autoCheckUpdate = async () => {
       releaseUrl.value = result.latestRelease.html_url;
       releaseDescription.value = result.latestRelease.body || '暂无更新说明';
 
-      //跳过弹框，但是显示新版本
       if (skipDate === today) {
-        updateDialogVisible.value = false;
-        return;
+          updateDialogVisible.value = false;
+          return;
       }
       updateDialogVisible.value = true;
     }
@@ -453,6 +503,65 @@ const autoCheckUpdate = async () => {
     console.error('自动版本检查失败:', error);
   }
 }
+
+// 处理下载更新
+const handleDownloadUpdate = async () => {
+  isDownloading.value = true
+  downloadProgress.value = 0
+  downloadStatus.value = '开始下载...'
+
+  // 强制更新一次，确保状态显示
+  await nextTick()
+
+  try {
+    const result = await DownloadAndUpdate()
+
+    if (result.error) {
+      downloadStatus.value = '下载失败'
+      ElNotification.error('下载更新失败: ' + result.msg)
+    } else {
+      downloadStatus.value = '下载完成'
+      ElNotification.success('更新成功: ' + result.msg)
+
+      // 根据系统提示重启
+      if (result.msg.includes('重启') || result.msg.includes('重启应用')) {
+        ElMessageBox.confirm('更新成功，是否立即重启应用？', '提示', {
+          confirmButtonText: '重启',
+          cancelButtonText: '稍后',
+          type: 'success'
+        }).then(async () => {
+          await RestartApplication()
+        }).catch(() => {
+          updateDialogVisible.value = false
+        })
+      } else {
+        updateDialogVisible.value = false
+      }
+    }
+  } catch (error) {
+    console.error('下载更新失败:', error)
+    downloadStatus.value = '下载出错'
+    ElNotification.error('下载更新失败: ' + error.message)
+  } finally {
+    isDownloading.value = false
+    // 不清空状态，让用户看到最终状态
+    // downloadProgress.value = 0
+    // downloadStatus.value = ''
+  }
+}
+
+// 修改进度监听器，同时更新状态
+EventsOn('downloadProgress', (progress) => {
+  downloadProgress.value = Math.round(progress)
+  // 同时更新状态文本
+  downloadStatus.value = `下载中... ${downloadProgress.value}%`
+  console.log('下载进度:', progress, '四舍五入后:', downloadProgress.value)
+
+  // 如果正在下载且对话框未打开，自动打开对话框显示进度
+  if (progress > 0 && progress < 100 && !updateDialogVisible.value) {
+    updateDialogVisible.value = true
+  }
+})
 
 const handleCheckUpdate = async () => {
   const hasNewVersion = await checkUpdate();
@@ -473,13 +582,6 @@ const handleSkipToday = () => {
   });
 }
 
-const handleDownloadUpdate = () => {
-  if (releaseUrl.value) {
-    BrowserOpenURL(releaseUrl.value);
-    updateDialogVisible.value = false;
-  }
-}
-
 const handleDialogClose = (done) => {
   updateDialogVisible.value = false;
   done();
@@ -494,7 +596,7 @@ const handleUrlClick = () => {
 
 <style scoped lang="scss">
 .menu {
-  height: 100vh;
+  height: 96vh;
   padding: 0 10px;
   background: #f0f5f6;
   color: #26384e;
@@ -784,5 +886,29 @@ const handleUrlClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 新增进度条样式 */
+.progress-section {
+  display: flex;
+  flex-direction: column;
+
+  .progress-content {
+    margin-left: 0;
+    margin-top: 8px;
+
+    .progress-text {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+  }
+}
+
+/* 调整下载按钮样式 */
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

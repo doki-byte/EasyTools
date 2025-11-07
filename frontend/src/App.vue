@@ -1,16 +1,21 @@
 <template>
   <div class="app">
-    <!-- 原有布局 -->
-    <div class="appMenu" v-if="routeName !== 'login'">
-      <Menu :routeName="routeName" />
-    </div>
-    <div class="appMain">
-      <!-- 添加缓存功能 -->
-      <router-view v-slot="{ Component }">
-        <keep-alive :include="cachedPages">
-          <component :is="Component" :key="routeName" />
-        </keep-alive>
-      </router-view>
+    <CustomTitleBar/>
+    <!-- 主要内容容器 -->
+    <div class="main-container" :class="{ 'with-menu': routeName !== 'login' }">
+      <!-- 菜单栏 -->
+      <div class="appMenu" v-if="routeName !== 'login'">
+        <Menu :routeName="routeName" />
+      </div>
+      <!-- 主内容区域 -->
+      <div class="appMain">
+        <!-- 添加缓存功能 -->
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="cachedPages">
+            <component :is="Component" :key="routeName" />
+          </keep-alive>
+        </router-view>
+      </div>
     </div>
 
     <!-- 毛玻璃效果退出确认弹框 -->
@@ -57,14 +62,16 @@
 
 <script>
 import Menu from './components/Menu.vue'
+import CustomTitleBar from "./components/CustomTitleBar.vue";
 import { globalHotkeyManager } from '@/utils/globalHotkey';
 import { ToggleShowHide, SetHotkey } from "../wailsjs/go/hotkey/HotKey";
 import { EventsOn, EventsOff } from "../wailsjs/runtime";
-import { GetOs, ExitApp } from "../wailsjs/go/controller/System";
+import { GetOs, ExitApp } from "../wailsjs/go/system/System";
 
 export default {
   name: 'App',
   components: {
+    CustomTitleBar,
     Menu
   },
   data() {
@@ -73,7 +80,7 @@ export default {
       cachedPages: [
         'ToolsView',
         'SiteView',
-        'InfoSearchView',
+        'AssistiveView',
         'InfoDealView',
         'ConnectView',
         'CyberChefView',
@@ -240,43 +247,72 @@ export default {
 </script>
 
 <style scoped lang="scss">
-/* 原有样式保持不动 */
+/* 重置样式 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 #app {
+  height: 95vh;
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  width: 100vw;
-  height: 100vh;
-  background: #ffffff;
-}
-
 .app {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #f5f7fa;
+  position: relative;
+}
 
+/* 主内容容器 */
+.main-container {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 30px); /* 减去标题栏高度 */
+  overflow: hidden;
+}
+
+/* 有菜单时的布局 */
+.main-container.with-menu {
   .appMenu {
+    width: 130px;
     flex-shrink: 0;
+    background: #ffffff;
+    border-right: 1px solid #e8e8e8;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    z-index: 100;
+    overflow-y: auto;
   }
 
   .appMain {
-    height: 100vh;
-    overflow: auto;
     flex: 1;
+    background: #ffffff;
+    overflow: auto;
+    position: relative;
+    height: 96vh;
+  }
+}
+
+/* 无菜单时的布局（登录页面） */
+.main-container:not(.with-menu) {
+  .appMain {
+    flex: 1;
+    background: #ffffff;
+    overflow: auto;
+    position: relative;
   }
 }
 
 /* 毛玻璃效果弹框样式 */
 .glass-dialog {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -298,8 +334,6 @@ body {
   align-items: center;
   justify-content: center;
 }
-
-
 
 .app-name {
   margin: 0;
@@ -338,6 +372,7 @@ body {
   border: 1px solid #d9d9d9;
   background: transparent;
   height: 36px;
+  transition: all 0.3s ease;
 }
 
 .glass-confirm {
@@ -347,18 +382,52 @@ body {
   border: none;
   color: white;
   height: 36px;
+  transition: all 0.3s ease;
 }
 
 .glass-cancel:hover {
   border-color: #4096ff;
   color: #4096ff;
   background: rgba(64, 150, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .glass-confirm:hover {
   background: linear-gradient(135deg, #ff8787 0%, #f76707 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+/* 滚动条美化 */
+.appMenu::-webkit-scrollbar,
+.appMain::-webkit-scrollbar {
+  width: 6px;
+}
+
+.appMenu::-webkit-scrollbar-track,
+.appMain::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.appMenu::-webkit-scrollbar-thumb,
+.appMain::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.appMenu::-webkit-scrollbar-thumb:hover,
+.appMain::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .main-container.with-menu {
+    .appMenu {
+      width: 180px;
+    }
+  }
 }
 </style>
 
@@ -380,5 +449,10 @@ body {
 
 .glass-exit-modal .ant-modal-mask {
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* 确保标题栏在最顶层 */
+.custom-titlebar {
+  z-index: 1000;
 }
 </style>

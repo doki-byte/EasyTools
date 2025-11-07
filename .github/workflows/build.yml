@@ -141,11 +141,6 @@ jobs:
       run: |
         choco install upx -y
 
-    - name: Install UPX (macOS)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install upx
-
     - name: Compress with UPX (Linux)
       if: matrix.os == 'ubuntu-24.04'
       run: |
@@ -156,15 +151,6 @@ jobs:
       shell: bash
       run: |
         upx ./build/bin/${{ matrix.output-dir }}/EasyTools.exe
-
-    - name: Compress with UPX (macOS)
-      if: matrix.os == 'macos-latest'
-      shell: bash
-      run: |
-        # 压缩 macOS 应用
-        if [ -f "./build/bin/${{ matrix.output-dir }}/EasyTools.app/Contents/MacOS/EasyTools" ]; then
-          upx "./build/bin/${{ matrix.output-dir }}/EasyTools.app/Contents/MacOS/EasyTools" --force-macos
-        fi
 
     - name: Package macOS app (for macOS builds)
       if: matrix.os == 'macos-latest'

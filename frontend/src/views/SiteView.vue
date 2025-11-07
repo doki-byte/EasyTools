@@ -172,7 +172,7 @@ import {ReadImageAsBase64} from "../../wailsjs/go/controller/Tool";
 import {BrowserOpenURL} from "../../wailsjs/runtime"; // 打开链接的方法
 import {Search} from "@element-plus/icons-vue";
 import {ElNotification, ElTree} from "element-plus";
-import {GetConfigDir, GetOpenFilePath, OpenPath} from "../../wailsjs/go/controller/System";
+import {GetConfigDir, GetOpenFilePath, OpenPath} from "../../wailsjs/go/system/System";
 
 export default {
   name: "SiteView",
@@ -885,7 +885,7 @@ export default {
 /* 右上角小目录树 */
 .cate-tree {
   position: fixed;
-  top: 20px;
+  top: 50px;
   right: 15px;
   width: 140px;
   max-height: 30px; /* 默认收起状态的高度 */
@@ -1069,7 +1069,7 @@ export default {
 
 
   .context-menu {
-    position: absolute;
+    position: fixed;
     z-index: 1000;
     background-color: #ffffff;
     border: 1px solid #e6e6e6;

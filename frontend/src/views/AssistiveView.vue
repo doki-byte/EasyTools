@@ -227,12 +227,12 @@
 </template>
 
 <script>
-import { QueryAntivirusProcesses, QueryGoogleQueries, QueryPasswordsAPI } from "../../wailsjs/go/controller/InfoSearch"
+import { QueryAntivirusProcesses, QueryGoogleQueries, QueryPasswordsAPI } from "../../wailsjs/go/controller/Assistive"
 import axios from 'axios'
 import { loadMenuOrder, moduleTabsConfig } from '@/utils/menuConfig';
 
 export default {
-  name: "InfoSearchView",
+  name: "AssistiveView",
   data() {
     return {
       activeTab: "", // 初始为空，等配置加载后设置
@@ -242,7 +242,7 @@ export default {
       passwordData: [],
       total: 0,
       currentPage: 1,
-      pageSize: 10,
+      pageSize: 12,
 
       tasklistInput: "",
       avResults: [],
@@ -371,7 +371,7 @@ export default {
         });
 
         // 应用保存的配置
-        infoSearchTabs.forEach(savedTab => {
+        assistiveTabs.forEach(savedTab => {
           if (tabMap[savedTab.name]) {
             tabMap[savedTab.name].order = savedTab.order;
             tabMap[savedTab.name].visible = savedTab.visible;
@@ -424,7 +424,7 @@ export default {
 
     setDefaultTabs() {
       // 直接使用默认配置
-      this.moduleTabs = moduleTabsConfig.infoSearch.map(tab => ({
+      this.moduleTabs = moduleTabsConfig.assistive.map(tab => ({
         ...tab,
         order: tab.defaultOrder
       }));
@@ -636,7 +636,7 @@ export default {
 <style scoped>
 /* 页面容器 */
 .container {
-  height: 100vh;
+  height: 95vh;
   display: flex;
   margin-left: 10px;
   flex-direction: column;
@@ -714,6 +714,7 @@ export default {
   border-radius: 8px;
   border: 1px solid #ebeef5;
   overflow: hidden;
+  min-height: 550px;
 }
 
 .custom-table .el-table__row:hover {

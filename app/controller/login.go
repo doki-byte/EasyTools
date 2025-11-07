@@ -1,13 +1,14 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // User 系统API
 type User struct {
-	Base
+	system.Base
 }
 
 // UserItem 工具结构体
@@ -34,7 +35,7 @@ func (UserItem) TableName() string {
 
 // Login 用户登录验证
 func (s *User) Login(username, password string) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -54,7 +55,7 @@ func (s *User) Login(username, password string) error {
 
 // UpdateUser 修改用户信息（包含密码修改）
 func (s *User) UpdateUser(username string, updatedUser UpdateUserItem) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}

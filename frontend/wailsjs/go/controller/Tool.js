@@ -6,6 +6,10 @@ export function AddTool(arg1) {
   return window['go']['controller']['Tool']['AddTool'](arg1);
 }
 
+export function Db() {
+  return window['go']['controller']['Tool']['Db']();
+}
+
 export function DeleteTool(arg1) {
   return window['go']['controller']['Tool']['DeleteTool'](arg1);
 }
@@ -18,6 +22,10 @@ export function GetAllTools() {
   return window['go']['controller']['Tool']['GetAllTools']();
 }
 
+export function GetAppPath() {
+  return window['go']['controller']['Tool']['GetAppPath']();
+}
+
 export function GetCategoryList() {
   return window['go']['controller']['Tool']['GetCategoryList']();
 }
@@ -26,12 +34,28 @@ export function GetSearchTools(arg1) {
   return window['go']['controller']['Tool']['GetSearchTools'](arg1);
 }
 
+export function InitMianSha() {
+  return window['go']['controller']['Tool']['InitMianSha']();
+}
+
+export function Log(arg1) {
+  return window['go']['controller']['Tool']['Log'](arg1);
+}
+
 export function MoveCommandToCategory(arg1) {
   return window['go']['controller']['Tool']['MoveCommandToCategory'](arg1);
 }
 
 export function ReadImageAsBase64(arg1) {
   return window['go']['controller']['Tool']['ReadImageAsBase64'](arg1);
+}
+
+export function Schema(arg1) {
+  return window['go']['controller']['Tool']['Schema'](arg1);
+}
+
+export function SetCtx(arg1) {
+  return window['go']['controller']['Tool']['SetCtx'](arg1);
 }
 
 export function UpdateCategorySorts(arg1) {

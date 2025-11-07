@@ -1,4 +1,3 @@
-// router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
 import WebsiteView from '@/views/SiteView.vue';
 import { getToken } from '@/utils/token';
@@ -7,7 +6,7 @@ import 'nprogress/nprogress.css';
 
 import ToolView from '@/views/ToolsView.vue';
 import RandomInfoView from '@/views/RandomInfoView.vue';
-import InfoSearchView from '@/views/InfoSearchView.vue';
+import AssistiveView from '@/views/AssistiveView.vue';
 import InfoDealView from '@/views/InfoDealView.vue';
 import CyberChefView from '@/views/CyberChefView.vue';
 import ConnectView from "@/views/ConnectView.vue";
@@ -28,9 +27,9 @@ const routes = [
     component: WebsiteView,
   },
   {
-    path: '/infoSearch',
-    name: 'infoSearch',
-    component: InfoSearchView,
+    path: '/assistive',
+    name: 'assistive',
+    component: AssistiveView,
   },
   {
     path: '/infoDeal',

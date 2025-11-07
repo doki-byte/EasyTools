@@ -8,17 +8,16 @@
 
 ## 更新说明
 
-###  v1.9.3
+###  v1.9.4
 
 感谢师傅们提供的修改建议，目前已更新一下功能：
 
-1. 优化redis界面，修复连接过多导致的页面无限下拉的bug; 
-2. 新增显示更新详情功能;
-3. 参考fine修改小程序反编译界面; 
-4. tools新建工具的时间添加打开工具文件位置的功能; 
-5. 新增二级菜单的显示/隐藏,位置移动; 
-6. 修改ftp下载方式为浏览器下载，避免EasyTools卡死; 
-7. 优化JwtCreck功能;
+1. 修复mac小程序反编译一直报错bug; 
+2. 修复mac运行无法直接显示主界面的bug;
+3. 修复构建的mac程序无法直接运行的bug;
+4. 优化OSS资源桶功能; 
+5. 新增全局代理功能; 
+6. 新增自动下载替换更新包的功能。
 
 ## 工具介绍
 
@@ -96,7 +95,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 ![image-20250826211840281](images/image-20250826211840281.png)
 
-![image-20250826211848198](images/image-20250826211848198.png)
+![image-20251107204032110](E:\Notes\脚本工具源码\EasyTools\images\image-20251107204032110.png)
 
 ![image-20250826211856564](images/image-20250826211856564.png)
 
@@ -171,7 +170,7 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 ![image-20250826212112948](images/image-20250826212112948.png)
 
-![image-20250927222442743](images/image-20250927222442743.png)
+![image-20251107204317639](E:\Notes\脚本工具源码\EasyTools\images\image-20251107204317639.png)
 
 ## 程序编译
 
@@ -211,7 +210,6 @@ wails build --trimpath -ldflags="-w -s"
 
 1. 优先查看版本架构是否正确
 2. `sudo spctl --master-disable`,此行代码可以让 Mac 允许安装第三方来源的应用
-3. 尝试`upx -d EasyTools.app\Contents\MacOS\EasyTools`进行upx脱壳
 
 ## 交流反馈
 

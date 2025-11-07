@@ -3,6 +3,7 @@ package controller
 import (
 	"EasyTools/app/connect/ftp"
 	"EasyTools/app/connect/ssh"
+	"EasyTools/app/controller/system"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 // Server 本地文件服务
 type Server struct {
-	Base
+	system.Base
 	address   string
 	port      int
 	staticDir string
@@ -36,7 +37,7 @@ func NewServer() *Server {
 // start 启动文件服务
 func (s *Server) start(port int) *Server {
 
-	baseDir := s.getAppPath()
+	baseDir := s.GetAppPath()
 	s.staticDir = filepath.Join(baseDir, "icon")
 	s.port = port
 

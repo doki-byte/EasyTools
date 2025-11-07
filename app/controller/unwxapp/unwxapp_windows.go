@@ -1,8 +1,9 @@
-//go:build linux || darwin
+//go:build windows
 
-package controller
+package unwxapp
 
 import (
+	"EasyTools/app/controller/system"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -88,7 +90,7 @@ type InfoToFront struct {
 }
 
 type UnWxapp struct {
-	Base
+	system.Base
 	http                *http.Client
 	autoDecompile       bool
 	mutex               sync.Mutex
@@ -105,7 +107,7 @@ func NewUnWxapp() *UnWxapp {
 
 // 获取配置
 func (u *UnWxapp) getConfig() (*WechatConfig, error) {
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return nil, errors.New("数据库连接失败")
 	}
@@ -119,7 +121,7 @@ func (u *UnWxapp) getConfig() (*WechatConfig, error) {
 
 // 保存配置
 func (u *UnWxapp) saveConfig(config *WechatConfig) error {
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return errors.New("数据库连接失败")
 	}
@@ -232,7 +234,7 @@ func (u *UnWxapp) ClearApplet() error {
 	}
 
 	// 清空任务表
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return errors.New("数据库连接失败")
 	}
@@ -287,20 +289,28 @@ func (u *UnWxapp) ClearDecompiled() error {
 			}
 
 			version := versionEntry.Name()
-			decompiledDir := filepath.Join(appPath, version, "__APP__")
+			decompiledAppDir := filepath.Join(appPath, version, "__APP__")
+			decompiledPluginDir := filepath.Join(appPath, version, "__PLUGINCODE__")
 
 			// 删除反编译输出目录
-			if _, err := os.Stat(decompiledDir); err == nil {
-				log.Printf("删除反编译目录: %s", decompiledDir)
-				if err := os.RemoveAll(decompiledDir); err != nil {
-					log.Printf("删除反编译目录失败: %s, %v", decompiledDir, err)
+			if _, err := os.Stat(decompiledAppDir); err == nil {
+				log.Printf("删除反编译目录: %s", decompiledAppDir)
+				if err := os.RemoveAll(decompiledAppDir); err != nil {
+					log.Printf("删除反编译目录失败: %s, %v", decompiledAppDir, err)
+				}
+			}
+
+			if _, err := os.Stat(decompiledPluginDir); err == nil {
+				log.Printf("删除反编译目录: %s", decompiledPluginDir)
+				if err := os.RemoveAll(decompiledPluginDir); err != nil {
+					log.Printf("删除反编译目录失败: %s, %v", decompiledPluginDir, err)
 				}
 			}
 		}
 	}
 
 	// 清空任务表
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return errors.New("数据库连接失败")
 	}
@@ -430,7 +440,7 @@ func (u *UnWxapp) GetMatchedString(appid, version string) ([]string, error) {
 }
 
 func (u *UnWxapp) SelectDirectory() (string, error) {
-	return runtime.OpenDirectoryDialog(u.ctx, runtime.OpenDialogOptions{
+	return runtime.OpenDirectoryDialog(u.Ctx, runtime.OpenDialogOptions{
 		Title: "选择小程序目录",
 	})
 }
@@ -460,28 +470,46 @@ func (u *UnWxapp) ExtractSensitiveInfo(appID, version string) error {
 	}
 	log.Printf("获取配置成功，Applet路径: %s", config.AppletPath)
 
-	outputDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
-	log.Printf("检查输出目录: %s", outputDir)
+	outputAppDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
+	outputPluginDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__PLUGINCODE__")
+	log.Printf("检查输出目录: %s 和 %s", outputAppDir, outputPluginDir)
 
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		log.Printf("反编译输出目录不存在: %s", outputDir)
-		return fmt.Errorf("反编译输出目录不存在: %s", outputDir)
+	// 检查目录是否存在
+	_, appErr := os.Stat(outputAppDir)
+	_, pluginErr := os.Stat(outputPluginDir)
+
+	// 如果两个目录都不存在，则报错
+	if os.IsNotExist(appErr) && os.IsNotExist(pluginErr) {
+		log.Printf("反编译输出目录不存在: %s 和 %s", outputAppDir, outputPluginDir)
+		return fmt.Errorf("反编译输出目录不存在: %s 和 %s", outputAppDir, outputPluginDir)
 	}
 	log.Printf("输出目录存在")
 
 	var files []string
 	log.Printf("开始遍历文件...")
-	if err := filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+
+	// 遍历存在的目录
+	var dirsToWalk []string
+	if !os.IsNotExist(appErr) {
+		dirsToWalk = append(dirsToWalk, outputAppDir)
+	}
+	if !os.IsNotExist(pluginErr) {
+		dirsToWalk = append(dirsToWalk, outputPluginDir)
+	}
+
+	for _, dir := range dirsToWalk {
+		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				files = append(files, path)
+			}
+			return nil
+		}); err != nil {
+			log.Printf("遍历反编译文件失败: %v", err)
+			return fmt.Errorf("遍历反编译文件失败: %v", err)
 		}
-		if !info.IsDir() {
-			files = append(files, path)
-		}
-		return nil
-	}); err != nil {
-		log.Printf("遍历反编译文件失败: %v", err)
-		return fmt.Errorf("遍历反编译文件失败: %v", err)
 	}
 
 	if len(files) == 0 {
@@ -512,22 +540,41 @@ func (u *UnWxapp) CheckDecompileStatus(appID, version string) (string, error) {
 	}
 
 	// 检查反编译输出目录
-	outputDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+	outputAppDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
+	outputPluginDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__PLUGINCODE__")
+
+	// 检查目录是否存在
+	_, appErr := os.Stat(outputAppDir)
+	_, pluginErr := os.Stat(outputPluginDir)
+
+	// 如果两个目录都不存在
+	if os.IsNotExist(appErr) && os.IsNotExist(pluginErr) {
 		return "反编译未完成或失败: 输出目录不存在", nil
 	}
 
-	// 检查是否有反编译文件
+	// 统计文件数量
 	var fileCount int
-	filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			fileCount++
-		}
-		return nil
-	})
+
+	// 遍历存在的目录
+	var dirsToWalk []string
+	if !os.IsNotExist(appErr) {
+		dirsToWalk = append(dirsToWalk, outputAppDir)
+	}
+	if !os.IsNotExist(pluginErr) {
+		dirsToWalk = append(dirsToWalk, outputPluginDir)
+	}
+
+	for _, dir := range dirsToWalk {
+		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				fileCount++
+			}
+			return nil
+		})
+	}
 
 	return fmt.Sprintf("数据库状态: %s, 文件数量: %d", task.DecompileStatus, fileCount), nil
 }
@@ -607,8 +654,9 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 
 		var versions []*Version
 		for _, versionEntry := range versionEntries {
-			file := filepath.Join(versionsDir, versionEntry.Name(), "__APP__.wxapkg")
-			if u.fileExist(file) {
+			appFile := filepath.Join(versionsDir, versionEntry.Name(), "__APP__.wxapkg")
+			pluginFile := filepath.Join(versionsDir, versionEntry.Name(), "__PLUGINCODE__.wxapkg")
+			if u.fileExist(appFile) || u.fileExist(pluginFile) {
 				info, err := versionEntry.Info()
 				if err != nil {
 					continue
@@ -652,7 +700,7 @@ func (u *UnWxapp) createVersionTasks(miniProgram *MiniProgram) []*VersionTask {
 }
 
 func (u *UnWxapp) handleVersionTasks(appID string, versionsTask []*VersionTask) ([]*VersionTaskStatus, error) {
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return nil, errors.New("数据库连接失败")
 	}
@@ -709,7 +757,7 @@ func (u *UnWxapp) handleVersionTasks(appID string, versionsTask []*VersionTask) 
 }
 
 func (u *UnWxapp) findOrCreateInfo(appID string) (*MiniAppInfo, error) {
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return nil, errors.New("数据库连接失败")
 	}
@@ -747,7 +795,7 @@ func (u *UnWxapp) queryMiniAPPInfoAsync(appID string) {
 		return
 	}
 
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return
 	}
@@ -812,7 +860,7 @@ func (u *UnWxapp) findVersionTask(appID, version string) (*VersionTask, error) {
 		return nil, fmt.Errorf("appID 或 version 不能为空")
 	}
 
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return nil, errors.New("数据库连接失败")
 	}
@@ -851,7 +899,7 @@ func (u *UnWxapp) findVersionTask(appID, version string) (*VersionTask, error) {
 }
 
 func (u *UnWxapp) updateVersionTask(task *VersionTask) error {
-	db := u.db()
+	db := u.Db()
 	if db == nil {
 		return errors.New("数据库连接失败")
 	}
@@ -919,7 +967,7 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
 	//log.Printf("反编译包路径: %s", packagePath)
 
-	baseDir := u.getAppPath()
+	baseDir := u.GetAppPath()
 	unwxappDir := filepath.Join(baseDir, "tools", "Unwxapp")
 
 	args := []string{"index.js", "wx"}
@@ -931,6 +979,7 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 
 	cmd := exec.Command("node", args...)
 	cmd.Dir = unwxappDir
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	//log.Printf("执行命令: node %s", strings.Join(args, " "))
 
@@ -953,34 +1002,50 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 	//log.Printf("命令输出: %s", outputStr)
 
 	// 检查反编译输出目录
-	outputDir := filepath.Join(packagePath, "__APP__")
-	//log.Printf("检查输出目录: %s", outputDir)
+	outputAppDir := filepath.Join(packagePath, "__APP__")
+	outputPluginDir := filepath.Join(packagePath, "__PLUGINCODE__")
 
-	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		//log.Printf("反编译输出目录不存在: %s", outputDir)
+	// 检查目录是否存在
+	_, appErr := os.Stat(outputAppDir)
+	_, pluginErr := os.Stat(outputPluginDir)
+
+	// 如果两个目录都不存在，则报错
+	if os.IsNotExist(appErr) && os.IsNotExist(pluginErr) {
 		task.DecompileStatus = "Error"
 		task.Message = "反编译输出目录不存在"
 		if err := u.updateVersionTask(task); err != nil {
 			//log.Printf("更新错误状态失败: %v", err)
 		}
-		return nil, fmt.Errorf("反编译输出目录不存在: %s", outputDir)
+		return nil, fmt.Errorf("反编译输出目录不存在，检查了: %s 和 %s", outputAppDir, outputPluginDir)
 	}
 
 	// 统计文件数量
 	var files []string
 	var fileCount int
-	if err := filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+
+	// 遍历存在的目录
+	var dirsToWalk []string
+	if !os.IsNotExist(appErr) {
+		dirsToWalk = append(dirsToWalk, outputAppDir)
+	}
+	if !os.IsNotExist(pluginErr) {
+		dirsToWalk = append(dirsToWalk, outputPluginDir)
+	}
+
+	for _, dir := range dirsToWalk {
+		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				files = append(files, path)
+				fileCount++
+			}
+			return nil
+		}); err != nil {
+			//log.Printf("遍历反编译文件失败: %v", err)
+			// 即使遍历失败，也继续处理
 		}
-		if !info.IsDir() {
-			files = append(files, path)
-			fileCount++
-		}
-		return nil
-	}); err != nil {
-		//log.Printf("遍历反编译文件失败: %v", err)
-		// 即使遍历失败，也继续处理
 	}
 
 	//log.Printf("找到 %d 个反编译文件", fileCount)
@@ -1050,6 +1115,11 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 	// 获取输出目录的相对路径
 	config, _ := u.getConfig()
 	baseOutputDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
+
+	// 如果 __APP__ 目录不存在，使用 __PLUGINCODE__ 目录
+	if _, err := os.Stat(baseOutputDir); os.IsNotExist(err) {
+		baseOutputDir = filepath.Join(config.AppletPath, task.AppID, task.Version, "__PLUGINCODE__")
+	}
 
 	// 按文件类型分类统计
 	fileStats := make(map[string]int)

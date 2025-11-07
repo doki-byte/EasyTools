@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"bufio"
 	"crypto/ecdsa"
 	"crypto/ed25519"
@@ -22,7 +23,7 @@ import (
 )
 
 type JwtCrackController struct {
-	Base
+	system.Base
 }
 
 type JwtResult struct {
@@ -188,7 +189,7 @@ func (j *JwtCrackController) DecodeJWTWithAlg(tokenStr string, alg string, keyPa
 
 func (j *JwtCrackController) ChooseJwtFile() (string, error) {
 
-	return runtime.OpenFileDialog(j.ctx, runtime.OpenDialogOptions{
+	return runtime.OpenFileDialog(j.Ctx, runtime.OpenDialogOptions{
 		Title: "选择jwt字典",
 	})
 }
@@ -456,7 +457,7 @@ func loadEd25519PublicKeyFromPEM(path string) (ed25519.PublicKey, error) {
 
 // 获取默认字典路径
 func (j *JwtCrackController) GetDefaultDictPath() string {
-	appPath := j.getAppPath()
+	appPath := j.GetAppPath()
 	defaultDictPath := filepath.Join(appPath, "tools", "dict", "jwtdict.txt")
 
 	// 检查文件是否存在

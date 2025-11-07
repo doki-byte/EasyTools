@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"EasyTools/app/model"
+	"EasyTools/app/proxy"
 	"crypto/md5"
-	"crypto/tls"
 	"encoding/hex"
 	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"io"
 	"mime"
 	"net/http"
@@ -14,14 +16,11 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 // Site 控制器
 type Site struct {
-	Base
+	system.Base
 }
 
 // SiteItem 站点结构体
@@ -52,7 +51,7 @@ func (SiteItem) TableName() string {
 
 // 获取分类
 func (s *Site) GetCategoryList() ([]map[string]interface{}, error) {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -92,7 +91,7 @@ func (s *Site) GetCategoryList() ([]map[string]interface{}, error) {
 func (s *Site) GetAllSites() ([]SiteCategory, error) {
 	var sitesCategories []SiteCategory
 
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -148,7 +147,7 @@ func (s *Site) GetSearchSites(title string) ([]SiteCategory, error) {
 	var categories []SiteCategory
 
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return nil, fmt.Errorf("数据库连接未初始化")
 	}
@@ -174,7 +173,7 @@ func (s *Site) GetSearchSites(title string) ([]SiteCategory, error) {
 		err := db.Where("category = ? AND title LIKE ?", categoryName, "%"+title+"%").Find(&sites).Error
 		if err != nil {
 			// 跳过失败的分类，但记录日志
-			s.log(fmt.Sprintf("查询分类 '%s' 的站点失败: %v", categoryName, err))
+			s.Log(fmt.Sprintf("查询分类 '%s' 的站点失败: %v", categoryName, err))
 			continue
 		}
 
@@ -217,16 +216,8 @@ func (s *Site) FetchSiteInfo(rawURL string) (map[string]string, error) {
 		return result, fmt.Errorf("无法解析 URL: %v", err)
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-
-	client := &http.Client{
-		Transport: tr,
-		Timeout:   12 * time.Second,
-	}
+	// 使用全局代理管理器的 HTTP 客户端
+	client := proxy.GlobalProxyManager.GetHTTPClient()
 
 	// 获取页面
 	req, _ := http.NewRequest("GET", rawURL, nil)
@@ -283,12 +274,12 @@ func (s *Site) FetchSiteInfo(rawURL string) (map[string]string, error) {
 	iconAbs := parsedBase.ResolveReference(iconURL).String()
 
 	// 下载 icon
-	saveName, err := downloadAndSaveIcon(client, iconAbs)
+	saveName, err := s.downloadAndSaveIcon(client, iconAbs)
 	if err != nil {
 		// 下载失败：尝试 /favicon.ico 作为最后手段（如果之前不是/fav）
 		if !strings.HasSuffix(strings.ToLower(iconAbs), "/favicon.ico") {
 			rootFav := parsedBase.Scheme + "://" + parsedBase.Host + "/favicon.ico"
-			if saveName2, err2 := downloadAndSaveIcon(client, rootFav); err2 == nil {
+			if saveName2, err2 := s.downloadAndSaveIcon(client, rootFav); err2 == nil {
 				result["icon"] = saveName2
 				return result, nil
 			}
@@ -302,7 +293,7 @@ func (s *Site) FetchSiteInfo(rawURL string) (map[string]string, error) {
 }
 
 // downloadAndSaveIcon 下载 iconUrl 并保存到 ./icon/<md5>.<ext>，返回文件名（不含路径）
-func downloadAndSaveIcon(client *http.Client, iconUrl string) (string, error) {
+func (s *Site) downloadAndSaveIcon(client *http.Client, iconUrl string) (string, error) {
 	// 请求 icon
 	req, _ := http.NewRequest("GET", iconUrl, nil)
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0")
@@ -341,7 +332,7 @@ func downloadAndSaveIcon(client *http.Client, iconUrl string) (string, error) {
 	h.Write([]byte(iconUrl))
 	name := hex.EncodeToString(h.Sum(nil)) + ext
 
-	baseDir := GetAppBaseDir()
+	baseDir := system.GetAppBaseDir()
 
 	iconDir := filepath.Join(baseDir, "icon")
 	if err := os.MkdirAll(iconDir, 0755); err != nil {
@@ -375,7 +366,7 @@ func downloadAndSaveIcon(client *http.Client, iconUrl string) (string, error) {
 // 新增工具
 func (s *Site) AddSite(site SiteItem) (int, error) {
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		// s.log("数据库连接未初始化")
 		return 0, fmt.Errorf("数据库连接未初始化")
@@ -395,7 +386,7 @@ func (s *Site) AddSite(site SiteItem) (int, error) {
 // 修改工具
 func (s *Site) UpdateSite(id int, UpdateSite SiteItem) error {
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		// s.log("数据库连接未初始化")
 		return fmt.Errorf("数据库连接未初始化")
@@ -414,7 +405,7 @@ func (s *Site) UpdateSite(id int, UpdateSite SiteItem) error {
 // 删除工具
 func (s *Site) DeleteSite(id int) error {
 	// 获取数据库连接
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -434,7 +425,7 @@ func (s *Site) DeleteSite(id int) error {
 
 	// 如果站点有图标，删除对应的图标文件
 	if site.Icon != "" {
-		baseDir := GetAppBaseDir()
+		baseDir := system.GetAppBaseDir()
 		iconPath := filepath.Join(baseDir, "icon", site.Icon)
 
 		// 检查文件是否存在
@@ -442,9 +433,9 @@ func (s *Site) DeleteSite(id int) error {
 			// 文件存在，尝试删除
 			if err := os.Remove(iconPath); err != nil {
 				// 删除失败，记录错误但不中断流程
-				s.log(fmt.Sprintf("删除图标文件失败: %v", err))
+				s.Log(fmt.Sprintf("删除图标文件失败: %v", err))
 			} else {
-				s.log(fmt.Sprintf("已删除图标文件: %s", iconPath))
+				s.Log(fmt.Sprintf("已删除图标文件: %s", iconPath))
 			}
 		}
 	}
@@ -454,7 +445,7 @@ func (s *Site) DeleteSite(id int) error {
 
 // 修改分类名称（将所有属于 oldCategory 的工具改为 newCategory）
 func (s *Site) UpdateSiteCategory(oldCategory, newCategory string) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -469,7 +460,7 @@ func (s *Site) UpdateSiteCategory(oldCategory, newCategory string) error {
 
 // 删除分类及其下所有工具
 func (s *Site) DeleteSiteCategory(category string) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -486,7 +477,7 @@ func (s *Site) DeleteSiteCategory(category string) error {
 func (s *Site) UpdateCategorySorts(sorts []map[string]interface{}) error {
 	//fmt.Printf("调试信息 - 收到排序请求: %+v\n", sorts) // 添加详细日志
 
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -553,7 +544,7 @@ func (s *Site) UpdateCategorySorts(sorts []map[string]interface{}) error {
 func (s *Site) UpdateCommandSorts(sorts []map[string]interface{}) error {
 	//fmt.Printf("[DEBUG] 收到命令排序请求: %+v\n", sorts)
 
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}
@@ -614,7 +605,7 @@ func (s *Site) UpdateCommandSorts(sorts []map[string]interface{}) error {
 
 // 在Site结构体中添加以下方法
 func (s *Site) MoveCommandToCategory(request map[string]interface{}) error {
-	db := s.db()
+	db := s.Db()
 	if db == nil {
 		return fmt.Errorf("数据库连接未初始化")
 	}

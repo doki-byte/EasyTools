@@ -10,6 +10,10 @@ export function ChooseJwtFile() {
   return window['go']['controller']['JwtCrackController']['ChooseJwtFile']();
 }
 
+export function Db() {
+  return window['go']['controller']['JwtCrackController']['Db']();
+}
+
 export function DecodeJWTWithAlg(arg1, arg2, arg3) {
   return window['go']['controller']['JwtCrackController']['DecodeJWTWithAlg'](arg1, arg2, arg3);
 }
@@ -18,6 +22,26 @@ export function EncodeJWTWithAlg(arg1, arg2, arg3) {
   return window['go']['controller']['JwtCrackController']['EncodeJWTWithAlg'](arg1, arg2, arg3);
 }
 
+export function GetAppPath() {
+  return window['go']['controller']['JwtCrackController']['GetAppPath']();
+}
+
 export function GetDefaultDictPath() {
   return window['go']['controller']['JwtCrackController']['GetDefaultDictPath']();
+}
+
+export function InitMianSha() {
+  return window['go']['controller']['JwtCrackController']['InitMianSha']();
+}
+
+export function Log(arg1) {
+  return window['go']['controller']['JwtCrackController']['Log'](arg1);
+}
+
+export function Schema(arg1) {
+  return window['go']['controller']['JwtCrackController']['Schema'](arg1);
+}
+
+export function SetCtx(arg1) {
+  return window['go']['controller']['JwtCrackController']['SetCtx'](arg1);
 }

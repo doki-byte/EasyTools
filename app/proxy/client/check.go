@@ -79,7 +79,7 @@ func (p *Proxy) CheckDatasets() Response {
 	}
 
 	msg := fmt.Sprintf("共有 %d 条有效数据", p.config.LiveProxies)
-	p.Debug("msg: ", msg)
+	//p.Debug("msg: ", msg)
 	runtime.EventsEmit(p.ctx, "is_ready", p.config.LiveProxies)
 	runtime.EventsEmit(p.ctx, "log_update", fmt.Sprintf("[INF] %s ", msg))
 
@@ -96,18 +96,18 @@ func (p *Proxy) checkProxy(proxyIP string) bool {
 	client.SetTimeout(time.Duration(timeout) * time.Second)
 	resp, err := client.R().Get("http://myip.ipip.net")
 	if err != nil {
-		p.Error("不可用： %s, 错误: %v\n", proxyIP, err)
+		//p.Error("不可用： %s, 错误: %v\n", proxyIP, err)
 		runtime.EventsEmit(p.ctx, "log_update", fmt.Sprintf("[ERR] %s <-- : --> %v", proxyIP, err))
 		return false
 	}
 
 	if strings.Contains(resp.String(), "当前 IP") {
-		p.Error("可用： %s\n", proxyIP, "resp: ", resp.String())
+		//p.Error("可用： %s\n", proxyIP, "resp: ", resp.String())
 		runtime.EventsEmit(p.ctx, "log_update", fmt.Sprintf("[INF] 有效值 %s ", resp.String()))
 		return true
 	}
 
-	p.Error("不可用： %s\n", proxyIP)
+	//p.Error("不可用： %s\n", proxyIP)
 	runtime.EventsEmit(p.ctx, "log_update", fmt.Sprintf("[WAR] 不稳定 %s -- %v", proxyIP, err))
 	return false
 }

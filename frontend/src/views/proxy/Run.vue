@@ -1,4 +1,5 @@
 <template>
+  <!-- 模板部分保持不变 -->
   <a-row :gutter="12">
     <a-col :span="18">
       <a-input
@@ -7,9 +8,9 @@
           placeholder="请选择包含代理URL的文件"
       >
         <template #suffix>
-          <!-- <a-tooltip content="可以从此处获取, 点击即可打开">
-          <icon-question-circle @click="BrowserOpenURL('http://proxycompass.com/cn/free-proxies/asia/china/')"/>
-          </a-tooltip> -->
+<!--          <a-tooltip content="可以从此处获取, 点击即可打开">-->
+<!--          <icon-question-circle @click="BrowserOpenURL('http://proxycompass.com/cn/free-proxies/asia/china/')"/>-->
+<!--          </a-tooltip>-->
         </template>
       </a-input>
     </a-col>
@@ -76,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref, nextTick } from "vue";
 import { ChooseFile } from "../../../wailsjs/go/proxy/Proxy";
 import { Notification } from '@arco-design/web-vue';
 import {BrowserOpenURL, EventsOff, EventsOn} from "../../../wailsjs/runtime";
@@ -105,15 +106,43 @@ const details = ref([  // 配置详情
     label: '协程数',
     value: `${configState.getCoroutineCount()}`,
   },
-  // {
-  //   label: '代理总数',
-  //   value: `${configState.getAllProxies()} 条`,
-  // },
   {
     label: '有效代理',
     value: `${configState.getLiveProxies()} 条`,
   },
 ]);
+
+// 从日志中提取当前使用的代理IP
+const extractCurrentProxyFromLog = (log: string): string | null => {
+  // 匹配 "[INF] 当前使用代理 IP:PORT" 格式的日志
+  const match = log.match(/\[INF\]\s*当前使用代理\s*([\d.]+:\d+)/);
+  if (match && match[1]) {
+    return match[1].split(':')[0]; // 返回IP部分
+  }
+  return null;
+};
+
+// 处理日志输出
+const handleLogEmits = (log: string) => {
+  logs.value.push(log);
+
+  // 检查日志是否包含当前使用的代理信息
+  const currentProxyIP = extractCurrentProxyFromLog(log);
+  if (currentProxyIP) {
+    console.log('检测到当前代理IP:', currentProxyIP);
+    // 更新当前IP
+    configState.setCurrentIP(currentProxyIP);
+    // 发送事件通知主组件
+    EventsOn('current_ip', currentProxyIP);
+  }
+
+  // 自动滚动到底部
+  nextTick(() => {
+    if (logContainer.value) {
+      logContainer.value.scrollTop = logContainer.value.scrollHeight;
+    }
+  });
+};
 
 // 打开文件选择框
 function openFile() {
@@ -139,14 +168,6 @@ function openFile() {
   });
 }
 
-// 处理日志输出
-const handleLogEmits = (log: string) => {
-  logs.value.push(log);
-  if (logContainer.value) {
-    logContainer.value.scrollTop = logContainer.value.scrollHeight;
-  }
-};
-
 // 日志样式
 const logStyle = (log: string) => {
   if (log.includes('[ERR]')) {
@@ -161,23 +182,20 @@ const logStyle = (log: string) => {
 
 const stopTask = () => {
   console.log(configState.getStatus())
-  // 检查当前状态，确保任务正在运行
   if (configState.getStatus() !== 2) {
     Notification.error({
       title: '停止失败',
       content: '当前没有正在运行的任务。',
     });
-    return; // 任务状态不是运行中，直接返回
+    return;
   }
 
-  // 向后端发送停止任务请求
   configState.setStatus(0);
-  disabled.value = true;  // 禁用按钮防止重复点击
+  disabled.value = true;
 
-  // 调用 stopListening 停止任务
   configState.stopTask().then(() => {
-    configState.setStatus(0);  // 更新任务状态为已取消
-    disabled.value = false;  // 启用按钮
+    configState.setStatus(0);
+    disabled.value = false;
     Notification.success({
       title: '任务已停止',
       content: '任务已经成功停止。',
@@ -187,10 +205,9 @@ const stopTask = () => {
       title: '停止失败',
       content: err,
     });
-    disabled.value = false;  // 启用按钮
+    disabled.value = false;
   });
 };
-
 
 onMounted(() => {
   configState.getProfile()
@@ -206,17 +223,21 @@ onMounted(() => {
       { label: '监听绑定', value: profile.SocksAddress },
       { label: '协程数',   value: `${profile.CoroutineCount}` },
       { label: '超时时间', value: `${profile.Timeout}s` },
-      // 读 profile.AllProxies 而不是 getAllProxies()
-      // { label: '代理总数', value: `${profile.AllProxies} 条` },
     ]
   });
   EventsOn('is_ready', (callback: string) => {
     started.value = false;
     configState.setStatus(2)
+
+    const liveCount = parseInt(callback) || 0;
+    configState.LiveProxies = liveCount;
+
+    details.value = details.value.filter(item => item.label !== '有效代理');
     details.value.push({
       label: '有效代理',
-      value: `${callback} 条`,
-    })
+      value: `${liveCount} 条`,
+    });
+
     Notification.success({
       title: "任务完成",
       content: `共有 ${callback} 条有效数据`,
@@ -231,10 +252,12 @@ onUnmounted(() => {
   EventsOff('task_progress');
   EventsOff('start_task');
   EventsOff('is_ready');
+  EventsOff('current_ip');
 });
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .log-viewer {
   height: 53vh;
   border-radius: 8px;

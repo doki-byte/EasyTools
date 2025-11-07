@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"EasyTools/app/controller/system"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -199,7 +200,7 @@ func runHandler(w http.ResponseWriter, r *http.Request) {
 		args = append(args, "-H", fmt.Sprintf("%s: %s", k, v))
 	}
 
-	baseDir := GetAppBaseDir()
+	baseDir := system.GetAppBaseDir()
 	resultFile := filepath.Join(baseDir, "results.json")
 
 	args = append(args, "-of", "json", "-o", resultFile)

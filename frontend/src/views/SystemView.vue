@@ -6,6 +6,7 @@
       <div v-if="OS === 'windows'">
         <el-tab-pane label="全局管理" name="hotkey-manager" />
       </div>
+      <el-tab-pane label="代理配置" name="proxy-config" />
     </el-tabs>
 
     <el-main>
@@ -113,6 +114,151 @@
 
         <div v-if="hotkeyMessage" :class="['message', hotkeyMessageType]">{{ hotkeyMessage }}</div>
       </div>
+
+      <!-- 代理配置内容 -->
+      <div v-if="activeTab === 'proxy-config'" class="proxy-config-content">
+        <el-card class="proxy-card">
+          <template #header>
+            <div class="card-header">
+              <span>全局代理配置</span>
+              <el-switch
+                  v-model="globalProxyEnabled"
+                  active-text="启用代理"
+                  inactive-text="禁用代理"
+                  @change="handleGlobalProxyToggle"
+              />
+            </div>
+          </template>
+
+          <el-form :model="proxyConfig" :rules="proxyRules" ref="proxyFormRef" label-width="100px">
+            <el-form-item label="代理类型" prop="type">
+              <el-radio-group v-model="proxyConfig.type">
+                <el-radio value="http">HTTP</el-radio>
+                <el-radio value="https">HTTPS</el-radio>
+                <el-radio value="socks5">SOCKS5</el-radio>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item label="服务器地址" prop="host">
+              <el-input
+                  v-model="proxyConfig.host"
+                  placeholder="例如: 127.0.0.1"
+                  :disabled="!globalProxyEnabled"
+                  style="width: 200px"
+              />
+            </el-form-item>
+
+            <el-form-item label="端口" prop="port">
+              <el-input
+                  v-model="proxyConfig.port"
+                  placeholder="例如: 8080"
+                  :disabled="!globalProxyEnabled"
+                  style="width: 120px"
+              />
+            </el-form-item>
+
+            <el-form-item label="超时时间" prop="timeout">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-input
+                    v-model.number="proxyConfig.timeout"
+                    placeholder="例如: 30"
+                    :disabled="!globalProxyEnabled"
+                    style="width: 120px"
+                    type="number"
+                    min="1"
+                    max="300"
+                >
+                  <template #append>秒</template>
+                </el-input>
+                <el-tooltip
+                    effect="dark"
+                    content="设置代理连接和请求的超时时间（1-300秒）"
+                    placement="right"
+                >
+                  <el-icon><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </div>
+            </el-form-item>
+
+            <el-form-item label="认证信息">
+              <div class="auth-section">
+                <el-checkbox v-model="useAuth" :disabled="!globalProxyEnabled">
+                  需要认证
+                </el-checkbox>
+
+                <div v-if="useAuth" class="auth-fields">
+                  <el-input
+                      v-model="proxyConfig.auth.username"
+                      placeholder="用户名"
+                      :disabled="!globalProxyEnabled"
+                      style="width: 150px; margin-right: 10px"
+                  />
+                  <el-input
+                      v-model="proxyConfig.auth.password"
+                      placeholder="密码"
+                      type="password"
+                      :disabled="!globalProxyEnabled"
+                      style="width: 150px"
+                      show-password
+                  />
+                </div>
+              </div>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button
+                  type="primary"
+                  :loading="testing"
+                  :disabled="!globalProxyEnabled"
+                  @click="testProxy"
+              >
+                测试连接
+              </el-button>
+
+              <el-button
+                  type="success"
+                  :loading="saving"
+                  @click="saveProxyConfig"
+              >
+                保存配置
+              </el-button>
+            </el-form-item>
+          </el-form>
+
+          <!-- 测试结果 -->
+          <div v-if="testResult" class="test-result">
+            <el-alert
+                :title="testResult.message"
+                :type="testResult.type"
+                :closable="false"
+                show-icon
+            />
+          </div>
+        </el-card>
+
+        <!-- 使用说明 -->
+        <el-card class="info-card">
+          <template #header>
+            <span>使用说明</span>
+          </template>
+
+          <div class="info-content">
+            <p><strong>全局代理模式：</strong></p>
+            <ul>
+              <li><strong>全局代理启用</strong>：所有网络请求都通过代理服务器</li>
+              <li><strong>全局代理禁用</strong>：所有网络请求都直接连接</li>
+            </ul>
+
+            <p><strong>注意事项：</strong></p>
+            <ul>
+              <li><b>所有配置修改之后，请点击保存配置以启动新的配置</b></li>
+              <li>启用代理后，所有模块的网络请求都会通过配置的代理服务器</li>
+              <li>请确保代理服务器配置正确，否则可能导致网络连接失败</li>
+              <li>测试连接功能可以帮助验证代理配置是否有效</li>
+            </ul>
+          </div>
+        </el-card>
+      </div>
     </el-main>
 
     <!-- 模块标签页管理对话框 -->
@@ -166,19 +312,24 @@
 
 <script>
 import {markRaw} from 'vue';
-import {ElMessage} from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable';
-import {MoreFilled, Setting} from '@element-plus/icons-vue';
+import {Check, Close, Connection, MoreFilled, QuestionFilled, Setting} from '@element-plus/icons-vue';
 import {defaultMenu, iconMap, loadMenuOrder, moduleTabsConfig, saveMenuOrder} from '@/utils/menuConfig';
 import {SetHotkey, ToggleShowHide} from "../../wailsjs/go/hotkey/HotKey";
 import {EventsOn} from "../../wailsjs/runtime";
 import {globalHotkeyManager} from '@/utils/globalHotkey';
 import {accelFromEvent, DEFAULT_HOTKEY, LOCALSTORAGE_KEY, normalizeAccelerator} from '@/utils/hotkeyUtils';
-import {GetAutoStart, GetOs, SetAutoStart} from "../../wailsjs/go/controller/System";
+import {GetAutoStart, GetOs, SetAutoStart} from "../../wailsjs/go/system/System";
+import {SetGlobalProxy, TestProxyConnection, GetGlobalProxy} from "../../wailsjs/go/proxy/ProxyManager"
 
 export default {
   name: "SystemManageView",
   components: {
+    QuestionFilled,
+    Connection,
+    Check,
+    Close,
     draggable,
     MoreFilled,
     Setting
@@ -204,11 +355,45 @@ export default {
       // 模块标签页对话框相关
       moduleTabsDialogVisible: false,
       currentModule: null,
-      currentModuleTabs: []
+      currentModuleTabs: [],
+
+      // 代理配置相关数据
+      globalProxyEnabled: false,
+      proxyConfig: {
+        type: 'http',
+        host: '127.0.0.1',
+        port: '8080',
+        timeout: 10,
+        auth: {
+          username: '',
+          password: ''
+        }
+      },
+      useAuth: false,
+      testing: false,
+      saving: false,
+      testResult: null,
+
+      proxyRules: {
+        host: [
+          { required: true, message: '请输入代理服务器地址', trigger: 'blur' }
+        ],
+        port: [
+          { required: true, message: '请输入代理端口', trigger: 'blur' },
+          { pattern: /^[0-9]+$/, message: '端口必须是数字', trigger: 'blur' }
+        ],
+        timeout: [ // 新增超时验证规则
+          { required: true, message: '请输入超时时间', trigger: 'blur' },
+          { pattern: /^[0-9]+$/, message: '超时时间必须是数字', trigger: 'blur' },
+          { validator: this.validateTimeout, trigger: 'blur' }
+        ]
+      }
     };
   },
   async created() {
     await this.loadMenuData();
+    await this.loadProxyConfig()
+
     try {
       this.OS = await GetOs();
       if (this.OS === "windows") {
@@ -220,6 +405,12 @@ export default {
       console.error('获取操作系统类型失败', error);
       this.OS = '';
     }
+
+    // 从路由查询参数中获取tab，如果存在则设置activeTab
+    if (this.$route.query.tab) {
+      this.activeTab = this.$route.query.tab;
+    }
+
   },
   mounted() {
     if (this.OS === "windows") {
@@ -364,12 +555,7 @@ export default {
     // 打开模块标签页管理对话框
     openModuleTabsDialog(module) {
       this.currentModule = module;
-
-      // 直接使用原数据的引用，确保响应式
-      this.currentModuleTabs = this.moduleTabsItems[module.name] || []; // 直接引用，不深拷贝
-
-      // console.log('打开对话框时的标签页顺序:', this.currentModuleTabs.map(t => ({name: t.name, order: t.order})));
-
+      this.currentModuleTabs = this.moduleTabsItems[module.name] || [];
       this.moduleTabsDialogVisible = true;
     },
 
@@ -377,11 +563,6 @@ export default {
     async saveModuleTabs() {
       if (this.currentModule) {
         try {
-          // console.log('保存前的标签页顺序:', this.currentModuleTabs.map(t => ({name: t.name, order: t.order})));
-
-          // 直接使用当前数据，不需要额外处理
-          // this.moduleTabsItems[this.currentModule.name] 已经通过引用自动更新
-
           // 获取当前的主菜单和标签页配置
           const mainOrderToSave = this.menuItems.map(item => ({
             name: item.name,
@@ -397,8 +578,6 @@ export default {
               visible: typeof item.visible === 'boolean' ? item.visible : true
             }));
           });
-
-          // console.log('要保存的标签页数据:', tabsOrderToSave[this.currentModule.name]);
 
           // 保存到本地存储
           const success = await saveMenuOrder(mainOrderToSave, tabsOrderToSave);
@@ -423,14 +602,10 @@ export default {
       });
     },
 
-    // 简化拖拽处理，模仿一级菜单
     onModuleTabsDragEnd() {
-      // 直接更新 order，就像一级菜单那样
       this.currentModuleTabs.forEach((item, index) => {
         item.order = index;
       });
-
-      // console.log('拖拽后的顺序:', this.currentModuleTabs.map(t => ({name: t.name, order: t.order})));
     },
 
     // 关闭模块标签页管理对话框
@@ -439,7 +614,6 @@ export default {
       this.currentModule = null;
       this.currentModuleTabs = [];
     },
-
 
     async saveOrder() {
       try {
@@ -697,21 +871,172 @@ export default {
         this.autoStartLoading = false;
       }
     },
+
+    // 代理配置方法 - 简化为全局模式
+    async loadProxyConfig() {
+      try {
+        const result = await GetGlobalProxy()
+
+        if (result && typeof result === 'object') {
+          this.globalProxyEnabled = result.enabled || false
+
+          if (result.config) {
+            this.proxyConfig = {
+              type: result.config.type || 'http',
+              host: result.config.host || '127.0.0.1',
+              port: result.config.port || '8080',
+              timeout: result.config.timeout || 10, // 加载超时配置
+              auth: result.config.auth || { username: '', password: '' }
+            }
+            this.useAuth = !!(result.config.auth && result.config.auth.username)
+          }
+        }
+      } catch (error) {
+        ElMessage.error('加载代理配置失败: ' + error.message)
+      }
+    },
+
+    async handleGlobalProxyToggle(enabled) {
+      console.log('代理开关状态改变:', enabled)
+
+      if (!enabled) {
+        try {
+          await ElMessageBox.confirm(
+              '确定要禁用代理吗？请记得点击保存配置按钮。',
+              '确认操作',
+              { type: 'warning' }
+          )
+        } catch (error) {
+          console.log('用户取消禁用代理')
+          this.globalProxyEnabled = true
+        }
+      }
+    },
+
+    async saveProxyConfig() {
+
+      // 如果启用了代理，需要验证表单
+      if (this.globalProxyEnabled) {
+        if (!this.$refs.proxyFormRef) {
+          ElMessage.warning('表单引用未初始化')
+          return
+        }
+
+        try {
+          await this.$refs.proxyFormRef.validate()
+        } catch (error) {
+          ElMessage.warning('请完善代理配置信息')
+          return
+        }
+      }
+
+      this.saving = true
+      this.testResult = null
+
+      try {
+        const config = {
+          ...this.proxyConfig,
+          auth: this.useAuth ? this.proxyConfig.auth : null
+        }
+
+        // 添加超时处理
+        const savePromise = SetGlobalProxy(config, this.globalProxyEnabled)
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('保存超时')), 10000)
+        });
+
+        const success = await Promise.race([savePromise, timeoutPromise])
+        // console.log('保存结果:', success)
+
+        if (success) {
+          ElMessage.success(this.globalProxyEnabled ? '代理配置已启用' : '代理已禁用')
+          window.dispatchEvent(new CustomEvent('proxy-config-saved'))
+        } else {
+          ElMessage.error('保存代理配置失败')
+        }
+      } catch (error) {
+        ElMessage.error('保存代理配置失败: ' + (error.message || error))
+      } finally {
+        this.saving = false
+      }
+    },
+
+    async testProxy() {
+      if (!this.$refs.proxyFormRef) return
+
+      // 验证表单
+      try {
+        await this.$refs.proxyFormRef.validate()
+      } catch (error) {
+        ElMessage.warning('请完善代理配置信息')
+        return
+      }
+
+      this.testing = true
+      this.testResult = null
+
+      try {
+        const config = {
+          ...this.proxyConfig,
+          auth: this.useAuth ? this.proxyConfig.auth : null
+        }
+
+        const success = await TestProxyConnection(config)
+
+        if (success) {
+          this.testResult = {
+            type: 'success',
+            message: '代理连接测试成功！'
+          }
+          ElMessage.success('代理连接测试成功！')
+        } else {
+          this.testResult = {
+            type: 'error',
+            message: '代理连接测试失败'
+          }
+          ElMessage.error('代理连接测试失败')
+        }
+      } catch (error) {
+        console.error('代理测试错误:', error)
+        this.testResult = {
+          type: 'error',
+          message: `测试失败: 代理无法访问`
+        }
+        ElMessage.error(`测试失败: 代理无法访问`)
+      } finally {
+        this.testing = false
+      }
+    },
+    // 超时时间验证
+    validateTimeout(rule, value, callback) {
+      if (!value) {
+        callback(new Error('请输入超时时间'));
+        return;
+      }
+
+      const timeout = parseInt(value);
+      if (isNaN(timeout) || timeout <= 0) {
+        callback(new Error('超时时间必须大于0'));
+      } else if (timeout > 300) {
+        callback(new Error('超时时间不能超过300秒'));
+      } else {
+        callback();
+      }
+    },
   }
 };
 </script>
 
 <style scoped>
-/* 页面容器 */
+/* 原有样式保持不变 */
 .container {
-  height: 100vh;
+  height: 96vh;
   display: flex;
   margin-left: 10px;
   flex-direction: column;
   background-color: #f8f9fb;
 }
 
-/* 顶部 Tabs 样式 */
 .tabs {
   background-color: #ffffff;
   box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
@@ -745,10 +1070,9 @@ export default {
   border: 1px solid #e6e8eb;
   border-radius: 8px;
   overflow: hidden;
-  user-select: none; /* 防止文字选择 */
+  user-select: none;
 }
 
-/* 菜单项容器 */
 .menu-item-container {
   background: #fff;
   border-bottom: 1px solid #e6e8eb;
@@ -764,7 +1088,6 @@ export default {
   padding: 12px 16px;
 }
 
-/* 只在拖拽手柄上设置可拖拽光标 */
 .drag-handle {
   margin-right: 12px;
   color: #909399;
@@ -791,7 +1114,6 @@ export default {
   margin-left: 12px;
 }
 
-/* 按钮区域 */
 .action-buttons {
   display: flex;
   gap: 12px;
@@ -799,7 +1121,6 @@ export default {
   margin-top: 20px;
 }
 
-/* 模块标签页对话框样式 */
 .module-tabs-dialog {
   padding: 10px 0;
 }
@@ -847,7 +1168,6 @@ export default {
   gap: 10px;
 }
 
-/* 快捷键管理样式 */
 :deep(h2) {
   display: block;
   font-size: 1.5em;
@@ -945,5 +1265,63 @@ export default {
   background-color: #fef0f0;
   color: #f56c6c;
   border: 1px solid #fde2e2;
+}
+
+.proxy-config-content {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.proxy-card {
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.test-result {
+  margin-top: 16px;
+}
+
+.info-card {
+  margin-top: 20px;
+}
+
+.info-content ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.info-content li {
+  margin-bottom: 5px;
+  color: #606266;
+}
+
+.code-example {
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  color: #303133;
+  overflow-x: auto;
+  margin: 10px 0;
+  line-height: 1.4;
 }
 </style>

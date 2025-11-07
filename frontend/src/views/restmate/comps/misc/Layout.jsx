@@ -6,7 +6,7 @@ import CookieModal from "../cookies/CookieModal";
 const Layout = ({ children }) => {
   const cookieModal = useStore((x) => x.cookieModal);
   return (
-    <div className="h-svh bg-brand max-h-svh relative overflow-hidden" id="layout">
+    <div className="h-svh bg-brand max-h-[96svh] relative overflow-hidden" id="layout">
       <div className="grid h-full" style={{ gridTemplateColumns: "auto 1fr", gridTemplateRows: "minmax(0, 100%)" }}>
         <div id="sidenav">
           <SideBar />

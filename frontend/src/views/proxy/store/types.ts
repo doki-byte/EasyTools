@@ -7,13 +7,13 @@ export interface Config {
     HunterKey: string;
     QuakeKey: string;
     Country: string;
-    Maxpage: string; // 保持与 Go 中一致，字符串类型
+    Maxpage: string;
 
     CoroutineCount: number;
     LiveProxies: number;
     AllProxies: number;
-    LiveProxyLists: string[]; // 字符串数组类型
-    Timeout: string; // 保持与 Go 中一致，字符串类型
+    LiveProxyLists: string[];
+    Timeout: string;
     SocksAddress: string;
     FilePath: string;
 
@@ -24,9 +24,6 @@ export interface Config {
     GlobalProxy: string;
 }
 
-
-
-// 定义 Pinia store
 export const useConfigStore = defineStore('config', {
     state: () => ({
         Code: 0,
@@ -44,9 +41,10 @@ export const useConfigStore = defineStore('config', {
         QuakeKey: "",
         CheckTimeout: 0,
         Maxpage: 0,
-        LiveProxyLists: [] as any[], // 可以根据实际数据改成具体类型
+        LiveProxyLists: [] as any[],
         Country: "0",
-        GlobalProxy:"0"
+        GlobalProxy:"0",
+        CurrentIP: "N/A" // 添加当前IP字段
     }),
 
     actions: {
@@ -72,25 +70,25 @@ export const useConfigStore = defineStore('config', {
             }
         },
 
-        // 保存配置，传入参数类型明确
+        // 保存配置
         async saveConfig(configData: Config): Promise<void>  {
             try {
-                await SaveConfig(configData); // SaveConfig 应该接受 Config 类型
+                await SaveConfig(configData);
                 console.log("配置已保存！");
             } catch (err) {
                 console.error("保存失败:", err);
             }
         },
 
-        // 新增的停止任务方法
+        // 停止任务方法
         async stopTask() {
             try {
-                this.setStatus(0);  // 更新状态为停止中
-                await StopListening();  // 调用后端的 stopListening 方法
-                this.setStatus(3);  // 更新任务状态为已取消
+                this.setStatus(0);
+                await StopListening();
+                this.setStatus(3);
             } catch (err) {
                 console.error("停止任务失败:", err);
-                this.setStatus(1);  // 设置为失败状态
+                this.setStatus(1);
             }
         },
 
@@ -109,6 +107,9 @@ export const useConfigStore = defineStore('config', {
         },
         getLiveProxies() {
             return this.LiveProxies;
+        },
+        setLiveProxies(count: number) {
+            this.LiveProxies = count;
         },
         getAllProxies() {
             return this.AllProxies;
@@ -178,6 +179,13 @@ export const useConfigStore = defineStore('config', {
         },
         setGlobalProxy(proxy: string) {
             this.GlobalProxy = proxy;
+        },
+        // 添加当前IP的getter和setter
+        getCurrentIP() {
+            return this.CurrentIP;
+        },
+        setCurrentIP(ip: string) {
+            this.CurrentIP = ip;
         }
     }
 });

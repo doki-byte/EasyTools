@@ -1,4 +1,4 @@
-package controller
+package system
 
 import (
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -25,18 +25,18 @@ func NewSystem() *System {
 
 // BrowserOpenURL 默认浏览器打开网址
 func (s *System) BrowserOpenURL(url string) {
-	BrowserOpenURL(s.ctx, url)
+	BrowserOpenURL(s.Ctx, url)
 }
 
 // GetOpenDir 获取选择的目录路径
 func (s System) GetOpenDir() string {
-	path, _ := OpenDirectoryDialog(s.ctx, OpenDialogOptions{})
+	path, _ := OpenDirectoryDialog(s.Ctx, OpenDialogOptions{})
 	return path
 }
 
 // GetOpenFilePath 获取选择的目录路径
 func (s System) GetOpenFilePath() string {
-	path, _ := OpenFileDialog(s.ctx, OpenDialogOptions{})
+	path, _ := OpenFileDialog(s.Ctx, OpenDialogOptions{})
 	return path
 }
 
@@ -49,18 +49,18 @@ func (s System) GetOpenChooseFilePath(initialDir string) string {
 		options.DefaultDirectory = initialDir
 	}
 
-	path, _ := OpenFileDialog(s.ctx, options)
+	path, _ := OpenFileDialog(s.Ctx, options)
 	return path
 }
 
 // ClipboardGetText 获取剪切板内容
 func (s *System) ClipboardGetText() (string, error) {
-	return ClipboardGetText(s.ctx)
+	return ClipboardGetText(s.Ctx)
 }
 
 // ClipboardSetText 设置剪切板内容
 func (s *System) ClipboardSetText(text string) error {
-	return ClipboardSetText(s.ctx, text)
+	return ClipboardSetText(s.Ctx, text)
 }
 
 // ShellCMD 以shell方式运行cmd命令
@@ -70,12 +70,12 @@ func (s *System) ShellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
 
 // OpenConfigDir 打开应用配置目录
 func (s *System) OpenConfigDir() {
-	s.openDir(s.getAppPath())
+	s.openDir(s.GetAppPath())
 }
 
 // GetConfigDir 打开应用配置目录
 func (s *System) GetConfigDir() string {
-	return s.getAppPath()
+	return s.GetAppPath()
 }
 
 // GetOs 获取系统类型

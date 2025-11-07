@@ -148,7 +148,7 @@ import {
   SaveImage
 } from "../../wailsjs/go/controller/Note";
 import {Expand, Fold} from "@element-plus/icons-vue";
-import {OpenPath} from "../../wailsjs/go/controller/System";
+import {OpenPath} from "../../wailsjs/go/system/System";
 
 interface Node {
   name: string;

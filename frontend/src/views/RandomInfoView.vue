@@ -2,7 +2,7 @@
   <div class="id-generator" @contextmenu.prevent>
     <header class="header">
       <h1>信息生成</h1>
-      <span style="color: yellow">以下信息均为随机生成,请仔细甄别。</span>
+      <span style="color: yellow">以下信息均为随机生成,与现实世界无关。</span>
     </header>
 
     <main class="main-content">

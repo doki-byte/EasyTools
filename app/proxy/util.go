@@ -1,6 +1,9 @@
-package util
+package proxy
 
 import (
+	"fmt"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	runtime2 "runtime"
@@ -24,4 +27,22 @@ func GetAppBaseDir() string {
 		panic("获取当前路径失败: " + err.Error())
 	}
 	return filepath.Join(currentPath, "EasyToolsFiles")
+}
+
+func PathExist(path string) string {
+	_, err := os.Stat(path)
+	if err != nil && os.IsNotExist(err) {
+		_ = os.MkdirAll(path, os.ModePerm)
+	}
+	return path
+}
+
+func Db() *gorm.DB {
+	//打开数据库，如果不存在，则创建
+	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("%s\\config.db", GetAppBaseDir())), &gorm.Config{})
+	if err != nil {
+		fmt.Println("数据库连接失败")
+	}
+	// u.Log("数据库连接成功")
+	return db
 }

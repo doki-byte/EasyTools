@@ -1,4 +1,4 @@
-package controller
+package system
 
 import (
 	"EasyTools/app/util"
@@ -8,7 +8,7 @@ import (
 
 // Base 控制器基类
 type Base struct {
-	ctx context.Context
+	Ctx context.Context
 }
 
 const (
@@ -43,18 +43,18 @@ func (b *Base) error(message string) Res {
 	return b.res(ErrorCode, message, nil)
 }
 
-// setCtx 设置上下文对象
-func (b *Base) setCtx(ctx context.Context) {
-	b.ctx = ctx
+// SetCtx 设置上下文对象
+func (b *Base) SetCtx(ctx context.Context) {
+	b.Ctx = ctx
 }
 
-// db 获取数据库操作对象和数据库初始化
-func (b *Base) db() *gorm.DB {
+// Db 获取数据库操作对象和数据库初始化
+func (b *Base) Db() *gorm.DB {
 	return util.NewUtil().Db()
 }
 
-// log 增加日志记录
-func (b *Base) log(content string) *Base {
+// Log 增加日志记录
+func (b *Base) Log(content string) *Base {
 	util.NewUtil().Log(content)
 	return b
 }
@@ -66,18 +66,18 @@ func (b *Base) initFile() *Base {
 }
 
 // 初始化免杀模块
-func (b *Base) initMianSha() *Base {
+func (b *Base) InitMianSha() *Base {
 	util.NewUtil().InitMianSha()
 	return b
 }
 
-// schema 根据model自动建立数据表
-func (b *Base) schema(dst ...interface{}) {
+// Schema 根据model自动建立数据表
+func (b *Base) Schema(dst ...interface{}) {
 	util.NewUtil().Schema(dst...)
 }
 
-// getAppPath 获取应用主目录
-func (b *Base) getAppPath() string {
+// GetAppPath 获取应用主目录
+func (b *Base) GetAppPath() string {
 	return util.NewUtil().GetAppPath()
 }
 
