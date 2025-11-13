@@ -1,5 +1,5 @@
 <template>
-  <el-container class="container">
+  <el-container class="app-container"  direction="vertical">
     <!-- 标签栏 -->
     <el-tabs v-model="activeTab" class="tabs" :key="tabsKey">
       <el-tab-pane
@@ -189,13 +189,13 @@
 <script>
 import ConnectionList from "./redis/ConnectionList.vue";
 import ConnectionManage from "./redis/ConnectionManage.vue";
-import { BrowserOpenURL } from '../../wailsjs/runtime';
 import Keys from "./redis/Keys.vue";
 import KeyValue from "./redis/KeyValue.vue";
 import axios from 'axios'
-import { ElMessage,ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Folder, Document, Upload } from '@element-plus/icons-vue'
 import { loadMenuOrder, moduleTabsConfig } from '@/utils/menuConfig';
+import {BrowserOpenURL} from "../../wailsjs/runtime";
 
 export default {
   name: "ConnectView",
@@ -288,28 +288,7 @@ export default {
     // 监听菜单更新事件
     window.addEventListener('menu-order-updated', this.handleMenuOrderUpdated);
 
-    // 只有第一次打开才弹窗：可以根据需要改成持久化判断（如 localStorage）
-    ElMessageBox.confirm(
-        '温馨提示，该功能还存在 bug，在您切换页面之后，无法保存已加载的编码选项，是否在浏览器中打开网页呢？',
-        '提示',
-        {
-          confirmButtonText: '确认',
-          cancelButtonText: '取消',
-          type: 'warning',
-          // 点击遮罩或按 ESC 不触发 confirm
-          distinguishCancelAndClose: true,
-        }
-    )
-        .then(() => {
-          // 用户点击“确认”，在默认浏览器中打开
-          const fullUrl = "http://127.0.0.1:52868/";
-          BrowserOpenURL(fullUrl);
-          // 本地 iframe 继续加载，不需要额外操作
-        })
-        .catch((action) => {
-          // 用户点击“取消”或关闭，不做额外操作
-          // 本地 iframe 会如常加载
-        });
+    // 移除原有的弹窗提示，因为提示现在在顶部按钮上显示
   },
 
   beforeUnmount() {
@@ -503,7 +482,7 @@ export default {
         this.downloadingFile = '';
       }
     },
-    
+
     // 文件选中后触发
     onFileSelected(event) {
       const file = event.target.files[0];
@@ -586,11 +565,13 @@ export default {
 }
 
 /* 页面容器 */
-.container {
-  height: 100vh;
+.app-container {
+  min-height: 96vh;
   display: flex;
   flex-direction: column;
   background-color: #f8f9fb;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 /* 顶部 Tabs 样式 */

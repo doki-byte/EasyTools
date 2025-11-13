@@ -6,6 +6,14 @@ export function Db() {
   return window['go']['controller']['Assistive']['Db']();
 }
 
+export function FscanResultDeal(arg1) {
+  return window['go']['controller']['Assistive']['FscanResultDeal'](arg1);
+}
+
+export function FscanTextDeal(arg1) {
+  return window['go']['controller']['Assistive']['FscanTextDeal'](arg1);
+}
+
 export function GetAppPath() {
   return window['go']['controller']['Assistive']['GetAppPath']();
 }
@@ -44,4 +52,8 @@ export function Schema(arg1) {
 
 export function SetCtx(arg1) {
   return window['go']['controller']['Assistive']['SetCtx'](arg1);
+}
+
+export function UploadFile(arg1, arg2) {
+  return window['go']['controller']['Assistive']['UploadFile'](arg1, arg2);
 }

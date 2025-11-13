@@ -21,7 +21,7 @@ export interface Config {
 
     Code: number;
     Error: string;
-    GlobalProxy: string;
+    Xui: string;
 }
 
 export const useConfigStore = defineStore('config', {
@@ -43,7 +43,7 @@ export const useConfigStore = defineStore('config', {
         Maxpage: 0,
         LiveProxyLists: [] as any[],
         Country: "0",
-        GlobalProxy:"0",
+        Xui:"0",
         CurrentIP: "N/A" // 添加当前IP字段
     }),
 
@@ -64,7 +64,7 @@ export const useConfigStore = defineStore('config', {
                 this.QuakeKey = profile.QuakeKey;
                 this.Maxpage = Number(profile.Maxpage);
                 this.Country = profile.Country;
-                this.GlobalProxy=profile.GlobalProxy;
+                this.Xui=profile.Xui;
             } catch (err) {
                 console.error("获取配置失败:", err);
             }
@@ -174,11 +174,11 @@ export const useConfigStore = defineStore('config', {
         setCountry(country: string) {
             this.Country = country;
         },
-        getGlobalProxy(){
-            return this.GlobalProxy;
+        getXui(){
+            return this.Xui;
         },
-        setGlobalProxy(proxy: string) {
-            this.GlobalProxy = proxy;
+        setXui(xui: string) {
+            this.Xui = xui;
         },
         // 添加当前IP的getter和setter
         getCurrentIP() {

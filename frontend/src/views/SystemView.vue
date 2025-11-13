@@ -1,5 +1,5 @@
 <template>
-  <el-container class="container">
+  <el-container class="app-container"  direction="vertical">
     <!-- 标签栏 -->
     <el-tabs v-model="activeTab" class="tabs">
       <el-tab-pane label="菜单管理" name="menu-manager" />
@@ -10,6 +10,9 @@
     </el-tabs>
 
     <el-main>
+      <div style="float: right ; padding: 5px 8px">
+        <el-button type="success" @click="goBack">返回<el-icon><House/></el-icon></el-button>
+      </div>
       <!-- 菜单管理 -->
       <div v-if="activeTab === 'menu-manager'">
         <div class="menu-manager">
@@ -65,7 +68,6 @@
           <div class="action-buttons">
             <el-button type="primary" @click="saveOrder">保存顺序</el-button>
             <el-button @click="resetOrder">重置为默认顺序</el-button>
-            <el-button @click="goBack">返回</el-button>
           </div>
         </div>
       </div>
@@ -314,7 +316,7 @@
 import {markRaw} from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus'
 import draggable from 'vuedraggable';
-import {Check, Close, Connection, MoreFilled, QuestionFilled, Setting} from '@element-plus/icons-vue';
+import {Back, Check, Close, Connection, House, MoreFilled, QuestionFilled, Setting} from '@element-plus/icons-vue';
 import {defaultMenu, iconMap, loadMenuOrder, moduleTabsConfig, saveMenuOrder} from '@/utils/menuConfig';
 import {SetHotkey, ToggleShowHide} from "../../wailsjs/go/hotkey/HotKey";
 import {EventsOn} from "../../wailsjs/runtime";
@@ -326,6 +328,8 @@ import {SetGlobalProxy, TestProxyConnection, GetGlobalProxy} from "../../wailsjs
 export default {
   name: "SystemManageView",
   components: {
+    House,
+    Back,
     QuestionFilled,
     Connection,
     Check,
@@ -1028,13 +1032,14 @@ export default {
 </script>
 
 <style scoped>
-/* 原有样式保持不变 */
-.container {
-  height: 96vh;
+/* 页面容器 */
+.app-container {
+  min-height: 96vh;
   display: flex;
-  margin-left: 10px;
   flex-direction: column;
   background-color: #f8f9fb;
+  padding: 0 10px;
+  box-sizing: border-box;
 }
 
 .tabs {

@@ -7,6 +7,10 @@ import {context} from '../models';
 
 export function Db():Promise<gorm.DB>;
 
+export function FscanResultDeal(arg1:string):Promise<string>;
+
+export function FscanTextDeal(arg1:string):Promise<string>;
+
 export function GetAppPath():Promise<string>;
 
 export function InitMianSha():Promise<system.Base>;
@@ -26,3 +30,5 @@ export function QueryPasswordsWithQuery(arg1:number,arg2:number,arg3:string):Pro
 export function Schema(arg1:Array<any>):Promise<void>;
 
 export function SetCtx(arg1:context.Context):Promise<void>;
+
+export function UploadFile(arg1:string,arg2:string):Promise<void>;

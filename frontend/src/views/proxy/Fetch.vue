@@ -203,6 +203,11 @@ const getLogClass = (log: LogEntry) => {
   }
 }
 
+// 获取当前xui模式
+const getCurrentXuiMode = () => {
+  return configStore.getXui() === '1'
+}
+
 // 监听后端进度事件
 const setupProgressListener = () => {
   console.log('🔄 设置事件监听器...')
@@ -211,7 +216,9 @@ const setupProgressListener = () => {
     console.log('✅ 收到开始事件:', data)
     eventStatus.value = '收到开始事件'
 
-    const message = typeof data === 'string' ? data : '开始获取代理数据...'
+    const xuiMode = getCurrentXuiMode()
+    const message = typeof data === 'string' ? data :
+        (xuiMode ? '开始扫描X-UI面板...' : '开始获取代理数据...')
     addLog(message, 'info')
 
     currentSource.value = ''
@@ -250,19 +257,20 @@ const setupProgressListener = () => {
         addLog(progress.message, 'info')
       }
 
-      // 处理代理数据 - 添加更详细的调试
+      // 处理代理数据
       if (progress.proxies && Array.isArray(progress.proxies)) {
         console.log(`📦 处理代理数据: ${progress.proxies.length} 个代理`)
-
         const startIndex = datasets.value.length + 1
+        const xuiMode = getCurrentXuiMode()
+
         const newProxies: ProxyInfo[] = progress.proxies.map((proxy: string, index: number) => ({
           key: (startIndex + index).toString(),
           source: progress.source || '未知来源',
-          kind: 'socks5',
+          kind: xuiMode ? 'xui' : 'socks5',
           address: proxy,
         }))
 
-        console.log(`🆕 添加 ${newProxies.length} 个新代理`)
+        console.log(`🆕 添加 ${newProxies.length} 个新代理，类型: ${xuiMode ? 'xui' : 'socks5'}`)
 
         // 使用响应式更新
         datasets.value = [...datasets.value, ...newProxies]
@@ -290,7 +298,10 @@ const setupProgressListener = () => {
 
     console.log('🎉 收到完成事件:', data)
     eventStatus.value = '收到完成事件'
-    const message = typeof data === 'string' ? data : '数据获取完成'
+
+    const xuiMode = getCurrentXuiMode()
+    const message = typeof data === 'string' ? data :
+        (xuiMode ? 'X-UI面板扫描完成' : '数据获取完成')
 
     addLog(message, 'success')
     // 更新分页总数
@@ -303,11 +314,21 @@ const setupProgressListener = () => {
         clearTimeout(timeoutRef.value)
         timeoutRef.value = null
       }
-      Notification.success({
-        title: '获取完成',
-        content: message,
-        duration: 2000,
-      })
+
+      // 根据模式显示不同的成功消息
+      if (xuiMode) {
+        Notification.success({
+          title: 'X-UI扫描完成',
+          content: 'X-UI面板扫描完成，请查看Excel文件获取节点信息',
+          duration: 3000,
+        })
+      } else {
+        Notification.success({
+          title: '获取完成',
+          content: message,
+          duration: 2000,
+        })
+      }
     })
   })
 
@@ -379,7 +400,12 @@ function getProxies() {
 
   loading.value = true
   logs.value = []
-  addLog('开始获取代理数据...', 'info')
+
+  // 获取当前xui模式用于显示不同的提示
+  const currentXuiMode = getCurrentXuiMode()
+  const startMessage = currentXuiMode ? '开始扫描X-UI面板...' : '开始获取代理数据...'
+
+  addLog(startMessage, 'info')
   currentSource.value = ''
   datasets.value = []
   eventStatus.value = '等待事件...'
@@ -401,20 +427,38 @@ function getProxies() {
       if (datasets.value.length > 0) {
         paginationState.total = datasets.value.length
         addLog(`已获取 ${datasets.value.length} 条代理数据`, 'success')
-        Notification.success({
-          title: '部分数据获取完成',
-          content: `由于部分API响应超时，已获取 ${datasets.value.length} 条代理数据`,
-          duration: 3000,
-        })
+
+        if (currentXuiMode) {
+          Notification.success({
+            title: 'X-UI扫描部分完成',
+            content: `由于部分面板响应超时，已扫描 ${datasets.value.length} 个X-UI面板`,
+            duration: 3000,
+          })
+        } else {
+          Notification.success({
+            title: '部分数据获取完成',
+            content: `由于部分API响应超时，已获取 ${datasets.value.length} 条代理数据`,
+            duration: 3000,
+          })
+        }
       } else {
         // 完全没有数据
         addLog('请求超时，未获取到任何数据', 'warning')
-        Notification.warning({
-          title: '请求超时',
-          content: '获取代理数据时间过长，可能是网络问题或API服务不稳定，请稍后重试',
-          duration: 3000,
-          closable: true,
-        })
+        if (currentXuiMode) {
+          Notification.warning({
+            title: '扫描超时',
+            content: '扫描X-UI面板时间过长，可能是网络问题或面板服务不稳定，请稍后重试',
+            duration: 3000,
+            closable: true,
+          })
+        } else {
+          Notification.warning({
+            title: '请求超时',
+            content: '获取代理数据时间过长，可能是网络问题或API服务不稳定，请稍后重试',
+            duration: 3000,
+            closable: true,
+          })
+        }
       }
     }
   }, 60000)
@@ -458,19 +502,36 @@ function getProxies() {
           paginationState.total = finalData.length
 
           loading.value = false
-          addLog(`已获取 ${finalData.length} 条代理数据`, 'success')
 
-          Notification.success({
-            title: '获取完成',
-            content: `共获取 ${finalData.length} 条代理数据`,
-            duration: 2000,
-          })
+          const currentXuiMode = getCurrentXuiMode()
+          const successMessage = currentXuiMode ?
+              `已扫描 ${finalData.length} 个X-UI面板` :
+              `已获取 ${finalData.length} 条代理数据`
+
+          addLog(successMessage, 'success')
+
+          if (currentXuiMode) {
+            Notification.success({
+              title: 'X-UI扫描完成',
+              content: `共扫描 ${finalData.length} 个X-UI面板，节点信息已保存到Excel`,
+              duration: 3000,
+            })
+          } else {
+            Notification.success({
+              title: '获取完成',
+              content: `共获取 ${finalData.length} 条代理数据`,
+              duration: 2000,
+            })
+          }
         } else {
           loading.value = false
-          addLog('未获取到任何代理数据', 'warning')
+          const currentXuiMode = getCurrentXuiMode()
+          const noDataMessage = currentXuiMode ? '未扫描到任何可用的X-UI面板' : '未获取到任何代理数据'
+
+          addLog(noDataMessage, 'warning')
           Notification.warning({
             title: '无数据',
-            content: '未获取到任何代理数据',
+            content: noDataMessage,
             duration: 2000,
           })
         }
@@ -546,9 +607,15 @@ function useFetchedDatasets() {
   // 立即触发跳转到运行模块
   emit('switchTab', '1')
 
+  // 根据xui模式显示不同的消息
+  const currentXuiMode = getCurrentXuiMode()
+  const startMessage = currentXuiMode ?
+      'X-UI面板信息已保存到Excel，正在跳转到运行页面...' :
+      '正在跳转到运行页面...'
+
   Notification.info({
     title: '任务开始',
-    content: '正在跳转到运行页面...',
+    content: startMessage,
     duration: 1500,
     closable: true,
   });
@@ -565,11 +632,20 @@ function useFetchedDatasets() {
       return;
     }
 
-    Notification.success({
-      title: '任务完成',
-      content: res.Message,
-      duration: 2000,
-    });
+    // 根据xui模式显示不同的成功消息
+    if (currentXuiMode) {
+      Notification.success({
+        title: 'X-UI扫描完成',
+        content: 'X-UI面板信息已保存到Excel文件，请手动查看使用',
+        duration: 3000,
+      });
+    } else {
+      Notification.success({
+        title: '任务完成',
+        content: res.Message,
+        duration: 2000,
+      });
+    }
   }).catch(error => {
     Notification.error({
       title: '请求失败',

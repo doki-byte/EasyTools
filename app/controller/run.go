@@ -1,14 +1,15 @@
 package controller
 
 import (
-	"EasyTools/app/connect/redis"
+	"EasyTools/app/controller/connect/redis"
+	hotkey2 "EasyTools/app/controller/hotkey"
+	"EasyTools/app/controller/infoDeal"
+	proxySetting "EasyTools/app/controller/proxy"
+	proxyFearch "EasyTools/app/controller/proxy/client"
+	"EasyTools/app/controller/restmate"
 	system2 "EasyTools/app/controller/system"
 	"EasyTools/app/controller/unwxapp"
-	hotkey2 "EasyTools/app/hotkey"
 	"EasyTools/app/model"
-	proxySetting "EasyTools/app/proxy"
-	proxyFearch "EasyTools/app/proxy/client"
-	"EasyTools/app/restmate"
 	"context"
 	"embed"
 	"fmt"
@@ -33,11 +34,12 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 	tool := NewTool()
 	login := NewUser()
 	assistive := NewAssistive()
-	infoDeal := NewInfoDeal()
+	OssBucker := infoDeal.NewOssBucker()
+	QueryIp := infoDeal.NewQueryIp()
 	redisDb := redis.NewRedis()
 	update := system2.NewUpdate()
 	Unwxapp := unwxapp.NewUnWxapp()
-	jwtcrack := NewJwtCrackController()
+	jwtcrack := infoDeal.NewJwtCrackController()
 	note := NewNote()
 	freeProxy := proxyFearch.NewProxy()
 	hotkey := hotkey2.NewHotKey()
@@ -67,7 +69,8 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 			tool.SetCtx(ctx)
 			login.SetCtx(ctx)
 			assistive.SetCtx(ctx)
-			infoDeal.SetCtx(ctx)
+			OssBucker.SetCtx(ctx)
+			QueryIp.SetCtx(ctx)
 			update.SetCtx(ctx)
 			Unwxapp.SetCtx(ctx)
 			jwtcrack.SetCtx(ctx)
@@ -110,7 +113,7 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 						memTotal := system.GetMemUsageTotal() // 实现获取总内存使用的方法
 
 						// 格式化标题
-						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.9.4            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
+						newTitle := fmt.Sprintf("EasyTools：一款实用的渗透测试工具箱  v1.9.5            CPU: %.2f%% | 自身: %.2f MB | 内存: %.2f%%",
 							cpuUsage, memSelf, memTotal)
 
 						// 更新窗口标题
@@ -154,7 +157,8 @@ func WailsRun(assets embed.FS, port int, appIcon, systemTrayIcon []byte) {
 			tool,
 			login,
 			assistive,
-			infoDeal,
+			OssBucker,
+			QueryIp,
 			redisDb,
 			update,
 			Unwxapp,

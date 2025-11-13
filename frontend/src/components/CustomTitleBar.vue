@@ -17,15 +17,15 @@
 
     <!-- 功能按钮区域（不可拖动） -->
     <div class="titlebar-right">
-      <!-- Github -->
-      <el-tooltip content="Github" placement="bottom" effect="light">
+      <!-- 动态浏览器打开按钮 -->
+      <el-tooltip v-if="showBrowserButton" content="在浏览器中打开" placement="bottom" effect="light">
         <button
             class="titlebar-btn proxy-indicator"
-            @click="openGithub"
+            @click="openInBrowser"
             style="--wails-draggable: no-drag;"
         >
           <el-icon size="16">
-            <IconGithub />
+            <Promotion />
           </el-icon>
         </button>
       </el-tooltip>
@@ -50,6 +50,32 @@
           </span>
           <!-- 状态指示点 -->
           <span class="status-dot" :class="proxyStatusClass"></span>
+        </button>
+      </el-tooltip>
+
+      <!-- Github -->
+      <el-tooltip content="Github" placement="bottom" effect="light">
+        <button
+            class="titlebar-btn proxy-indicator"
+            @click="openGithub"
+            style="--wails-draggable: no-drag;"
+        >
+          <el-icon size="16">
+            <IconGithub />
+          </el-icon>
+        </button>
+      </el-tooltip>
+
+      <!-- Github Issues -->
+      <el-tooltip content="提交BUG" placement="bottom" effect="light">
+        <button
+            class="titlebar-btn proxy-indicator"
+            @click="openGithubIssues"
+            style="--wails-draggable: no-drag;"
+        >
+          <el-icon size="16">
+            <IconBug />
+          </el-icon>
         </button>
       </el-tooltip>
 
@@ -86,17 +112,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, onUnmounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import { Connection, Minus, CopyDocument, Close, FullScreen } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted, computed, onUnmounted, nextTick, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Connection, Minus, CopyDocument, Close, FullScreen, Promotion } from '@element-plus/icons-vue'
 import { GetProxyStatus } from "../../wailsjs/go/proxy/ProxyManager"
 import {EventsOn, EventsOff, BrowserOpenURL} from '../../wailsjs/runtime'
 import { WindowMinimise, WindowToggleMaximise, Quit } from "../../wailsjs/runtime"
+import {ElNotification} from 'element-plus'
 
 const router = useRouter()
+const route = useRoute()
 const proxyLoading = ref(false)
 const proxyError = ref(false)
 const isMaximized = ref(false)
+
+// 使用 ref 来跟踪已经显示过提示的路由
+const shownTips = ref(new Set())
 
 // 代理状态
 const proxyStatus = reactive({
@@ -107,12 +138,60 @@ const proxyStatus = reactive({
 })
 
 // 默认标题
-const defaultTitle = ref('EasyTools：一款实用的渗透测试工具箱 v1.9.4')
+const defaultTitle = ref('EasyTools：一款实用的渗透测试工具箱 v1.9.5')
 
 // 监听窗口状态变化
 EventsOn('window-state-changed', (state) => {
   isMaximized.value = state === 'maximised'
 })
+
+// 计算是否显示浏览器按钮
+const showBrowserButton = computed(() => {
+  return route.name === 'connect' || route.name === 'cyberchef'
+})
+
+// 显示提示消息的函数
+const showBrowserTip = (routeName) => {
+  // 检查本次会话中是否已经显示过提示
+  if (!shownTips.value.has(routeName)) {
+    // 延迟显示Message提示
+    setTimeout(() => {
+      let message = '点击右上角按钮可以在浏览器中打开此页面'
+
+      ElNotification({
+        title: '提示',
+        message: message,
+        type: 'info',
+        position: 'top-right',  // 默认就是右上角
+        duration: 3000          // 可选：自动关闭时间，单位 ms
+      });
+
+      // 标记为已显示（仅本次会话有效）
+      shownTips.value.add(routeName)
+    }, 1000)
+  }
+}
+
+// 监听路由变化
+watch(() => route.name, (newRouteName) => {
+  if (newRouteName === 'connect' || newRouteName === 'cyberchef') {
+    showBrowserTip(newRouteName)
+  }
+}, { immediate: true })
+
+// 在浏览器中打开
+const openInBrowser = () => {
+  let url = ''
+  if (route.name === 'connect') {
+    url = 'http://127.0.0.1:52868/'
+  } else if (route.name === 'cyberchef') {
+    url = 'http://127.0.0.1:52867/CyberChef/index.html'
+  }
+
+  if (url) {
+    BrowserOpenURL(url)
+  }
+}
 
 // 窗口标题计算
 const currentTitle = computed(() => {
@@ -120,10 +199,14 @@ const currentTitle = computed(() => {
   return docTitle && docTitle !== 'EasyTools' ? docTitle : defaultTitle.value
 })
 
-
 // 打开Github
 const openGithub = () => {
   BrowserOpenURL("https://github.com/doki-byte/EasyTools")
+}
+
+// 打开GithubIssues
+const openGithubIssues = () => {
+  BrowserOpenURL("https://github.com/doki-byte/EasyTools/issues")
 }
 
 // 计算代理状态类
@@ -166,9 +249,7 @@ const loadProxyStatus = async () => {
   proxyLoading.value = true
   proxyError.value = false
   try {
-    // console.log('标题栏：开始加载代理状态...')
     const status = await GetProxyStatus()
-    // console.log('标题栏：GetProxyStatus 返回结果:', status)
 
     if (status && typeof status === 'object') {
       Object.assign(proxyStatus, {
@@ -185,10 +266,7 @@ const loadProxyStatus = async () => {
         totalModules: 0
       })
     }
-
-    // console.log('标题栏：代理状态加载完成:', proxyStatus)
   } catch (error) {
-    // console.error('标题栏：获取代理状态失败:', error)
     proxyError.value = true
     Object.assign(proxyStatus, {
       globalEnabled: false,
@@ -204,7 +282,6 @@ const loadProxyStatus = async () => {
 // 事件监听设置
 const setupProxyEvents = () => {
   EventsOn('proxy-status-changed', (status) => {
-    // console.log('标题栏：收到代理状态变化事件:', status)
     if (status && typeof status === 'object') {
       Object.assign(proxyStatus, {
         globalEnabled: !!status.globalEnabled,
@@ -217,22 +294,18 @@ const setupProxyEvents = () => {
   })
 
   EventsOn('global-proxy-updated', () => {
-    // console.log('标题栏：收到全局代理更新事件')
     loadProxyStatus()
   })
 
   EventsOn('module-proxy-status-changed', () => {
-    // console.log('标题栏：收到模块代理状态变化事件')
     loadProxyStatus()
   })
 
   EventsOn('proxy-error', (error) => {
-    // console.error('标题栏：收到代理错误事件:', error)
     proxyError.value = true
   })
 
   EventsOn('title-updated', (newTitle) => {
-    // console.log('标题栏：收到标题更新事件:', newTitle)
     if (newTitle && typeof newTitle === 'string') {
       defaultTitle.value = newTitle
     }
@@ -254,11 +327,9 @@ const close = () => {
 
 // 初始化
 onMounted(async () => {
-  // console.log('标题栏：组件挂载')
   await nextTick()
   await loadProxyStatus()
   setupProxyEvents()
-  // console.log('标题栏：初始化完成')
 })
 
 onUnmounted(() => {
@@ -272,6 +343,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 保持原有的样式不变 */
 .custom-titlebar {
   display: flex;
   align-items: center;

@@ -1,7 +1,7 @@
 package system
 
 import (
-	"EasyTools/app/proxy"
+	"EasyTools/app/controller/proxy"
 	"archive/tar"
 	"archive/zip"
 	"bufio"
@@ -81,7 +81,7 @@ func (u *Update) Startup(ctx context.Context) {
 func (u *Update) GetLatestRelease() (*CheckResult, error) {
 	owner := "doki-byte"
 	repo := "EasyTools"
-	currentVersion := "v1.9.4"
+	currentVersion := "v1.9.5"
 
 	latest, err := CheckLatestRelease(owner, repo)
 	if err != nil {

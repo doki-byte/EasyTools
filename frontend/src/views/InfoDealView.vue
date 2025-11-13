@@ -1,5 +1,5 @@
 <template>
-  <el-container class="container">
+  <el-container class="app-container"  direction="vertical">
     <!-- 标签栏 -->
     <el-tabs v-model="activeTab" class="tabs" :key="tabsKey">
       <el-tab-pane
@@ -12,122 +12,6 @@
 
     <!-- 内容区域 -->
     <el-main>
-      <div v-if="activeTab === 'fscan-deal'" class="tab-content">
-        <div class="fscan-content">
-          <div class="fscan-header-card">
-            <h4>选择 Fscan 结果文件</h4>
-            <el-upload class="upload-demo" drag action="" :before-upload="beforeUpload" :file-list="fileList"
-                       :show-file-list="false" :on-change="handleFileChange">
-              <i class="el-icon-upload"></i>
-              <div class="el-upload__text">
-                拖拽文件到此处，或<em>点击上传</em>
-              </div>
-              <div class="el-upload__tip">仅支持 .txt 文件</div>
-            </el-upload>
-          </div>
-
-          <!-- 操作按钮 -->
-          <div class="actions" v-if="fileName">
-            <el-button type="primary" @click="processFile">处理文件</el-button>
-            <el-button type="success" @click="openExcelPreview" v-if="isDealFile">
-              预览 Excel 文件
-            </el-button>
-            <p v-if="isDealFile">文件保存位置：{{ excelFilePath }}</p>
-          </div>
-
-          <!-- Excel 预览 -->
-          <div v-if="sheetsData.length" class="fscan-preview-card">
-            <!-- Tabs for sheet navigation -->
-            <el-tabs v-model="activeSheet" class="tabs">
-              <el-tab-pane v-for="(sheet, index) in sheetsData" :key="index" :label="sheet.sheetName"
-                           :name="sheet.sheetName">
-              </el-tab-pane>
-            </el-tabs>
-
-            <!-- 当前选中的表格 -->
-            <div v-if="activeSheet">
-              <table class="excel-preview-table">
-                <thead>
-                <tr>
-                  <th v-for="(col, index) in getActiveSheetData()[0]" :key="index">{{ col }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(row, rowIndex) in paginatedData.slice((currentPage-1)*pageSize, currentPage*pageSize)" :key="rowIndex">
-                  <td v-for="(cell, colIndex) in row" :key="colIndex">{{ cell }}</td>
-                </tr>
-                </tbody>
-              </table>
-
-              <!-- 分页组件 -->
-              <el-pagination
-                  v-if="paginatedData.length > pageSize"
-                  :current-page="currentPage"
-                  :page-size="pageSize"
-                  :total="paginatedData.length"
-                  @current-change="handlePageChange">
-              </el-pagination>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 蓝队大批量IP封禁处置 -->
-      <div v-if="activeTab === 'ip-ban-deal'" class="tab-content">
-        <div class="ip-ban-content">
-          <div class="ip-ban-info-card">
-            <p class="info">
-              请填写威胁情报 & 恶意IP列表（每行一个IP），以及选填白名单IP列表。系统将自动去重，并排除白名单内容，避免误封。
-            </p>
-          </div>
-
-          <div class="ip-ban-input-card">
-            <!-- 上半部分：输入框 -->
-            <div class="row upper-row">
-              <div class="column">
-                <h4>威胁情报 & 恶意IP</h4>
-                <el-input type="textarea" v-model="maliciousIPInput" placeholder="请输入威胁情报 & 恶意IP (每行一个)"
-                          :rows="10" class="input-box" />
-              </div>
-              <div class="column">
-                <h4>IP白名单</h4>
-                <el-input type="textarea" v-model="whiteListIPInput" placeholder="请输入IP白名单 (每行一个)" :rows="10"
-                          class="input-box" />
-              </div>
-            </div>
-
-            <!-- 下半部分：结果框 -->
-            <div class="row lower-row">
-              <div class="column">
-                <h4>去重后IP (排除白名单)</h4>
-                <div class="ip-input-container">
-                  <el-input type="textarea" :value="uniqueIPs.join('\n')" readonly placeholder="去重后IP (排除白名单)"
-                            :rows="8" class="input-box readonly" />
-                  <el-button type="success" class="ip-copy-button" @click="IpCopyToClipboard('uniqueIPs')">
-                    复制
-                  </el-button>
-                </div>
-              </div>
-              <div class="column">
-                <h4>重复IP</h4>
-                <div class="ip-input-container">
-                  <el-input type="textarea" :value="duplicateIPs.join('\n')" readonly placeholder="重复的IP"
-                            :rows="8" class="input-box readonly" />
-                  <el-button type="success" class="ip-copy-button" @click="IpCopyToClipboard('duplicateIPs')">
-                    复制
-                  </el-button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 去重按钮 -->
-            <el-button type="primary" @click="processIPs" class="process-button">
-              去重
-            </el-button>
-          </div>
-        </div>
-      </div>
-
       <!-- OSS存储桶功能部分 -->
       <div v-if="activeTab === 'oss-list'" class="tab-content">
         <div class="oss-content">
@@ -136,9 +20,9 @@
             <h4>OSS 存储桶功能</h4>
             <div class="function-select">
               <el-radio-group v-model="ossFunction" @change="onOssFunctionChange">
-                <el-radio label="vuln-scan">漏洞扫描</el-radio>
-                <el-radio label="file-list">文件遍历</el-radio>
-                <el-radio label="batch-scan">批量扫描</el-radio>
+                <el-radio value="vuln-scan">漏洞扫描</el-radio>
+                <el-radio value="file-list">文件遍历</el-radio>
+                <el-radio value="batch-scan">批量扫描</el-radio>
               </el-radio-group>
             </div>
           </div>
@@ -276,8 +160,8 @@
                   <el-form label-width="120px">
                     <el-form-item label="导出格式">
                       <el-radio-group v-model="exportConfig.format">
-                        <el-radio label="excel">Excel文件 (.xlsx)</el-radio>
-                        <el-radio label="csv">CSV文件 (.csv)</el-radio>
+                        <el-radio value="excel">Excel文件 (.xlsx)</el-radio>
+                        <el-radio value="csv">CSV文件 (.csv)</el-radio>
                       </el-radio-group>
                     </el-form-item>
 
@@ -1143,6 +1027,177 @@
           </el-col>
         </el-row>
       </div>
+
+      <!-- 在el-main中添加IP查询内容 -->
+      <div v-if="activeTab === 'ip-query'" class="tab-content">
+        <div class="ip-query-wrapper">
+          <!-- 左右布局 -->
+          <el-row :gutter="10" class="ip-query-content">
+            <!-- 左侧输入区域 -->
+            <el-col :span="8">
+              <el-card shadow="hover" class="input-card">
+                <template #header>
+                  <div class="card-header">
+                    <span>IP地址/域名输入</span>
+                    <div class="header-actions">
+                      <el-button type="primary" @click="startIpQuery" :loading="ipQueryLoading" size="small">
+                        {{ ipQueryLoading ? '查询中...' : '开始查询' }}
+                      </el-button>
+                      <el-button @click="clearIpInput" size="small">清空</el-button>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="input-section">
+                  <el-input
+                      v-model="ipQueryInput"
+                      type="textarea"
+                      placeholder="请输入IP地址或域名，每行一个。支持以下格式：
+- 纯IP: 1.1.1.1
+- 带协议: http://1.1.1.1, https://example.com
+- 域名: example.com, www.google.com"
+                      :rows="29"
+                      class="ip-textarea"
+                      resize="none"
+                  />
+                </div>
+
+                <div class="input-stats">
+                  <span class="stat-item">输入数量: {{ ipInputCount }}</span>
+                  <span class="stat-item">已完成: {{ ipCompletedCount }}</span>
+                  <span class="stat-item">成功: {{ ipSuccessCount }}</span>
+                  <span class="stat-item">失败: {{ ipFailedCount }}</span>
+                </div>
+
+                <!-- 查询进度 -->
+                <div class="query-progress" v-if="ipQueryLoading">
+                  <el-progress
+                      :percentage="ipQueryProgress"
+                      :status="ipQueryProgress === 100 ? 'success' : ''"
+                      :show-text="true"
+                  />
+                  <p class="progress-text">查询进度: {{ ipQueryProgress }}% ({{ ipCompletedCount }}/{{ ipInputCount }})</p>
+                </div>
+              </el-card>
+            </el-col>
+
+            <!-- 右侧结果表格 -->
+            <el-col :span="16">
+              <el-card shadow="hover" class="result-card">
+                <template #header>
+                  <div class="card-header">
+                    <span>查询结果 (共 {{ ipQueryResults.length }} 条)</span>
+                    <div class="result-actions">
+                      <el-button type="success" @click="exportIpResults" size="small" :loading="ipExportLoading">
+                        {{ ipExportLoading ? '导出中...' : '导出XLSX' }}
+                      </el-button>
+                      <el-button type="primary" @click="copyIpResults" size="small">
+                        复制结果
+                      </el-button>
+                      <el-button @click="clearIpResults" size="small">
+                        清空结果
+                      </el-button>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="table-container">
+                  <el-table
+                      :data="ipQueryResults"
+                      border
+                      stripe
+                      style="width: 100%"
+                      height="600"
+                      v-loading="ipQueryLoading"
+                      empty-text="暂无查询结果"
+                  >
+                    <el-table-column type="index" label="序号" width="55" align="center" />
+                    <el-table-column prop="original" label="URL" min-width="190" show-overflow-tooltip>
+                      <template #default="{ row }">
+                        <span class="url-text" @click="copyToClipboard(row.original, 'URL')">{{ row.original }}</span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="ip" label="IP地址" width="150" align="center">
+                      <template #default="{ row }">
+                        <div class="ip-cell">
+                          <span>{{ row.ip || '-' }}</span>
+                          <el-button
+                              v-if="row.ip"
+                              link
+                              size="small"
+                              @click="copyToClipboard(row.ip, 'IP地址')"
+                              class="copy-btn"
+                          >
+                            <el-icon><CopyDocument /></el-icon>
+                          </el-button>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="location" label="IP归属地" min-width="200" show-overflow-tooltip>
+                      <template #default="{ row }">
+                        <div class="location-cell">
+                          <span>{{ row.location || '查询中...' }}</span>
+                          <el-button
+                              v-if="row.location"
+                              link
+                              size="small"
+                              @click="copyToClipboard(row.location, '归属地')"
+                              class="copy-btn"
+                          >
+                            <el-icon><CopyDocument /></el-icon>
+                          </el-button>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态" width="80" align="center">
+                      <template #default="{ row }">
+                        <el-tag
+                            :type="row.status === 'success' ? 'success' : row.status === 'error' ? 'danger' : 'warning'"
+                            size="small"
+                        >
+                          {{ getIpStatusText(row.status) }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="120" align="center">
+                      <template #default="{ row }">
+                        <el-button
+                            v-if="row.ip"
+                            link
+                            size="small"
+                            @click="openIpInfo(row.ip)"
+                        >
+                          详情
+                        </el-button>
+                        <el-button
+                            link
+                            size="small"
+                            @click="retryQuery(row)"
+                            :loading="row.retrying"
+                        >
+                          {{ row.retrying ? '重试中' : '重试' }}
+                        </el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+
+                <!-- 结果统计 -->
+                <div class="results-summary" v-if="ipQueryResults.length > 0">
+                  <div class="summary-item success">
+                    <span class="count">{{ ipSuccessCount }}</span>
+                    <span class="label">成功</span>
+                  </div>
+                  <div class="summary-item error">
+                    <span class="count">{{ ipFailedCount }}</span>
+                    <span class="label">失败</span>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
     </el-main>
   </el-container>
 </template>
@@ -1151,11 +1206,8 @@
 import {
   DealOssList,
   DetectCloudProvider,
-  FscanResultDeal,
-  GetExcelContent,
-  StartVulnScan,
-  UploadFile
-} from "../../wailsjs/go/controller/InfoDeal";
+  StartVulnScan
+} from "../../wailsjs/go/infoDeal/OssBucker";
 import {
   AutoDecompile,
   ClearApplet,
@@ -1172,7 +1224,6 @@ import {
   SetAppletPath
 } from "../../wailsjs/go/unwxapp/UnWxapp";
 import {ElMessage, ElMessageBox} from "element-plus";
-import * as XLSX from "xlsx";
 import {GetConfigDir, GetOs, OpenPath} from "../../wailsjs/go/system/System";
 import {
   BruteForceJWT,
@@ -1180,7 +1231,7 @@ import {
   DecodeJWTWithAlg,
   EncodeJWTWithAlg,
   GetDefaultDictPath
-} from "../../wailsjs/go/controller/JwtCrackController";
+} from "../../wailsjs/go/infoDeal/JwtCrackController";
 import {BrowserOpenURL} from "../../wailsjs/runtime";
 import {loadMenuOrder, moduleTabsConfig} from '@/utils/menuConfig';
 import {
@@ -1198,6 +1249,7 @@ import {
   Search,
   Unlock
 } from '@element-plus/icons-vue'
+import {BatchQueryIPLocation, ExportIPResults, QueryIPLocation} from "../../wailsjs/go/infoDeal/QueryIp";
 
 
 export default {
@@ -1222,21 +1274,6 @@ export default {
       activeTab: "", // 初始为空，等配置加载后设置
       moduleTabs: [], // 模块标签页配置
       tabsKey: Date.now(),
-
-      fileName: "", // 当前上传的文件名
-      fileList: [], // 上传的文件列表
-      excelData: [], // Excel 数据，用于渲染预览
-      isDealFile: false,
-      excelFilePath: "", // 后端生成的 Excel 文件路径
-      sheetsData: [], // 存储所有表的数据
-      activeSheet: "", // 当前显示的表
-      maliciousIPInput: "",
-      whiteListIPInput: "",
-      uniqueIPs: [],
-      duplicateIPs: [],
-      currentPage: 1, // 当前页
-      pageSize: 10, // 每页显示的行数
-      paginatedData: [], // 分页后的数据
 
       // OSS存储桶相关数据
       ossFunction: 'vuln-scan',
@@ -1357,6 +1394,18 @@ export default {
         { value: 'None', label: 'None' }
       ],
       value: 'HS256',
+
+      // IP查询相关数据
+      ipQueryInput: '',
+      ipQueryLoading: false,
+      ipQueryResults: [],
+      ipQueryProgress: 0,
+      ipExportLoading: false,
+
+      // IP查询统计
+      ipCompletedCount: 0,
+      ipSuccessCount: 0,
+      ipFailedCount: 0,
     };
   },
 
@@ -1449,7 +1498,15 @@ export default {
         }
       });
       return count;
-    }
+    },
+
+    // IP输入数量
+    ipInputCount() {
+      if (!this.ipQueryInput.trim()) return 0
+      return this.ipQueryInput.split('\n')
+          .filter(line => line.trim())
+          .length
+    },
   },
 
   watch: {
@@ -1611,118 +1668,6 @@ export default {
         order: tab.defaultOrder
       }));
       this.setDefaultActiveTab();
-    },
-
-
-    // fscan解析
-    beforeUpload(file) {
-      const isTxt = file.type === "text/plain";
-      if (!isTxt) {
-        ElMessage.error("仅支持上传 .txt 文件！");
-        return false; // 阻止上传
-      }
-      this.fileName = file.name; // 保存文件名
-      return true; // 允许上传
-    },
-    async handleFileChange(file) {
-      if (file.raw.type !== "text/plain") return;
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        this.fileContent = event.target.result;
-
-        try {
-          await UploadFile(this.fileName, this.fileContent);
-          ElMessage.success("文件上传成功！");
-        } catch (error) {
-          console.error("文件上传失败:", error);
-          ElMessage.error(error.message || "文件上传失败！");
-        }
-      };
-      reader.onerror = () => ElMessage.error("文件读取失败");
-      reader.readAsText(file.raw);
-    },
-    async processFile() {
-      try {
-        const result = await FscanResultDeal(this.fileName);
-        this.excelFilePath = result; // 保存路径
-        this.isDealFile = true;
-        ElMessage.success(`文件处理成功！生成的文件: ${result}`);
-      } catch (error) {
-        console.error("文件处理失败:", error);
-        ElMessage.error(error.message || "处理文件失败！");
-      }
-    },
-    async openExcelPreview() {
-      if (!this.excelFilePath) {
-        ElMessage.error("请先处理文件！");
-        return;
-      }
-
-      try {
-        const encodedContent = await GetExcelContent(this.excelFilePath);
-        if (!encodedContent) {
-          throw new Error("未能获取到有效的 Base64 数据！");
-        }
-
-        const binary = atob(encodedContent);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        const workbook = XLSX.read(bytes, { type: "array" });
-        this.sheetsData = workbook.SheetNames.map(sheetName => ({
-          sheetName,
-          data: XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
-        }));
-        this.activeSheet = this.sheetsData[0]?.sheetName;
-        this.paginatedData = this.getActiveSheetData(); // 初始化分页数据
-      } catch (error) {
-        console.error("Excel 文件预览失败:", error);
-        ElMessage.error(error.message || "Excel 文件预览失败！");
-      }
-    },
-    handlePageChange(page) {
-      this.currentPage = page;
-    },
-    getActiveSheetData() {
-      const activeSheetData = this.sheetsData.find(sheet => sheet.sheetName === this.activeSheet);
-      return activeSheetData ? activeSheetData.data : [];
-    },
-
-    // 蓝队封禁IP
-    processIPs() {
-      const maliciousIPs = this.maliciousIPInput
-          .split("\n")
-          .map(ip => ip.trim())
-          .filter(ip => ip);
-      const whiteListIPs = new Set(
-          this.whiteListIPInput
-              .split("\n")
-              .map(ip => ip.trim())
-              .filter(ip => ip)
-      );
-
-      const uniqueIPs = new Set();
-      const duplicateIPs = new Set();
-
-      maliciousIPs.forEach(ip => {
-        if (whiteListIPs.has(ip)) return;
-        if (uniqueIPs.has(ip)) {
-          duplicateIPs.add(ip);
-        } else {
-          uniqueIPs.add(ip);
-        }
-      });
-
-      this.uniqueIPs = Array.from(uniqueIPs);
-      this.duplicateIPs = Array.from(duplicateIPs);
-    },
-    IpCopyToClipboard(type) {
-      const list = this[type];
-      const text = list.join("\n");
-      navigator.clipboard.writeText(text).then(() => {
-        this.$message.success("IP 列表已复制到剪贴板！");
-      });
     },
 
     // 恢复OSS缓存
@@ -1952,26 +1897,6 @@ export default {
       // 清除缓存
       sessionStorage.removeItem('ossStorageCache');
       this.$message.success('配置已重置');
-    },
-
-    // 风险相关方法保持不变
-    riskSummary() {
-      const summary = {
-        CRITICAL: 0,
-        HIGH: 0,
-        MEDIUM: 0,
-        LOW: 0,
-        ERROR: 0
-      };
-
-      this.scanResults.forEach(result => {
-        const level = result.risk.split('_')[0];
-        if (summary.hasOwnProperty(level)) {
-          summary[level]++;
-        }
-      });
-
-      return summary;
     },
 
     getRiskLabel(riskLevel) {
@@ -3235,13 +3160,301 @@ export default {
         return this.jwtsecret && this.jwtsecret.trim() ? '校验失败' : '需要秘钥';
       }
     },
+
+    // IP查询相关方法
+    async querySingleIp(input, index) {
+      try {
+        // 直接调用 Wails 后端方法
+        const response = await QueryIPLocation({
+          target: input
+        })
+
+        if (response.success) {
+          this.ipQueryResults[index] = {
+            ...this.ipQueryResults[index],
+            ip: response.ip,
+            location: response.location,
+            status: 'success'
+          }
+          this.ipSuccessCount++
+        } else {
+          throw new Error(response.error || '查询失败')
+        }
+      } catch (error) {
+        console.error(`查询失败 [${input}]:`, error)
+        this.ipQueryResults[index] = {
+          ...this.ipQueryResults[index],
+          ip: '',
+          location: error.message,
+          status: 'error'
+        }
+        this.ipFailedCount++
+      }
+    },
+
+    clearIpInput() {
+      this.ipQueryInput = ''
+    },
+
+    clearIpResults() {
+      this.ipQueryResults = []
+      this.ipCompletedCount = 0
+      this.ipSuccessCount = 0
+      this.ipFailedCount = 0
+      this.ipQueryProgress = 0
+    },
+
+    copyIpResults() {
+      if (this.ipQueryResults.length === 0) {
+        this.$message.warning('没有可复制的数据')
+        return
+      }
+
+      const text = this.ipQueryResults.map((item, index) =>
+          `${index + 1}\t${item.original}\t${item.ip || ''}\t${item.location || ''}`
+      ).join('\n')
+
+      this.copyToClipboard(text, 'IP查询结果')
+    },
+
+    getIpStatusText(status) {
+      const statusMap = {
+        'pending': '待查询',
+        'success': '成功',
+        'error': '失败'
+      }
+      return statusMap[status] || status
+    },
+
+    openIpInfo(ip) {
+      if (!ip) return
+      // 在新标签页打开IP信息查询网站
+      BrowserOpenURL(`https://www.ipip.net/ip/${ip}.html`)
+    },
+    async startIpQuery() {
+      if (!this.ipQueryInput.trim()) {
+        this.$message.warning('请输入要查询的IP地址或域名')
+        return
+      }
+
+      const inputs = this.ipQueryInput.split('\n')
+          .filter(line => line.trim())
+          .map(line => line.trim())
+
+      if (inputs.length === 0) {
+        this.$message.warning('请输入有效的IP地址或域名')
+        return
+      }
+
+      this.ipQueryLoading = true
+      this.ipQueryResults = []
+      this.ipCompletedCount = 0
+      this.ipSuccessCount = 0
+      this.ipFailedCount = 0
+      this.ipQueryProgress = 0
+
+      try {
+        // 初始化结果数组
+        this.ipQueryResults = inputs.map(input => ({
+          original: input,
+          ip: '',
+          location: '',
+          status: 'pending',
+          retrying: false
+        }))
+
+        // 使用 Promise.all 进行并发查询，但控制并发数
+        const concurrency = 5 // 控制并发数
+        const total = inputs.length
+
+        // 分批处理
+        for (let i = 0; i < inputs.length; i += concurrency) {
+          const batch = inputs.slice(i, i + concurrency)
+          const promises = batch.map((input, index) =>
+              this.querySingleIpWithProgress(input, i + index, total)
+          )
+
+          await Promise.all(promises)
+
+          // 更新进度
+          this.ipCompletedCount = Math.min(i + concurrency, total)
+          this.ipQueryProgress = Math.round((this.ipCompletedCount / total) * 100)
+
+          // 添加小延迟，让UI有机会更新
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+
+        this.$message.success(`查询完成！成功: ${this.ipSuccessCount}, 失败: ${this.ipFailedCount}`)
+      } catch (error) {
+        console.error('IP查询错误:', error)
+        this.$message.error('查询过程中发生错误: ' + error.message)
+      } finally {
+        this.ipQueryLoading = false
+      }
+    },
+
+    // 重试单个查询
+    async retryQuery(row) {
+      const index = this.ipQueryResults.findIndex(item => item.original === row.original)
+      if (index === -1) return
+
+      row.retrying = true
+      try {
+        // 调用单个查询方法
+        const response = await QueryIPLocation({
+          targets: [row.original]
+        })
+
+        if (response.success) {
+          this.ipQueryResults[index] = {
+            ...this.ipQueryResults[index],
+            ip: response.ip,
+            location: response.location,
+            status: 'success'
+          }
+          // 更新统计
+          if (row.status === 'error') {
+            this.ipFailedCount--
+          }
+          this.ipSuccessCount++
+          this.$message.success('重试成功')
+        } else {
+          this.ipQueryResults[index] = {
+            ...this.ipQueryResults[index],
+            ip: '',
+            location: response.error,
+            status: 'error'
+          }
+          // 更新统计
+          if (row.status === 'success') {
+            this.ipSuccessCount--
+          }
+          this.ipFailedCount++
+          this.$message.error('重试失败: ' + response.error)
+        }
+      } catch (error) {
+        console.error('重试失败:', error)
+        this.$message.error('重试失败: ' + error.message)
+      } finally {
+        row.retrying = false
+      }
+    },
+    async querySingleIpWithProgress(input, index, total) {
+      try {
+        const response = await QueryIPLocation({
+          targets: [input]
+        })
+
+        if (response.success) {
+          this.ipQueryResults[index] = {
+            ...this.ipQueryResults[index],
+            ip: response.ip,
+            location: response.location,
+            status: 'success'
+          }
+          this.ipSuccessCount++
+        } else {
+          throw new Error(response.error || '查询失败')
+        }
+      } catch (error) {
+        console.error(`查询失败 [${input}]:`, error)
+        this.ipQueryResults[index] = {
+          ...this.ipQueryResults[index],
+          ip: '',
+          location: error.message,
+          status: 'error'
+        }
+        this.ipFailedCount++
+      }
+
+      // 强制更新视图
+      this.$forceUpdate()
+    },
+    async exportIpResults() {
+      if (this.ipQueryResults.length === 0) {
+        this.$message.warning('没有可导出的数据')
+        return
+      }
+
+      this.ipExportLoading = true
+      try {
+        const timestamp = new Date().getTime()
+        const fileName = `IP查询结果_${timestamp}`
+
+        const result = await ExportIPResults({
+          results: this.ipQueryResults,
+          fileName: fileName,
+          timestamp: new Date().toLocaleString('zh-CN')
+        })
+
+        if (result.success && result.data) {
+          // 处理二进制数据 - 使用正确的方式
+          try {
+            // 将 base64 字符串转换为 ArrayBuffer
+            const binaryString = atob(result.data)
+            const bytes = new Uint8Array(binaryString.length)
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i)
+            }
+
+            // 创建 Blob
+            const blob = new Blob([bytes], {
+              type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            })
+
+            // 创建下载链接
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', `${fileName}.xlsx`)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            window.URL.revokeObjectURL(url)
+
+            this.$message.success('Excel导出成功')
+          } catch (blobError) {
+            console.error('Blob创建失败:', blobError)
+            // 如果 Blob 方式失败，尝试直接下载
+            this.downloadBase64File(result.data, `${fileName}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+          }
+        } else {
+          this.$message.error('导出失败：' + (result.error || '未知错误'))
+        }
+      } catch (error) {
+        console.error('导出失败:', error)
+        this.$message.error('导出失败: ' + error.message)
+      } finally {
+        this.ipExportLoading = false
+      }
+    },
+    // 备用的 Base64 文件下载方法
+    downloadBase64File(base64Data, fileName, mimeType) {
+      try {
+        // 创建下载链接
+        const link = document.createElement('a')
+        link.href = `data:${mimeType};base64,${base64Data}`
+        link.setAttribute('download', fileName)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        this.$message.success('文件下载成功')
+      } catch (error) {
+        console.error('Base64下载失败:', error)
+        this.$message.error('下载失败，请检查浏览器设置')
+      }
+    },
   }
 };
 </script>
 
 <style scoped>
+.el-main{
+  padding: 0;
+}
+
 /* 页面容器 - 修复撑满屏幕问题 */
-.container {
+.app-container {
   min-height: 96vh;
   display: flex;
   flex-direction: column;
@@ -3259,213 +3472,6 @@ export default {
   padding: 0 10px;
   flex-shrink: 0;
 }
-
-/* 主内容区域 */
-.el-main {
-  padding: 0;
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-
-:deep(.el-main) {
-  padding: 0 !important;
-}
-
-/* 标签页内容通用样式 */
-.tab-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
-/* 通用卡片样式 */
-.tab-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 200px;
-}
-
-.tab-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.tab-card-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  min-height: 0;
-}
-
-/* 通用滚动条样式 */
-.tab-card-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.tab-card-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.tab-card-content::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-.tab-card-content::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* 文本样式 */
-:deep(h4){
-  display: block;
-  margin-block-start: 1.33em;
-  margin-block-end: 1.33em;
-  margin-inline-start: 0px;
-  margin-inline-end: 0px;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-:deep(h5){
-  display: block;
-  font-size: 0.83em;
-  margin-block-start: 1.67em;
-  margin-block-end: 1.67em;
-  margin-inline-start: 0;
-  margin-inline-end: 0;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-:deep(p){
-  display: block;
-  margin-block-start: 1em;
-  margin-block-end: 1em;
-  margin-inline-start: 0;
-  margin-inline-end: 0;
-  unicode-bidi: isolate;
-}
-
-/* 使用 flex 布局确保按钮和文件路径显示在同一行 */
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-/* 表格样式 */
-.excel-preview-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-.excel-preview-table th, .excel-preview-table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
-  font-size: 14px;
-}
-
-.excel-preview-table th {
-  background-color: #f0f0f0;
-  font-weight: bold;
-}
-
-.excel-preview-table tr:nth-child(even) {
-  background-color: #f9f9f9;
-}
-
-.excel-preview-table tr:hover {
-  background-color: #f1f1f1;
-}
-
-.excel-preview-table td {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 蓝队封禁IP工具 */
-.tab-content .info {
-  color: #409eff;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.column {
-  width: 48%;
-  box-sizing: border-box;
-  min-width: 300px;
-  margin-bottom: 10px;
-}
-
-.upper-row .column {
-  padding: 0 1px;
-}
-
-.lower-row .column {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: 0 10px;
-}
-
-/* 包裹 el-input 和按钮的容器 */
-.ip-input-container {
-  position: relative;
-}
-
-/* 输入框 */
-.input-box {
-  width: 100%;
-}
-
-/* 按钮定位到输入框右上角 */
-.ip-copy-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  z-index: 10;
-  padding: 5px 10px;
-  font-size: 12px;
-  background-color: #00aaff;
-  color: #ffffff;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.ip-copy-button:hover {
-  background-color: #176bca;
-}
-
-/* 按钮优化 */
-.process-button {
-  display: block;
-  margin: 10px auto;
-  padding: 8px 16px;
-  margin-top: 25px;
-  border-radius: 5px;
-  width: 100%;
-  font-size: 18px;
-  text-align: center;
-  background-color: #5cb85c;
-}
-
 
 /* ============ OSS存储桶样式 ============ */
 /* OSS存储桶功能样式 */
@@ -4378,7 +4384,7 @@ export default {
   flex: 1;
   border: none;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
   min-height: 200px;
   resize: vertical;
 }
@@ -4398,7 +4404,7 @@ export default {
 
 .rules-textarea {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* ============ 其他界面统一应用卡片样式 ============ */
@@ -4527,7 +4533,7 @@ export default {
 
 .section-input {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .config-item {
@@ -4596,7 +4602,7 @@ export default {
 
 .progress-text {
   margin: 8px 0 0 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #909399;
 }
 
@@ -4885,7 +4891,7 @@ export default {
 /* 表格在小屏幕上的响应式 */
 @media (max-width: 768px) {
   .excel-preview-table {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .excel-preview-table th,

@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"EasyTools/app/controller/proxy"
 	"EasyTools/app/controller/system"
 	"EasyTools/app/model"
-	"EasyTools/app/proxy"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"

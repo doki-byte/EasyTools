@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"EasyTools/app/connect/ftp"
-	"EasyTools/app/connect/ssh"
+	"EasyTools/app/controller/connect/ftp"
+	"EasyTools/app/controller/connect/ssh"
 	"EasyTools/app/controller/system"
 	"fmt"
 	"path/filepath"

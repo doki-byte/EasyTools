@@ -80,7 +80,7 @@
 import { onMounted, onUnmounted, ref, nextTick } from "vue";
 import { ChooseFile } from "../../../wailsjs/go/proxy/Proxy";
 import { Notification } from '@arco-design/web-vue';
-import {BrowserOpenURL, EventsOff, EventsOn} from "../../../wailsjs/runtime";
+import {BrowserOpenURL, EventsEmit, EventsOff, EventsOn} from "../../../wailsjs/runtime";
 import {Config, useConfigStore} from "./store/types";
 
 const logs = ref<string[]>([]);  // 日志数组
@@ -133,7 +133,7 @@ const handleLogEmits = (log: string) => {
     // 更新当前IP
     configState.setCurrentIP(currentProxyIP);
     // 发送事件通知主组件
-    EventsOn('current_ip', currentProxyIP);
+    EventsEmit('current_ip', currentProxyIP);
   }
 
   // 自动滚动到底部

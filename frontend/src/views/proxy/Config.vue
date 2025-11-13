@@ -55,9 +55,9 @@ const formData = ref({
     get: () => configState.getCountry(),
     set: (value) => configState.setCountry(value),
   }),
-  GlobalProxy: computed({
-    get: () => configState.getGlobalProxy(),
-    set: (value) => configState.setGlobalProxy(value),
+  Xui: computed({
+    get: () => configState.getXui(),
+    set: (value) => configState.setXui(value),
   })
 
 });
@@ -115,7 +115,7 @@ function saveConfig() {
     HunterKey: formData.value.HunterKey,
     QuakeKey: formData.value.QuakeKey,
     Maxpage: formData.value.MaxPage.toString(),
-    GlobalProxy: formData.value.GlobalProxy,
+    Xui: formData.value.Xui,
     LiveProxies: configState.getLiveProxies(),
     AllProxies: configState.getAllProxies(),
     LiveProxyLists: [] as string[],  // 初始化为字符串数组
@@ -133,8 +133,6 @@ function saveConfig() {
         disabled.value = false;
       });
 }
-
-
 
 onMounted(() => {
   configState.getProfile();
@@ -288,15 +286,16 @@ onMounted(() => {
     </a-row>
     <a-row :gutter="[24, 12]">
       <a-col :span="12">
-        <a-form-item label="全局代理(暂未实现)" name="GlobalProxy">
+        <a-form-item label="白嫖Xui(开启后只会抓取xui数据,点击使用只会保存excel,请手动打开excel进行调用)" name="Xui">
           <a-select
-              v-model="formData.GlobalProxy"
-              placeholder="请选择是否配置全局代理"
+              v-model="formData.Xui"
+              placeholder="请选择是否开启Xui抓取"
               hide-on-select
               allow-clear
           >
-            <a-option value="1">是</a-option>
             <a-option value="0">否</a-option>
+            <a-option value="1">是（不添加http代理）</a-option>
+            <a-option value="2">是（添加http代理）</a-option>
           </a-select>
         </a-form-item>
       </a-col>

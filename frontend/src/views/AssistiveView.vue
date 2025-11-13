@@ -1,5 +1,5 @@
 <template>
-  <el-container class="container">
+  <el-container class="app-container"  direction="vertical">
     <!-- 标签栏 -->
     <el-tabs v-model="activeTab" class="tabs" :key="tabsKey">
       <el-tab-pane
@@ -222,14 +222,100 @@
           </div>
         </el-card>
       </div>
+
+      <!-- Fscan结果处理 -->
+      <div v-if="activeTab === 'fscan-deal'" class="tab-content">
+        <div class="fscan-content">
+          <div class="fscan-header-card">
+            <h4>选择 Fscan 结果文件</h4>
+            <el-upload class="upload-demo" drag action="" :before-upload="beforeUpload" :file-list="fileList"
+                       :show-file-list="false" :on-change="handleFileChange">
+              <i class="el-icon-upload"></i>
+              <div class="el-upload__text">
+                拖拽文件到此处，或<em>点击上传</em>
+              </div>
+              <div class="el-upload__tip">仅支持 .txt 文件</div>
+            </el-upload>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="actions" v-if="fileName">
+            <el-button type="primary" @click="processFscanFile">处理文件</el-button>
+            <el-button type="success" @click="openExcelPath" v-if="isDealFile">
+              打开文件夹
+            </el-button>
+            <p v-if="isDealFile">文件保存位置：{{ excelFilePath }}</p>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- 蓝队大批量IP封禁处置 -->
+      <div v-if="activeTab === 'ip-ban-deal'" class="tab-content">
+        <div class="ip-ban-content">
+          <div class="ip-ban-info-card">
+            <p class="info">
+              请填写威胁情报 & 恶意IP列表（每行一个IP），以及选填白名单IP列表。系统将自动去重，并排除白名单内容，避免误封。
+            </p>
+          </div>
+
+          <div class="ip-ban-input-card">
+            <!-- 上半部分：输入框 -->
+            <div class="row upper-row">
+              <div class="column">
+                <h4>威胁情报 & 恶意IP</h4>
+                <el-input type="textarea" v-model="maliciousIPInput" placeholder="请输入威胁情报 & 恶意IP (每行一个)"
+                          :rows="10" class="input-box" />
+              </div>
+              <div class="column">
+                <h4>IP白名单</h4>
+                <el-input type="textarea" v-model="whiteListIPInput" placeholder="请输入IP白名单 (每行一个)" :rows="10"
+                          class="input-box" />
+              </div>
+            </div>
+
+            <!-- 下半部分：结果框 -->
+            <div class="row lower-row">
+              <div class="column">
+                <h4>去重后IP (排除白名单)</h4>
+                <div class="ip-input-container">
+                  <el-input type="textarea" :value="uniqueIPs.join('\n')" readonly placeholder="去重后IP (排除白名单)"
+                            :rows="8" class="input-box readonly" />
+                  <el-button type="success" class="ip-copy-button" @click="IpCopyToClipboard('uniqueIPs')">
+                    复制
+                  </el-button>
+                </div>
+              </div>
+              <div class="column">
+                <h4>重复IP</h4>
+                <div class="ip-input-container">
+                  <el-input type="textarea" :value="duplicateIPs.join('\n')" readonly placeholder="重复的IP"
+                            :rows="8" class="input-box readonly" />
+                  <el-button type="success" class="ip-copy-button" @click="IpCopyToClipboard('duplicateIPs')">
+                    复制
+                  </el-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 去重按钮 -->
+            <el-button type="primary" @click="processIPs" class="process-button">
+              去重
+            </el-button>
+          </div>
+        </div>
+      </div>
     </el-main>
   </el-container>
 </template>
 
 <script>
 import { QueryAntivirusProcesses, QueryGoogleQueries, QueryPasswordsAPI } from "../../wailsjs/go/controller/Assistive"
+import {FscanResultDeal, UploadFile} from "../../wailsjs/go/controller/Assistive";
 import axios from 'axios'
+import {GetConfigDir, OpenPath} from "../../wailsjs/go/system/System";
 import { loadMenuOrder, moduleTabsConfig } from '@/utils/menuConfig';
+import {ElMessage} from "element-plus";
 
 export default {
   name: "AssistiveView",
@@ -239,15 +325,33 @@ export default {
       queryPasswordInput: "",
       moduleTabs: [], // 模块标签页配置
       tabsKey: Date.now(),
+
+      // 密码查询
       passwordData: [],
       total: 0,
       currentPage: 1,
       pageSize: 12,
 
+      // fscan处理
+      fileName: "", // 当前上传的文件名
+      fileList: [], // 上传的文件列表
+      excelData: [], // Excel 数据，用于渲染预览
+      isDealFile: false,
+      excelFilePath: "", // 后端生成的 Excel 文件路径
+      sheetsData: [], // 存储所有表的数据
+      activeSheet: "", // 当前显示的表
+      maliciousIPInput: "",
+      whiteListIPInput: "",
+      uniqueIPs: [],
+      duplicateIPs: [],
+      paginatedData: [], // 分页后的数据
+
+      // tasklist 查询
       tasklistInput: "",
       avResults: [],
       isAvQueried: false,
 
+      // google 语法查询
       googleDomainInput: '',
       googleQueries: [],
       activeCategories: [],
@@ -355,10 +459,10 @@ export default {
         // console.log('加载的标签页数据:', savedData);
 
         const savedTabsOrder = savedData.tabs || {};
-        const infoSearchTabs = savedTabsOrder.infoSearch || [];
+        const assistiveTabs = savedTabsOrder.assistive || [];
 
         // 获取默认配置
-        const defaultTabs = moduleTabsConfig.infoSearch || [];
+        const defaultTabs = moduleTabsConfig.assistive || [];
 
         // 创建标签页映射
         const tabMap = {};
@@ -629,16 +733,98 @@ export default {
       script.src = url;
       document.head.appendChild(script);
     },
+
+    // fscan解析
+    beforeUpload(file) {
+      const isTxt = file.type === "text/plain";
+      if (!isTxt) {
+        ElMessage.error("仅支持上传 .txt 文件！");
+        return false; // 阻止上传
+      }
+      this.fileName = file.name; // 保存文件名
+      return true; // 允许上传
+    },
+    async handleFileChange(file) {
+      if (file.raw.type !== "text/plain") return;
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        this.fileContent = event.target.result;
+
+        try {
+          await UploadFile(this.fileName, this.fileContent);
+          ElMessage.success("文件上传成功！");
+        } catch (error) {
+          console.error("文件上传失败:", error);
+          ElMessage.error(error.message || "文件上传失败！");
+        }
+      };
+      reader.onerror = () => ElMessage.error("文件读取失败");
+      reader.readAsText(file.raw);
+    },
+    async processFscanFile() {
+      try {
+        const result = await FscanResultDeal(this.fileName);
+        this.excelFilePath = result; // 保存路径
+        this.isDealFile = true;
+        ElMessage.success(`文件处理成功！生成的文件: ${result}`);
+      } catch (error) {
+        console.error("文件处理失败:", error);
+        ElMessage.error(error.message || "处理文件失败！");
+      }
+    },
+    // 打开file文件夹
+    async openExcelPath() {
+      const baseDir = await GetConfigDir()
+      const fileDir = baseDir + "/file"; // 拼接file子目录
+      await OpenPath(fileDir)
+    },
+
+    // 蓝队封禁IP
+    processIPs() {
+      const maliciousIPs = this.maliciousIPInput
+          .split("\n")
+          .map(ip => ip.trim())
+          .filter(ip => ip);
+      const whiteListIPs = new Set(
+          this.whiteListIPInput
+              .split("\n")
+              .map(ip => ip.trim())
+              .filter(ip => ip)
+      );
+
+      const uniqueIPs = new Set();
+      const duplicateIPs = new Set();
+
+      maliciousIPs.forEach(ip => {
+        if (whiteListIPs.has(ip)) return;
+        if (uniqueIPs.has(ip)) {
+          duplicateIPs.add(ip);
+        } else {
+          uniqueIPs.add(ip);
+        }
+      });
+
+      this.uniqueIPs = Array.from(uniqueIPs);
+      this.duplicateIPs = Array.from(duplicateIPs);
+    },
+    IpCopyToClipboard(type) {
+      const list = this[type];
+      const text = list.join("\n");
+      navigator.clipboard.writeText(text).then(() => {
+        this.$message.success("IP 列表已复制到剪贴板！");
+      });
+    },
+
   }
 };
 </script>
 
 <style scoped>
 /* 页面容器 */
-.container {
+.app-container {
   height: 95vh;
   display: flex;
-  margin-left: 10px;
+  padding: 5px;
   flex-direction: column;
   background-color: #f8f9fb;
 }
@@ -676,36 +862,6 @@ export default {
 
 .input {
   flex: 1;
-}
-
-:deep(h4){
-  display: block;
-  margin-block-start: 1.33em;
-  margin-block-end: 1.33em;
-  margin-inline-start: 0px;
-  margin-inline-end: 0px;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-:deep(h5){
-  display: block;
-  font-size: 0.83em;
-  margin-block-start: 1.67em;
-  margin-block-end: 1.67em;
-  margin-inline-start: 0px;
-  margin-inline-end: 0px;
-  font-weight: bold;
-  unicode-bidi: isolate;
-}
-
-:deep(p){
-  display: block;
-  margin-block-start: 1em;
-  margin-block-end: 1em;
-  margin-inline-start: 0px;
-  margin-inline-end: 0px;
-  unicode-bidi: isolate;
 }
 
 /* 表格 */
@@ -899,4 +1055,211 @@ export default {
   text-align: center;
   color: #909399;
 }
+
+/* 主内容区域 */
+.el-main {
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+:deep(.el-main) {
+  padding: 0 !important;
+}
+
+/* 标签页内容通用样式 */
+.tab-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 5px 8px;
+}
+
+/* 通用卡片样式 */
+.tab-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+
+.tab-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tab-card-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 0;
+}
+
+/* 通用滚动条样式 */
+.tab-card-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-card-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.tab-card-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.tab-card-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 文本样式 */
+:deep(h4){
+  display: block;
+  margin-block-start: 1.33em;
+  margin-block-end: 1.33em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(h5){
+  display: block;
+  font-size: 0.83em;
+  margin-block-start: 1.67em;
+  margin-block-end: 1.67em;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+:deep(p){
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+  unicode-bidi: isolate;
+}
+
+/* 使用 flex 布局确保按钮和文件路径显示在同一行 */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* 表格样式 */
+.excel-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.excel-preview-table th, .excel-preview-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.excel-preview-table th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.excel-preview-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.excel-preview-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+.excel-preview-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 蓝队封禁IP工具 */
+.tab-content .info {
+  color: #409eff;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.column {
+  width: 48%;
+  box-sizing: border-box;
+  min-width: 300px;
+  margin-bottom: 10px;
+}
+
+.upper-row .column {
+  padding: 0 1px;
+}
+
+.lower-row .column {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 10px;
+}
+
+/* 包裹 el-input 和按钮的容器 */
+.ip-input-container {
+  position: relative;
+}
+
+/* 输入框 */
+.input-box {
+  width: 100%;
+}
+
+/* 按钮定位到输入框右上角 */
+.ip-copy-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 10;
+  padding: 5px 10px;
+  font-size: 12px;
+  background-color: #00aaff;
+  color: #ffffff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ip-copy-button:hover {
+  background-color: #176bca;
+}
+
+/* 按钮优化 */
+.process-button {
+  display: block;
+  padding: 8px 16px;
+  margin: 25px auto 10px;
+  border-radius: 5px;
+  width: 100%;
+  font-size: 18px;
+  text-align: center;
+  background-color: #5cb85c;
+}
+
 </style>

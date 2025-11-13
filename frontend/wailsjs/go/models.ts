@@ -70,7 +70,7 @@ export namespace config {
 	    Status: number;
 	    Code: number;
 	    Error: string;
-	    GlobalProxy: string;
+	    Xui: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -94,7 +94,7 @@ export namespace config {
 	        this.Status = source["Status"];
 	        this.Code = source["Code"];
 	        this.Error = source["Error"];
-	        this.GlobalProxy = source["GlobalProxy"];
+	        this.Xui = source["Xui"];
 	    }
 	}
 
@@ -142,30 +142,6 @@ export namespace controller {
 		    }
 		    return a;
 		}
-	}
-	export class JwtResult {
-	    jwt_token: string;
-	    header: Record<string, any>;
-	    payload: Record<string, any>;
-	    signature: string;
-	    valid: boolean;
-	    secret?: string;
-	    error?: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new JwtResult(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.jwt_token = source["jwt_token"];
-	        this.header = source["header"];
-	        this.payload = source["payload"];
-	        this.signature = source["signature"];
-	        this.valid = source["valid"];
-	        this.secret = source["secret"];
-	        this.error = source["error"];
-	    }
 	}
 	export class PasswordData {
 	    id: number;
@@ -780,6 +756,134 @@ export namespace http {
 	        this.Transport = source["Transport"];
 	        this.Jar = source["Jar"];
 	        this.Timeout = source["Timeout"];
+	    }
+	}
+
+}
+
+export namespace infoDeal {
+	
+	export class BatchQueryConfig {
+	    concurrency: number;
+	    timeout: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BatchQueryConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.concurrency = source["concurrency"];
+	        this.timeout = source["timeout"];
+	    }
+	}
+	export class IPResult {
+	    original: string;
+	    ip: string;
+	    location: string;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IPResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.original = source["original"];
+	        this.ip = source["ip"];
+	        this.location = source["location"];
+	        this.status = source["status"];
+	    }
+	}
+	export class IPExportRequest {
+	    results: IPResult[];
+	    fileName?: string;
+	    timestamp?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IPExportRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.results = this.convertValues(source["results"], IPResult);
+	        this.fileName = source["fileName"];
+	        this.timestamp = source["timestamp"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class IPQueryRequest {
+	    targets: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new IPQueryRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.targets = source["targets"];
+	    }
+	}
+	export class IPQueryResponse {
+	    success: boolean;
+	    original?: string;
+	    ip?: string;
+	    location?: string;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new IPQueryResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.original = source["original"];
+	        this.ip = source["ip"];
+	        this.location = source["location"];
+	        this.error = source["error"];
+	    }
+	}
+	
+	export class JwtResult {
+	    jwt_token: string;
+	    header: Record<string, any>;
+	    payload: Record<string, any>;
+	    signature: string;
+	    valid: boolean;
+	    secret?: string;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new JwtResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.jwt_token = source["jwt_token"];
+	        this.header = source["header"];
+	        this.payload = source["payload"];
+	        this.signature = source["signature"];
+	        this.valid = source["valid"];
+	        this.secret = source["secret"];
+	        this.error = source["error"];
 	    }
 	}
 

@@ -147,7 +147,7 @@ func (u *UnWxapp) InitCheck() bool {
 
 func (u *UnWxapp) checkNodeInPath() bool {
 	if _, err := exec.LookPath("node"); err == nil {
-		log.Println("✓ 检测到 Node.js")
+		log.Println("检测到 Node.js")
 		return true
 	}
 	return false
@@ -263,11 +263,11 @@ func (u *UnWxapp) AutoDecompile(enable bool) error {
 	if enable {
 		// 启动自动反编译循环
 		u.startAutoDecompile()
-		log.Printf("自动反编译已启用")
+
 	} else {
 		// 停止自动反编译循环
 		u.stopAutoDecompileLoop()
-		log.Printf("自动反编译已停用")
+
 	}
 
 	return u.saveConfig(config)
@@ -351,21 +351,20 @@ func (u *UnWxapp) ClearDecompiled() error {
 			}
 
 			version := versionEntry.Name()
-			decompiledAppDir := filepath.Join(appPath, version, "__APP__")
-			decompiledPluginDir := filepath.Join(appPath, version, "__PLUGINCODE__")
-
-			// 删除反编译输出目录
-			if _, err := os.Stat(decompiledAppDir); err == nil {
-				log.Printf("删除反编译目录: %s", decompiledAppDir)
-				if err := os.RemoveAll(decompiledAppDir); err != nil {
-					log.Printf("删除反编译目录失败: %s, %v", decompiledAppDir, err)
-				}
+			// 获取动态包名
+			packageNames, err := u.getPackageNames(filepath.Join(appPath, version))
+			if err != nil {
+				continue
 			}
 
-			if _, err := os.Stat(decompiledPluginDir); err == nil {
-				log.Printf("删除反编译目录: %s", decompiledPluginDir)
-				if err := os.RemoveAll(decompiledPluginDir); err != nil {
-					log.Printf("删除反编译目录失败: %s, %v", decompiledPluginDir, err)
+			// 删除所有包名的反编译输出目录
+			for _, pkgName := range packageNames {
+				decompiledDir := filepath.Join(appPath, version, pkgName)
+				if _, err := os.Stat(decompiledDir); err == nil {
+					log.Printf("删除反编译目录: %s", decompiledDir)
+					if err := os.RemoveAll(decompiledDir); err != nil {
+						log.Printf("删除反编译目录失败: %s, %v", decompiledDir, err)
+					}
 				}
 			}
 		}
@@ -436,57 +435,47 @@ func (u *UnWxapp) GetAllMiniApp() ([]InfoToFront, error) {
 }
 
 func (u *UnWxapp) Decompile(item InfoToFront) error {
-	log.Printf("Decompile 方法被调用: AppID: %s, 版本数量: %d", item.AppID, len(item.Versions))
 
 	// 参数验证
 	if item.AppID == "" {
-		log.Printf("错误: AppID 为空")
+
 		return fmt.Errorf("AppID 不能为空")
 	}
 
 	if len(item.Versions) == 0 {
-		log.Printf("错误: 版本列表为空")
+
 		return fmt.Errorf("版本列表不能为空")
 	}
 
 	for _, version := range item.Versions {
 		if version.Number == "" {
-			log.Printf("错误: 版本号为空")
+
 			return fmt.Errorf("版本号不能为空")
 		}
 	}
 
 	for _, version := range item.Versions {
 		go func(appid, versionNum string) {
-			log.Printf("开始处理版本: AppID=%s, Version=%s", appid, versionNum)
 
 			task, err := u.findVersionTask(appid, versionNum)
 			if err != nil {
-				log.Printf("查找版本任务失败: %v", err)
+
 				return
 			}
-
-			log.Printf("找到任务: ID=%d, 当前状态: Decompile=%s, Match=%s",
-				task.ID, task.DecompileStatus, task.MatchStatus)
 
 			// 检查任务状态
 			if !u.checkVersionTaskStatus(task, false) {
-				log.Printf("任务状态不允许执行: %s-%s, 当前状态: %s", appid, versionNum, task.DecompileStatus)
+
 				return
 			}
-
-			log.Printf("开始反编译: %s-%s", appid, versionNum)
 
 			// 使用Node.js工具进行反编译
-			files, err := u.decompileWithNode(task)
+			_, err = u.decompileWithNode(task)
 			if err != nil {
-				log.Printf("反编译失败: %v", err)
+
 				return
 			}
 
-			log.Printf("反编译完成，获得 %d 个文件", len(files))
-
-			log.Printf("处理完成: %s-%s", appid, versionNum)
 		}(item.AppID, version.Number)
 	}
 
@@ -508,59 +497,50 @@ func (u *UnWxapp) SelectDirectory() (string, error) {
 }
 
 func (u *UnWxapp) ExtractSensitiveInfo(appID, version string) error {
-	log.Printf("开始提取敏感信息: AppID=%s, Version=%s", appID, version)
 
 	task, err := u.findVersionTask(appID, version)
 	if err != nil {
-		log.Printf("查找版本任务失败: %v", err)
+
 		return fmt.Errorf("查找版本任务失败: %v", err)
 	}
-	log.Printf("找到任务: ID=%d, 状态: Decompile=%s, Match=%s", task.ID, task.DecompileStatus, task.MatchStatus)
 
 	// 检查反编译是否已完成
 	if task.DecompileStatus != "Stopped" {
-		log.Printf("反编译状态不是 Stopped，当前状态: %s", task.DecompileStatus)
+
 		return fmt.Errorf("请先完成反编译再提取敏感信息")
 	}
-	log.Printf("反编译状态检查通过")
 
 	// 获取反编译后的文件列表
 	config, err := u.getConfig()
 	if err != nil {
-		log.Printf("获取配置失败: %v", err)
+
 		return fmt.Errorf("获取配置失败: %v", err)
 	}
-	log.Printf("获取配置成功，Applet路径: %s", config.AppletPath)
 
-	outputAppDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
-	outputPluginDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__PLUGINCODE__")
-	log.Printf("检查输出目录: %s 和 %s", outputAppDir, outputPluginDir)
+	// 动态获取包名
+	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
+	packageNames, err := u.getPackageNames(packagePath)
+	if err != nil {
 
-	// 检查目录是否存在
-	_, appErr := os.Stat(outputAppDir)
-	_, pluginErr := os.Stat(outputPluginDir)
-
-	// 如果两个目录都不存在，则报错
-	if os.IsNotExist(appErr) && os.IsNotExist(pluginErr) {
-		log.Printf("反编译输出目录不存在: %s 和 %s", outputAppDir, outputPluginDir)
-		return fmt.Errorf("反编译输出目录不存在: %s 和 %s", outputAppDir, outputPluginDir)
+		return fmt.Errorf("获取包名失败: %v", err)
 	}
-	log.Printf("输出目录存在")
+
+	if len(packageNames) == 0 {
+
+		return fmt.Errorf("未找到有效的包名")
+	}
 
 	var files []string
-	log.Printf("开始遍历文件...")
 
-	// 遍历存在的目录
-	var dirsToWalk []string
-	if !os.IsNotExist(appErr) {
-		dirsToWalk = append(dirsToWalk, outputAppDir)
-	}
-	if !os.IsNotExist(pluginErr) {
-		dirsToWalk = append(dirsToWalk, outputPluginDir)
-	}
+	// 遍历所有包目录
+	for _, pkgName := range packageNames {
+		outputDir := filepath.Join(packagePath, pkgName)
+		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 
-	for _, dir := range dirsToWalk {
-		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+			continue
+		}
+
+		if err := filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -569,23 +549,20 @@ func (u *UnWxapp) ExtractSensitiveInfo(appID, version string) error {
 			}
 			return nil
 		}); err != nil {
-			log.Printf("遍历反编译文件失败: %v", err)
+
 			return fmt.Errorf("遍历反编译文件失败: %v", err)
 		}
 	}
 
 	if len(files) == 0 {
-		log.Printf("未找到反编译文件")
+
 		return fmt.Errorf("未找到反编译文件")
 	}
 
-	log.Printf("找到 %d 个文件用于敏感信息提取", len(files))
-
 	// 开始提取敏感信息
-	log.Printf("启动 extractInfo goroutine")
+
 	go u.extractInfo(task, files)
 
-	log.Printf("ExtractSensitiveInfo 方法执行完成")
 	return nil
 }
 
@@ -601,33 +578,24 @@ func (u *UnWxapp) CheckDecompileStatus(appID, version string) (string, error) {
 		return "", err
 	}
 
-	// 检查反编译输出目录
-	outputAppDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
-	outputPluginDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__PLUGINCODE__")
-
-	// 检查目录是否存在
-	_, appErr := os.Stat(outputAppDir)
-	_, pluginErr := os.Stat(outputPluginDir)
-
-	// 如果两个目录都不存在
-	if os.IsNotExist(appErr) && os.IsNotExist(pluginErr) {
-		return "反编译未完成或失败: 输出目录不存在", nil
+	// 动态获取包名
+	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
+	packageNames, err := u.getPackageNames(packagePath)
+	if err != nil {
+		return "", err
 	}
 
 	// 统计文件数量
 	var fileCount int
 
-	// 遍历存在的目录
-	var dirsToWalk []string
-	if !os.IsNotExist(appErr) {
-		dirsToWalk = append(dirsToWalk, outputAppDir)
-	}
-	if !os.IsNotExist(pluginErr) {
-		dirsToWalk = append(dirsToWalk, outputPluginDir)
-	}
+	// 遍历所有包目录
+	for _, pkgName := range packageNames {
+		outputDir := filepath.Join(packagePath, pkgName)
+		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+			continue
+		}
 
-	for _, dir := range dirsToWalk {
-		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		filepath.Walk(outputDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -660,15 +628,11 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 		return nil, err
 	}
 
-	//log.Printf("扫描小程序目录: %s", applet)
-
 	var items []*MiniProgram
 	entries, err := os.ReadDir(applet)
 	if err != nil {
 		return nil, err
 	}
-
-	//log.Printf("找到目录条目数量: %d", len(entries))
 
 	// 按修改时间排序
 	sort.Slice(entries, func(i, j int) bool {
@@ -687,8 +651,6 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 			continue
 		}
 
-		//log.Printf("找到小程序目录: %s", appid)
-
 		versionsDir := filepath.Join(applet, appid)
 		if isDir, err := u.isDir(versionsDir); err != nil || !isDir {
 			continue
@@ -696,11 +658,9 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 
 		versionEntries, err := os.ReadDir(versionsDir)
 		if err != nil {
-			//log.Printf("读取版本目录失败: %v", err)
+
 			continue
 		}
-
-		//log.Printf("小程序 %s 的版本目录数量: %d", appid, len(versionEntries))
 
 		info, err := entry.Info()
 		if err != nil {
@@ -716,9 +676,15 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 
 		var versions []*Version
 		for _, versionEntry := range versionEntries {
-			appFile := filepath.Join(versionsDir, versionEntry.Name(), "__APP__.wxapkg")
-			pluginFile := filepath.Join(versionsDir, versionEntry.Name(), "__PLUGINCODE__.wxapkg")
-			if u.fileExist(appFile) || u.fileExist(pluginFile) {
+			versionPath := filepath.Join(versionsDir, versionEntry.Name())
+
+			// 动态检查包文件
+			hasWxapkg, err := u.hasWxapkgFiles(versionPath)
+			if err != nil {
+				continue
+			}
+
+			if hasWxapkg {
 				info, err := versionEntry.Info()
 				if err != nil {
 					continue
@@ -728,9 +694,6 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 					UpdateDate: info.ModTime().Format("2006/01/02 15:04"),
 				}
 				versions = append(versions, version)
-				//log.Printf("找到版本: %s, 文件: %s", version.Number, file)
-			} else {
-				//log.Printf("未找到wxapkg文件: %s", file)
 			}
 		}
 
@@ -741,8 +704,76 @@ func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 		})
 	}
 
-	//log.Printf("最终找到小程序数量: %d", len(items))
 	return items, nil
+}
+
+// 检查目录是否有wxapkg文件
+func (u *UnWxapp) hasWxapkgFiles(dirPath string) (bool, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return false, err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".wxapkg") {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// 获取包名列表
+func (u *UnWxapp) getPackageNames(packagePath string) ([]string, error) {
+	var packageNames []string
+
+	// 默认包名
+	defaultPackages := []string{"__APP__", "__PLUGINCODE__", "__WITHOUT_MULTI_PLUGINCODE__"}
+
+	// 首先检查是否存在默认包名的wxapkg文件
+	for _, pkg := range defaultPackages {
+		wxapkgFile := filepath.Join(packagePath, pkg+".wxapkg")
+		if u.fileExist(wxapkgFile) {
+			packageNames = append(packageNames, pkg)
+		}
+	}
+
+	// 如果找到了默认包名，直接返回
+	if len(packageNames) > 0 {
+		return packageNames, nil
+	}
+
+	// 扫描目录查找符合模式的大写字母包名
+	entries, err := os.ReadDir(packagePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// 正则表达式匹配 __大写字母__ 模式
+	pattern := regexp.MustCompile(`^__[A-Z_]+__$`)
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		if strings.HasSuffix(name, ".wxapkg") {
+			// 去掉.wxapkg后缀
+			baseName := strings.TrimSuffix(name, ".wxapkg")
+
+			// 检查是否符合模式
+			if pattern.MatchString(baseName) {
+				packageNames = append(packageNames, baseName)
+			}
+		}
+	}
+
+	// 如果没有找到任何包，返回默认包名（即使文件不存在）
+	if len(packageNames) == 0 {
+		return defaultPackages, nil
+	}
+
+	return packageNames, nil
 }
 
 func (u *UnWxapp) createVersionTasks(miniProgram *MiniProgram) []*VersionTask {
@@ -755,7 +786,7 @@ func (u *UnWxapp) createVersionTasks(miniProgram *MiniProgram) []*VersionTask {
 			MatchStatus:     "Waiting",
 			UpdateDate:      version.UpdateDate,
 		}
-		//log.Printf("创建版本任务: AppID=%s, Version=%s", task.AppID, task.Version)
+
 		tasks = append(tasks, task)
 	}
 	return tasks
@@ -767,20 +798,16 @@ func (u *UnWxapp) handleVersionTasks(appID string, versionsTask []*VersionTask) 
 		return nil, errors.New("数据库连接失败")
 	}
 
-	//log.Printf("处理版本任务: AppID=%s, 任务数量=%d", appID, len(versionsTask))
-
 	// 查找现有任务
 	var existingTasks []VersionTask
 	if err := db.Where("app_id = ?", appID).Find(&existingTasks).Error; err != nil {
 		return nil, err
 	}
 
-	//log.Printf("现有任务数量: %d", len(existingTasks))
-
 	existingMap := make(map[string]*VersionTask)
 	for i := range existingTasks {
 		existingMap[existingTasks[i].Version] = &existingTasks[i]
-		//log.Printf("现有任务: Version=%s, Status=%s", existingTasks[i].Version, existingTasks[i].DecompileStatus)
+
 	}
 
 	var newTasks []*VersionTask
@@ -794,7 +821,7 @@ func (u *UnWxapp) handleVersionTasks(appID string, versionsTask []*VersionTask) 
 				MatchStatus:     existing.MatchStatus,
 				Message:         existing.Message,
 			})
-			//log.Printf("使用现有任务: Version=%s", task.Version)
+
 		} else {
 			newTasks = append(newTasks, task)
 			statuses = append(statuses, &VersionTaskStatus{
@@ -802,19 +829,18 @@ func (u *UnWxapp) handleVersionTasks(appID string, versionsTask []*VersionTask) 
 				DecompileStatus: "Waiting",
 				MatchStatus:     "Waiting",
 			})
-			//log.Printf("创建新任务: Version=%s", task.Version)
+
 		}
 	}
 
 	// 保存新任务
 	if len(newTasks) > 0 {
-		//log.Printf("保存新任务: 数量=%d", len(newTasks))
+
 		if err := db.Create(newTasks).Error; err != nil {
 			return nil, err
 		}
 	}
 
-	//log.Printf("最终返回状态数量: %d", len(statuses))
 	return statuses, nil
 }
 
@@ -932,7 +958,7 @@ func (u *UnWxapp) findVersionTask(appID, version string) (*VersionTask, error) {
 
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			//log.Printf("未找到现有任务，创建新任务: AppID=%s, Version=%s", appID, version)
+
 			// 如果记录不存在，创建一个新的任务记录
 			newTask := &VersionTask{
 				AppID:           appID,
@@ -945,18 +971,16 @@ func (u *UnWxapp) findVersionTask(appID, version string) (*VersionTask, error) {
 			}
 
 			if err := db.Create(newTask).Error; err != nil {
-				//log.Printf("创建新任务失败: %v", err)
+
 				return nil, fmt.Errorf("创建新任务失败: %v", err)
 			}
 
-			//log.Printf("创建新任务成功: ID=%d", newTask.ID)
 			return newTask, nil
 		}
-		//log.Printf("查找任务时发生错误: %v", result.Error)
+
 		return nil, result.Error
 	}
 
-	//log.Printf("找到现有任务: ID=%d, AppID=%s, Version=%s, DecompileStatus=%s", task.ID, task.AppID, task.Version, task.DecompileStatus)
 	return &task, nil
 }
 
@@ -971,11 +995,10 @@ func (u *UnWxapp) updateVersionTask(task *VersionTask) error {
 
 	result := db.Save(task)
 	if result.Error != nil {
-		//log.Printf("更新任务失败: %v", result.Error)
+
 		return result.Error
 	}
 
-	//log.Printf("任务更新成功: ID=%d, 状态=%s", task.ID, task.DecompileStatus)
 	return nil
 }
 
@@ -983,42 +1006,38 @@ func (u *UnWxapp) checkVersionTaskStatus(task *VersionTask, allowedStoppedStatus
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
 
-	//log.Printf("检查任务状态: DecompileStatus=%s, MatchStatus=%s, allowedStoppedStatus=%t", task.DecompileStatus, task.MatchStatus, allowedStoppedStatus)
-
 	// 如果任务正在运行，返回false
 	if task.DecompileStatus == "Running" || task.MatchStatus == "Running" {
-		//log.Printf("任务正在运行，不允许执行")
+
 		return false
 	}
 
 	// 如果允许停止状态，则Stopped状态也可以执行
 	if allowedStoppedStatus {
 		result := task.DecompileStatus == "Stopped" || task.DecompileStatus == "Waiting" || task.DecompileStatus == "Error"
-		//log.Printf("允许停止状态检查结果: %t", result)
+
 		return result
 	}
 
 	// 默认允许 Waiting 状态执行
 	result := task.DecompileStatus == "Waiting" || task.DecompileStatus == "Error"
-	//log.Printf("默认状态检查结果: %t", result)
+
 	return result
 }
 
 func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
-	//log.Printf("开始反编译: AppID=%s, Version=%s", task.AppID, task.Version)
 
 	// 更新任务状态为运行中
 	task.DecompileStatus = "Running"
 	task.Message = "反编译中"
 	if err := u.updateVersionTask(task); err != nil {
-		//log.Printf("更新任务状态为 Running 失败: %v", err)
+
 		return nil, err
 	}
-	//log.Printf("任务状态已更新为 Running")
 
 	config, err := u.getConfig()
 	if err != nil {
-		//log.Printf("获取配置失败: %v", err)
+
 		task.DecompileStatus = "Error"
 		task.Message = "获取配置失败"
 		u.updateVersionTask(task)
@@ -1027,7 +1046,6 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 
 	// 构建Node.js工具参数
 	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
-	//log.Printf("反编译包路径: %s", packagePath)
 
 	baseDir := u.GetAppPath()
 	unwxappDir := filepath.Join(baseDir, "tools", "Unwxapp")
@@ -1063,14 +1081,10 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 	cmd := exec.Command(nodePath, args...)
 	cmd.Dir = unwxappDir
 
-	//log.Printf("执行命令: node %s", strings.Join(args, " "))
-
 	output, err := cmd.CombinedOutput()
-	outputStr := string(output)
+	_ = string(output)
 
 	if err != nil {
-		log.Printf("反编译命令执行失败: %v", err)
-		log.Printf("命令输出: %s", outputStr)
 
 		task.DecompileStatus = "Error"
 		task.Message = fmt.Sprintf("反编译失败: %v", err)
@@ -1080,25 +1094,40 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 		return nil, err
 	}
 
-	//log.Printf("反编译命令执行完成")
-	//log.Printf("命令输出: %s", outputStr)
+	// 动态获取包名
+	packageNames, err := u.getPackageNames(packagePath)
+	if err != nil {
+		task.DecompileStatus = "Error"
+		task.Message = "获取包名失败"
+		if err := u.updateVersionTask(task); err != nil {
+		}
+		return nil, fmt.Errorf("获取包名失败: %v", err)
+	}
 
-	// 检查反编译输出目录
-	outputAppDir := filepath.Join(packagePath, "__APP__")
-	outputPluginDir := filepath.Join(packagePath, "__PLUGINCODE__")
+	if len(packageNames) == 0 {
+		task.DecompileStatus = "Error"
+		task.Message = "未找到有效的包名"
+		if err := u.updateVersionTask(task); err != nil {
+		}
+		return nil, fmt.Errorf("未找到有效的包名")
+	}
 
-	// 检查目录是否存在
-	_, appErr := os.Stat(outputAppDir)
-	_, pluginErr := os.Stat(outputPluginDir)
+	// 检查反编译输出目录是否存在
+	var dirsToWalk []string
+	for _, pkgName := range packageNames {
+		outputDir := filepath.Join(packagePath, pkgName)
+		if _, err := os.Stat(outputDir); !os.IsNotExist(err) {
+			dirsToWalk = append(dirsToWalk, outputDir)
+		}
+	}
 
-	// 如果两个目录都不存在，则报错
-	if os.IsNotExist(appErr) && os.IsNotExist(pluginErr) {
+	// 如果所有目录都不存在，则报错
+	if len(dirsToWalk) == 0 {
 		task.DecompileStatus = "Error"
 		task.Message = "反编译输出目录不存在"
 		if err := u.updateVersionTask(task); err != nil {
-			//log.Printf("更新错误状态失败: %v", err)
 		}
-		return nil, fmt.Errorf("反编译输出目录不存在，检查了: %s 和 %s", outputAppDir, outputPluginDir)
+		return nil, fmt.Errorf("反编译输出目录不存在，检查了包名: %v", packageNames)
 	}
 
 	// 统计文件数量
@@ -1106,14 +1135,6 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 	var fileCount int
 
 	// 遍历存在的目录
-	var dirsToWalk []string
-	if !os.IsNotExist(appErr) {
-		dirsToWalk = append(dirsToWalk, outputAppDir)
-	}
-	if !os.IsNotExist(pluginErr) {
-		dirsToWalk = append(dirsToWalk, outputPluginDir)
-	}
-
 	for _, dir := range dirsToWalk {
 		if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -1125,29 +1146,22 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 			}
 			return nil
 		}); err != nil {
-			//log.Printf("遍历反编译文件失败: %v", err)
 			// 即使遍历失败，也继续处理
 		}
 	}
-
-	//log.Printf("找到 %d 个反编译文件", fileCount)
-
+	
 	// 更新状态为完成
 	task.DecompileStatus = "Stopped"
 	task.Message = fmt.Sprintf("反编译完成，生成 %d 个文件", fileCount)
 	if err := u.updateVersionTask(task); err != nil {
-		//log.Printf("更新任务状态为 Stopped 失败: %v", err)
+
 		return files, err
 	}
 
-	//log.Printf("任务状态已成功更新为 Stopped")
-
 	// 反编译完成后自动触发敏感信息提取
 	if len(files) > 0 {
-		//log.Printf("反编译完成，自动开始提取敏感信息")
 		go u.extractInfo(task, files)
 	} else {
-		//log.Printf("警告: 没有找到反编译文件，跳过敏感信息提取")
 	}
 
 	return files, nil
@@ -1158,11 +1172,8 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 	task.MatchStatus = "Running"
 	task.Message = "敏感信息提取中"
 	if err := u.updateVersionTask(task); err != nil {
-		//log.Printf("更新任务状态失败: %v", err)
 		return
 	}
-
-	//log.Printf("开始提取敏感信息，文件数量: %d", len(files))
 
 	var results []string
 	filteredFileExt := []string{".png", ".jpg", ".jpeg", ".wxapkg", ".br", ".gif", ".ico", ".svg", ".webp", ".woff", ".ttf"}
@@ -1181,7 +1192,6 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 	for _, rule := range rules {
 		re, err := regexp.Compile(rule)
 		if err != nil {
-			//log.Printf("规则 %d 编译失败: %v, 规则: %s", i, err, rule)
 			continue
 		}
 		compiledRules = append(compiledRules, re)
@@ -1194,14 +1204,9 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 		return
 	}
 
-	// 获取输出目录的相对路径
+	// 获取输出目录的基础路径
 	config, _ := u.getConfig()
-	baseOutputDir := filepath.Join(config.AppletPath, task.AppID, task.Version, "__APP__")
-
-	// 如果 __APP__ 目录不存在，使用 __PLUGINCODE__ 目录
-	if _, err := os.Stat(baseOutputDir); os.IsNotExist(err) {
-		baseOutputDir = filepath.Join(config.AppletPath, task.AppID, task.Version, "__PLUGINCODE__")
-	}
+	baseDir := filepath.Join(config.AppletPath, task.AppID, task.Version)
 
 	// 按文件类型分类统计
 	fileStats := make(map[string]int)
@@ -1218,16 +1223,15 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 		// 统计文件类型
 		fileStats[ext]++
 
-		// 获取相对路径
+		// 获取相对路径（相对于基础目录）
 		relativePath := file
-		if rel, err := filepath.Rel(baseOutputDir, file); err == nil {
+		if rel, err := filepath.Rel(baseDir, file); err == nil {
 			relativePath = rel
 		}
 
 		// 读取文件内容
 		bytes, err := os.ReadFile(file)
 		if err != nil {
-			//log.Printf("读取文件失败 %s: %v", file, err)
 			continue
 		}
 
@@ -1239,7 +1243,6 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 			matches := re.FindAllString(content, -1)
 			if len(matches) > 0 {
 				fileHasMatches = true
-				//log.Printf("在文件 %s 中使用规则 %d 找到 %d 个匹配", relativePath, ruleIndex, len(matches))
 
 				for _, match := range matches {
 					match = strings.TrimSpace(match)
@@ -1286,14 +1289,12 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 		results = append(statsHeader, results...)
 	}
 
-	//log.Printf("敏感信息提取完成，共找到 %d 个匹配项", len(results))
-
 	task.Matched = strings.Join(results, "\n")
 	task.MatchStatus = "Stopped"
 	task.Message = fmt.Sprintf("敏感信息提取完成，共找到 %d 个匹配项", len(results))
 
 	if err := u.updateVersionTask(task); err != nil {
-		//log.Printf("更新任务最终状态失败: %v", err)
+
 	}
 }
 
@@ -1400,7 +1401,7 @@ func (u *UnWxapp) autoDecompileCheck() {
 
 	config, err := u.getConfig()
 	if err != nil {
-		//log.Printf("自动反编译检查失败: 获取配置失败 %v", err)
+
 		return
 	}
 
@@ -1411,7 +1412,7 @@ func (u *UnWxapp) autoDecompileCheck() {
 	// 获取所有小程序
 	miniPrograms, err := u.getAllMiniApp(config.AppletPath)
 	if err != nil {
-		//log.Printf("自动反编译检查失败: 获取小程序列表失败 %v", err)
+
 		return
 	}
 
@@ -1427,19 +1428,18 @@ func (u *UnWxapp) autoDecompileCheck() {
 		// 检查任务状态
 		task, err := u.findVersionTask(mp.AppID, latestVersion.Number)
 		if err != nil {
-			//log.Printf("自动反编译检查失败: 查找任务失败 %v", err)
+
 			continue
 		}
 
 		// 如果状态是 Waiting，则自动开始反编译
 		if task.DecompileStatus == "Waiting" {
-			//log.Printf("自动反编译: %s-%s", mp.AppID, latestVersion.Number)
 
 			// 更新任务状态
 			task.DecompileStatus = "Running"
 			task.Message = "自动反编译中"
 			if err := u.updateVersionTask(task); err != nil {
-				//log.Printf("自动反编译失败: 更新任务状态失败 %v", err)
+
 				continue
 			}
 
@@ -1447,10 +1447,10 @@ func (u *UnWxapp) autoDecompileCheck() {
 			go func(appID, version string) {
 				_, err := u.decompileWithNode(task)
 				if err != nil {
-					//log.Printf("自动反编译失败: %v", err)
+
 					return
 				}
-				//log.Printf("自动反编译完成: %s-%s, 生成 %d 个文件", appID, version, len(files))
+
 			}(mp.AppID, latestVersion.Number)
 		}
 	}

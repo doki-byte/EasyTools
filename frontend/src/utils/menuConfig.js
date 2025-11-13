@@ -55,15 +55,16 @@ export const moduleTabsConfig = {
         { name: 'password-query', title: '默认密码查询', defaultOrder: 1, visible: true },
         { name: 'shell-syntax', title: '反弹Shell', defaultOrder: 2, visible: true },
         { name: 'process-query', title: '杀软进程查询', defaultOrder: 3, visible: true },
-        { name: 'map-query', title: '地图测试', defaultOrder: 4, visible: true }
+        { name: 'ip-ban-deal', title: '蓝队大批量封禁IP处置', defaultOrder: 4, visible: true },
+        { name: 'fscan-deal', title: 'Fscan结果处理', defaultOrder: 5, visible: true },
+        { name: 'map-query', title: '地图测试', defaultOrder: 6, visible: true },
     ],
     // 信息处理模块的标签页
     infoDeal: [
         { name: 'unwxapp', title: 'WX小程序反编译', defaultOrder: 0, visible: true },
         { name: 'jwt_crack', title: 'JWT密钥破解', defaultOrder: 1, visible: true },
-        { name: 'ip-ban-deal', title: '蓝队大批量封禁IP处置', defaultOrder: 2, visible: true },
-        { name: 'oss-list', title: 'OSS存储桶遍历', defaultOrder: 3, visible: true },
-        { name: 'fscan-deal', title: 'Fscan结果处理', defaultOrder: 4, visible: true }
+        { name: 'oss-list', title: 'OSS存储桶遍历', defaultOrder: 2, visible: true },
+        { name: 'ip-query', title: 'IP归属地查询', defaultOrder: 3, visible: true },
     ],
     // 简练助手模块的标签页
     connect: [

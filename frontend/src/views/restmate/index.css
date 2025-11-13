@@ -37,3 +37,52 @@
 .szh-menu__item--hover {
   background-color: var(--color-lines) !important;
 }
+
+/* HTML 高亮样式 */
+.html-tag { color: #800000; }
+.html-attr { color: #ff0000; }
+.html-value { color: #0451a5; }
+.html-comment { color: #008000; }
+
+/* 环境变量高亮 */
+.env-var {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 2px;
+  padding: 1px 2px;
+}
+
+
+/* JSON 语法高亮样式 */
+.json-key {
+  color: #881391;
+  font-weight: 500;
+}
+
+.json-string {
+  color: #c41a16;
+}
+
+.json-number {
+  color: #1c00cf;
+}
+
+.json-boolean {
+  color: #0d22aa;
+  font-weight: 500;
+}
+
+.json-null {
+  color: #808080;
+  font-weight: 500;
+}
+
+/* 环境变量高亮样式 */
+.env-var {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid #ffeaa7;
+  font-weight: 500;
+}

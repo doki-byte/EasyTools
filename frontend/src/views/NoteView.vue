@@ -16,9 +16,9 @@
         <button class="btn btn-secondary" @click="createFolder">
           文件夹
         </button>
-<!--        <button class="btn btn-secondary" @click="refreshCurrentDirectory">-->
-<!--          刷新-->
-<!--        </button>-->
+        <!--        <button class="btn btn-secondary" @click="refreshCurrentDirectory">-->
+        <!--          刷新-->
+        <!--        </button>-->
       </div>
       <div class="tree-container">
         <ul class="tree-list">
@@ -803,7 +803,7 @@ $shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.1);
 .toggle-sidebar-btn {
   position: absolute;
   top: 15px;
-  left: 334px;
+  left: 205px;
   z-index: 999;
   background: $light;
   border: 1px solid $medium-gray;

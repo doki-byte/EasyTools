@@ -23,7 +23,7 @@
         </el-icon>
         <el-badge :is-dot="hasUpdate" style="margin-left: 5px;">
           <span :style="{ color: hasUpdate ? '#0062bc' : 'inherit' }">
-            {{ hasUpdate ? `New ${latestVersion}` : 'v1.9.4' }}
+            {{ hasUpdate ? `New ${latestVersion}` : 'v1.9.5' }}
           </span>
         </el-badge>
       </span>
@@ -596,7 +596,7 @@ const handleUrlClick = () => {
 
 <style scoped lang="scss">
 .menu {
-  height: 96vh;
+  height: 96.5vh;
   padding: 0 10px;
   background: #f0f5f6;
   color: #26384e;
