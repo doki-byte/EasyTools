@@ -8,12 +8,12 @@
 
 ## 更新说明
 
-###  v1.9.6
+###  v1.9.7
 
 感谢师傅们提供的修改建议，目前已更新一下功能：
 
-1. 新增Ctf wireshark流量包自动分析功能;
-2. 优化系统架构
+1. 修复便携代理模块fofa语法出错#geelph
+2. 新增cli命令执行功能，支持任意脚本运行，支持定时脚本执行
 
 ## 工具介绍
 
@@ -136,11 +136,13 @@ cd /D EasyToolsFiles\tools\gui_webshell\Godzilla && loader.vbs [可选参数]
 
 ![image-20250807213133995](images/image-20250807213133995.png)
 
-### 随心FUZZ
+### Cli执行工具
 
-使用需要添加fuff工具到环境变量
+支持任何你需要执行的cli脚本，支持定时任务执行
 
-![image-20250824125014188.png](images/image-20250824125014188.png)
+![image-20251119221542826](E:\Notes\脚本工具源码\EasyTools\images\image-20251119221542826.png)
+
+![image-20251119221613309](E:\Notes\脚本工具源码\EasyTools\images\image-20251119221613309.png)
 
 ### 随机生成
 
