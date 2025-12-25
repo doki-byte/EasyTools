@@ -1,0 +1,101 @@
+{
+  "latestVersion": "v2.0.4",
+  "updatas": [
+    { "data": "v2.0.4", "content": "1. 免杀生成新增白加黑挖掘功能,并且支持联动生成可利用白加黑Dll;  2. 新增在线软件中心功能;  3. 新增便携发包数据包文件上传一键bypass功能; 4. 优化便携代理功能; 5. 优化Ip查询功能;6. 修复最新版本Mac无法运行的bug;", "isNew": true },
+    { "data": "v2.0.2", "content": "1. 新增漏洞扫描与poc管理功能; 2. 优化指纹识别、端口扫描功能;  3. 修复cli命令参数过多导致页面不显示的bug @Tjsdrj; 4. 修复辅助功能-地图功能报错; 5. 增加pcap、cli文件拖拽功能; 6. 优化全局数据包高亮编辑与显示功能;7. 优化简练助手ssh功能,支持工具箱直接连接与打开浏览器进行连接管理"},
+    { "data": "v2.0.1", "content": "1. 优化指纹识别、端口扫描、目录扫描功能; 2. 新增便携发包自动获取swagger接口、批量发包功能; 3. 优化存在的其他bug;"},
+    { "data": "v2.0.0", "content": "1. 优化指纹识别功能; 2. 修复ssh界面显示不全bug; 3. 便携发包新增网页预览功能;"},
+    { "data": "v1.9.9", "content": "1. 优化工具添加功能,支持拖拽添加; 2. 优化jwt解析,新增jwt漏洞利用功能; 3. 新增目录扫描、端口扫描、指纹识别功能; 4. 优化Cli命令执行逻辑" },
+    { "data": "v1.9.8", "content": "1. 新增目录遍历提取功能(git泄露、svn泄露、index泄露、Ds_store泄露); 2. 优化左侧菜单分类,移动随机生成至辅助功能; 3. 优化google hackle功能、密码查询功能" },
+    { "data": "v1.9.7", "content": "1. 修复便携代理模块fofa语法出错#geelph; 2. 新增cli命令执行功能,支持任意脚本运行,支持定时脚本执行" },
+    { "data": "v1.9.6", "content": "1. 新增Ctf wireshark流量包自动分析功能; 2. 优化系统架构" },
+    { "data": "v1.9.5", "content": "1. 新增小程序针对游戏的反编译功能; 2. 新增批量查询IP归属地功能;3. 优化便携代理功能; 4. 优化编码解码、简连助手功能,添加状态栏浏览器打开功能,去除弹框功能; 5. 修复便携发包响应包一直显示loading的bug。" },
+    { "data": "v1.9.4", "content": "1. 修复mac小程序反编译一直报错bug; 2. 修复mac运行无法直接显示主界面的bug;3. 修复构建的mac程序无法直接运行的bug;4. 优化OSS资源桶功能; 5. 新增全局代理功能; 6. 新增自动下载替换更新包的功能。" },
+    { "data": "v1.9.3", "content": "1. 优化redis界面,修复连接过多导致的页面无限下拉的bug; 2. 新增显示更新详情功能; 3. 参考fine修改小程序反编译界面; 4. tools新建工具的时间添加打开工具文件位置的功能; 5. 新增二级菜单的显示/隐藏,位置移动; 6. 修改ftp下载方式为浏览器下载,避免EasyTools卡死; 7. 优化JwtCreck功能;" },
+    { "data": "v1.9.2", "content": "1. 新增redis命令执行功能;" },
+    { "data": "v1.9.1", "content": "1. 修复note笔记显示逻辑;" },
+    { "data": "v1.9.0", "content": "1. 优化note笔记模块图片显示规则,现在支持直接粘贴图片并保存预览; 2. 优化部分功能的界面显示; 3. 修复点击便携发包之后,左边菜单栏大小变化的bug; 4. 修复windows下,未选择工具目录时,直接运行工具报错的bug;" },
+    { "data": "v1.8.9", "content": "1. 新增程序自启动功能; 2.优化部分功能的bug; 3. 免杀模块新增白加黑、优化沙箱逻辑、修改免杀加载器等多个模块功能" },
+    { "data": "v1.8.8", "content": "1. 修复便携发包点击send之后白屏或者一直loading的bug" },
+    { "data": "v1.8.7", "content": "1. 新增便携发包功能,内置微信公众号/小程序、钉钉、企业微信调用接口; 2. 优化系统目录; " },
+    { "data": "v1.8.6", "content": "1. 简化Tools导航添加工具逻辑; 2. 新增site导航自动识别获取站点信息功能; 3. 优化模拟生成身份证时时间选择功能; 4. 新增系统托盘; 5. 新增全局快捷键控制程序的显示与隐藏" },
+    { "data": "v1.8.5", "content": "1. 修改Note笔记界面为奶白色; 2. 新增菜单顺序调整功能" },
+    { "data": "v1.8.4", "content": "1. 新增fuzz调用界面" },
+    { "data": "v1.8.3", "content": "1. 新增代理池功能;2. 优化CyberChef、ssh连接功能" },
+    { "data": "v1.8.2", "content": "优化工具、网址搜索功能;" },
+    { "data": "v1.8.1", "content": "1.新增Note备忘录功能;2.优化工具、网址搜索功能;3.新增jwt爆破功能;4.新增地图接口调用功能;5.优化redis连接及显示功能;6.修改CyberChef为中文版本的" },
+    { "data": "v1.8.0", "content": "1.新增工具箱打开路径;2.新增图标选择功能;3.优化ftp、ssh连接弹窗提示;4.小程序反编译模块新增node环境监测功能;5.新增杀软检测目录进程清单;6.修改CyberChef为中文版本的" },
+    { "data": "v1.7.5", "content": "1.新增小程序反编译功能(需要自行先安装node环境,版本14以上都行,或者直接安装最新版即可);2.修改oss资源桶遍历逻辑;3.修改免杀加载器模版" },
+    { "data": "v1.7.4", "content": "1.修改文件捆绑失败的bug;2.更新ByPassQvm图标" },
+    { "data": "v1.7.3", "content": "1.更新杀软识别数据库" },
+    { "data": "v1.7.2", "content": "1.新增FTP连接功能(匿名登录时,用户名为anonymous ,密码为空)" },
+    { "data": "v1.7.1", "content": "修复一个小bug" },
+    { "data": "v1.7.0", "content": "新增工具仓库、网址站点的任意拖拽功能,修改工具摆放顺序" },
+    { "data": "v1.6", "content": "新增登录页面默认密码修改功能;更新webssh功能,新增批量ssh命令执行功能" },
+    { "data": "v1.5", "content": "免杀生成:新增分离、远程两种加载模式" },
+    { "data": "v1.4", "content": "新增一键去除upx特征的功能(测试,只是规避明显特征,避免直接upx -d脱壳);新增一键添加数字签名的小功能" },
+    { "data": "v1.3", "content": "集成ShellCode在线免杀处理平台;新增文件体积修改功能;新增免杀:5种运行模式、2种加密方式、2种编译方式" },
+    { "data": "v1.2", "content": "新增信息处理模块;迁移蓝队批量封禁IP模块至信息处理  " },
+    { "data": "v1.1", "content": "目前集合功能:网址导航、工具导航、信息查询、编码解码%" }
+  ],
+  "specialThanks": [
+    {
+      "name": "joker",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/joker.jpg",
+      "url": "http://www.baidu.com"
+    },
+    {
+      "name": "ryuuz4k1",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/ryuuz4k1.jpg",
+      "url": ""
+    },
+    {
+      "name": "ToPaint",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/ToPaint.jpg",
+      "url": ""
+    },
+    {
+      "name": "吃人尘",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/吃人尘.jpg",
+      "url": ""
+    },
+    {
+      "name": "夜晓喽",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/夜晓喽.jpg",
+      "url": ""
+    },
+    {
+      "name": "李白鸽",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/libaige.jpg",
+      "url": ""
+    },
+    {
+      "name": "LiuXiaHuu",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/LiuXiaHuu.jpg",
+      "url": ""
+    },
+    {
+      "name": "b4l",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/b4l.jpg",
+      "url": ""
+    }
+  ],
+  "friendlySponsorship": [
+    {
+      "name": "杨cc",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/yangcc.png",
+      "url": "https://space.bilibili.com/500076166"
+    },
+    {
+      "name": "星落",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/xingluo.png",
+      "url": ""
+    },
+    {
+      "name": "岱宗安全研究实验室",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/daizong.png",
+      "url": "https://monttaisec.github.io/"
+    }
+  ]
+}
+
