@@ -1,7 +1,8 @@
 {
-  "latestVersion": "v2.0.4",
+  "latestVersion": "v2.0.5",
   "updates": [
-    { "date": "v2.0.4", "content": "1. 优化漏洞扫描模块，支持暂停任务与断点恢复功能，支持多任务同时扫描", "isNew": true },
+    { "date": "v2.0.5", "content": "1. 新增自定义主题功能; 2. 优化nuclei漏洞扫描功能", "isNew": true },
+    { "date": "v2.0.4", "content": "1. 优化漏洞扫描模块，支持暂停任务与断点恢复功能，支持多任务同时扫描"},
     { "date": "v2.0.3", "content": "1. 免杀生成新增白加黑挖掘功能,并且支持联动生成可利用白加黑Dll;  2. 新增在线软件中心功能;  3. 新增便携发包数据包文件上传一键bypass功能; 4. 优化便携代理功能; 5. 优化Ip查询功能;6. 修复最新版本Mac无法运行的bug;"},
     { "date": "v2.0.2", "content": "1. 新增漏洞扫描与poc管理功能; 2. 优化指纹识别、端口扫描功能;  3. 修复cli命令参数过多导致页面不显示的bug @Tjsdrj; 4. 修复辅助功能-地图功能报错; 5. 增加pcap、cli文件拖拽功能; 6. 优化全局数据包高亮编辑与显示功能;7. 优化简练助手ssh功能,支持工具箱直接连接与打开浏览器进行连接管理"},
     { "date": "v2.0.1", "content": "1. 优化指纹识别、端口扫描、目录扫描功能; 2. 新增便携发包自动获取swagger接口、批量发包功能; 3. 优化存在的其他bug;"},
@@ -86,11 +87,6 @@
       "name": "杨cc",
       "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/yangcc.png",
       "url": "https://space.bilibili.com/500076166"
-    },
-    {
-      "name": "星落",
-      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/xingluo.png",
-      "url": ""
     },
     {
       "name": "岱宗安全研究实验室",
