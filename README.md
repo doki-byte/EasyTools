@@ -26,6 +26,8 @@
 
 感谢各位师傅提出的宝贵修改建议和诸多bug！
 
++ **v2.0.8：** 1. 优化渗透测试模块各功能联动; 2. 修复mac部分状态白屏bug; 3. 修复便携发包逻辑; 4. 优化程序代理功能，支持系统代理设置(win专属); 5. 新增dll代理转发功能
+
 + **v2.0.7：** 1. 重新设计redis界面; 2. 优化ssh界面终端显示不全的bug; 3. 修复地图测试bug; 4. 优化google界面语法管理显示bug; 5. 修复指纹识别、目录扫描、端口扫描、备忘笔记右键菜单偏移的bug; 6. 优化漏洞扫描界面，指纹识别扫描; 7. 修复便携代理逻辑bug
 
 + **v2.0.6：** 1. 修复自定义主题频闪的bug; 2. 修复Mac下ssh连接失败的bug; 3. 新增mac类型的顶部栏
@@ -473,3 +475,6 @@ https://github.com/o8oo8o/WebSSH
 https://github.com/broken5/unveilr
 https://github.com/fasnow/fine
 ~~~
+
+## Star History  
+[![Stargazers over time](https://starchart.cc/doki-byte/EasyTools.svg?background=%23FFFFFF&axis=%230f100f&line=%23f8850a)](https://starchart.cc/doki-byte/EasyTools)
