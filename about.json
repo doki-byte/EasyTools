@@ -1,7 +1,8 @@
 {
-  "latestVersion": "v2.0.9",
+  "latestVersion": "v2.1.0",
   "updates": [
-    { "date": "v2.0.9", "content": "1. 简练助手新增mysql、redis、mariadb、postgres、sqlserver、sqlite、mongodb等诸多数据库的连接功能，支持自动获取已保存的ssh信息进行隧道连接; 2. 优化主机扫描的口令爆破功能，支持扫描结果联动发送简练助手进行一键连接", "isNew": true },
+    { "date": "v2.1.0", "content": "1. 数据库管理新增语句管理功能; 2. 新增系统配置备份功能", "isNew": true },
+    { "date": "v2.0.9", "content": "1. 简练助手新增mysql、redis、mariadb、postgres、sqlserver、sqlite、mongodb等诸多数据库的连接功能，支持自动获取已保存的ssh信息进行隧道连接; 2. 优化主机扫描的口令爆破功能，支持扫描结果联动发送简练助手进行一键连接"},
     { "date": "v2.0.8", "content": "1. 优化渗透测试模块各功能联动; 2. 修复mac部分状态白屏bug; 3. 修复便携发包逻辑; 4. 优化程序代理功能，支持系统代理设置(win专属); 5. 新增dll代理转发功能"},
     { "date": "v2.0.7", "content": "1. 重新设计redis界面; 2. 优化ssh界面终端显示不全的bug; 3. 修复地图测试bug; 4. 优化google界面语法管理显示bug; 5. 修复指纹识别、目录扫描、端口扫描、备忘笔记右键菜单偏移的bug; 6. 优化漏洞扫描界面，指纹识别扫描; 7. 修复便携代理逻辑bug"},
     { "date": "v2.0.6", "content": "1. 修复自定义主题频闪的bug; 2. 修复Mac下ssh连接失败的bug; 3. 新增mac类型的顶部栏"},
