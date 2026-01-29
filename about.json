@@ -88,6 +88,11 @@
       "name": "b4l",
       "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/b4l.jpg",
       "url": ""
+    },
+    {
+      "name": "smi",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/smi.jpg",
+      "url": ""
     }
   ],
   "friendlySponsorship": [
@@ -99,6 +104,11 @@
     {
       "name": "岱宗安全研究实验室",
       "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/daizong.png",
+      "url": "https://monttaisec.github.io/"
+    },
+    {
+      "name": "架构安全观",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/架构安全观.png",
       "url": "https://monttaisec.github.io/"
     }
   ]
