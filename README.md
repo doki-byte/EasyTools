@@ -9,8 +9,7 @@
 
 **【辅助功能】** OSS资源桶信息提取、小程序反编译、数据包一键重发、编码解码、加密解密、CS上线、反弹shell、杀软查询、常用命令、字典生成、资产分拣、Jwt破解、Ip归属地查询、地图接口测试、Google语法生成、Pcap数据包分析、OSS资源桶信息提取、小程序反编译、自定义主题功能等。
 
-<iframe src="//player.bilibili.com/player.html?isOutside=true&aid=116142811254852&bvid=BV1ddADzZEsW&cid=36331520622&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" width="600px" height="500px"></iframe>
-
+[![点击观看演示视频](images\image-20260225092629679.png)](https://www.bilibili.com/video/BV1ddADzZEsW)
 
 
 **【免责声明&使用许可】**
