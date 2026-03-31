@@ -1,7 +1,8 @@
 {
-  "latestVersion": "v2.2.2",
+  "latestVersion": "v2.2.3",
   "updates": [
-    { "date": "v2.2.2", "content": "1. 新增云上安全，支持阿里云、腾讯云、百度云、华为云等aksk的连接与账号接管; 2. 优化数据库管理，修复数据无法保存的bug; 3. 空间测绘新增零零信安接口; 4. 修复登录状态一直失效的bug", "isNew": true },
+    { "date": "v2.2.3", "content": "1. 修复零零信安接口无法使用的bug; 2. 修复渗透测试、信息收集模块右键菜单被遮挡的bug", "isNew": true },
+    { "date": "v2.2.2", "content": "1. 新增云上安全，支持阿里云、腾讯云、百度云、华为云等aksk的连接与账号接管; 2. 优化数据库管理，修复数据无法保存的bug; 3. 空间测绘新增零零信安接口; 4. 修复登录状态一直失效的bug"},
     { "date": "v2.2.1", "content": "1. 修复随机生成密码缺少类型的bug; 2. 优化ssh连接文件传输，修复文件路径支持输入路径并进去; 3. 删除渗透测试各模块空白页面; 4. 删除iflow配置，现在直接使用系统管理中的ai大模型配置; 5. 地图测试新增google地图api"},
     { "date": "v2.2.0", "content": "1. 修复数据库管理中数据展示，以及侧边栏搜索展开样式; 2. 优化主机扫描，目录扫描，空间测绘支持联动jsfinder; 3. 优化代理池功能; 4. 优化小程序反编译功能，简化修复逻辑"},
     { "date": "v2.1.9", "content": "1. 修复mac下ssh文件管理无法打开的bug; 2. 修复数据库管理第一条信息无法删除的bug"},
@@ -101,6 +102,11 @@
     {
       "name": "smi",
       "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/smi.jpg",
+      "url": ""
+    },
+    {
+      "name": "重剑无锋",
+      "src": "https://raw.githubusercontent.com/doki-byte/EasyTools/master/frontend/public/assets/about/重剑无锋.jpg",
       "url": ""
     }
   ],
