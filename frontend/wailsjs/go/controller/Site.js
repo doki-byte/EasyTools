@@ -34,6 +34,10 @@ export function GetCategoryList() {
   return window['go']['controller']['Site']['GetCategoryList']();
 }
 
+export function GetCtx() {
+  return window['go']['controller']['Site']['GetCtx']();
+}
+
 export function GetSearchSites(arg1) {
   return window['go']['controller']['Site']['GetSearchSites'](arg1);
 }
@@ -48,6 +52,10 @@ export function Log(arg1) {
 
 export function MoveCommandToCategory(arg1) {
   return window['go']['controller']['Site']['MoveCommandToCategory'](arg1);
+}
+
+export function ReadImageAsBase64(arg1) {
+  return window['go']['controller']['Site']['ReadImageAsBase64'](arg1);
 }
 
 export function Schema(arg1) {

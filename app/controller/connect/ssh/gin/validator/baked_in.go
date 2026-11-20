@@ -61,9 +61,9 @@ var (
 		"country_code": "iso3166_1_alpha2|iso3166_1_alpha3|iso3166_1_alpha_numeric",
 	}
 
-	// bakedInValidators is the default map of ValidationFunc
+	// bakedInValidators is the default MapCheck of ValidationFunc
 	// you can add, remove or even replace items to suite your needs,
-	// or even disregard and use your own map if so desired.
+	// or even disregard and use your own MapCheck if so desired.
 	bakedInValidators = map[string]Func{
 		"required":                      hasValue,
 		"required_if":                   requiredIf,
@@ -282,7 +282,7 @@ func isOneOf(fl FieldLevel) bool {
 	return false
 }
 
-// isUnique is the validation function for validating if each array|slice|map value is unique
+// isUnique is the validation function for validating if each array|slice|MapCheck value is unique
 func isUnique(fl FieldLevel) bool {
 	field := fl.Field()
 	param := fl.Param()

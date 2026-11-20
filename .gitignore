@@ -1,18 +1,42 @@
-build/bin
-frontend/node_modules
-frontend/dist
-数据处理
-EasyToolsFiles/logs
-EasyToolsFiles/tools
+# 依赖与依赖目录
+frontend/node_modules/
+frontend/dist/*
+!frontend/dist/gitkeep
 
+# 构建产物
+build/bin/
+EasyTools.exe
+EasyTools
+*.dmg
+*.tar.gz
+*.zip
 
+# 运行期数据（配置库、日志、字典、生成的载荷等）
+EasyToolsFiles/
 
-
-# Editor directories and files
-.idea
-.vscode
+# 编辑器与系统文件
+.idea/
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+Thumbs.db
+
+# 日志与临时文件
+*.log
+*.tmp
+*.bak
+
+# 本地环境配置
+.env
+.env.*
+local.env
+
+# 加密/签名材料（避免误提交）
+*.pfx
+*.p12
+*.pem
+*.key

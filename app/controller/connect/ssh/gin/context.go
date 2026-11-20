@@ -61,7 +61,7 @@ type Context struct {
 	params       *Params
 	skippedNodes *[]skippedNode
 
-	// This mutex protects Keys map.
+	// This mutex protects Keys MapCheck.
 	mu sync.RWMutex
 
 	// Keys is a key/value pair exclusively for the context of each request.
@@ -359,7 +359,7 @@ func (c *Context) GetStringSlice(key string) (ss []string) {
 	return
 }
 
-// GetStringMap returns the value associated with the key as a map of interfaces.
+// GetStringMap returns the value associated with the key as a MapCheck of interfaces.
 func (c *Context) GetStringMap(key string) (sm map[string]any) {
 	if val, ok := c.Get(key); ok && val != nil {
 		sm, _ = val.(map[string]any)
@@ -367,7 +367,7 @@ func (c *Context) GetStringMap(key string) (sm map[string]any) {
 	return
 }
 
-// GetStringMapString returns the value associated with the key as a map of strings.
+// GetStringMapString returns the value associated with the key as a MapCheck of strings.
 func (c *Context) GetStringMapString(key string) (sms map[string]string) {
 	if val, ok := c.Get(key); ok && val != nil {
 		sms, _ = val.(map[string]string)
@@ -375,7 +375,7 @@ func (c *Context) GetStringMapString(key string) (sms map[string]string) {
 	return
 }
 
-// GetStringMapStringSlice returns the value associated with the key as a map to a slice of strings.
+// GetStringMapStringSlice returns the value associated with the key as a MapCheck to a slice of strings.
 func (c *Context) GetStringMapStringSlice(key string) (smss map[string][]string) {
 	if val, ok := c.Get(key); ok && val != nil {
 		smss, _ = val.(map[string][]string)
@@ -479,13 +479,13 @@ func (c *Context) GetQueryArray(key string) (values []string, ok bool) {
 	return
 }
 
-// QueryMap returns a map for a given query key.
+// QueryMap returns a MapCheck for a given query key.
 func (c *Context) QueryMap(key string) (dicts map[string]string) {
 	dicts, _ = c.GetQueryMap(key)
 	return
 }
 
-// GetQueryMap returns a map for a given query key, plus a boolean value
+// GetQueryMap returns a MapCheck for a given query key, plus a boolean value
 // whether at least one value exists for the given key.
 func (c *Context) GetQueryMap(key string) (map[string]string, bool) {
 	c.initQueryCache()
@@ -552,20 +552,20 @@ func (c *Context) GetPostFormArray(key string) (values []string, ok bool) {
 	return
 }
 
-// PostFormMap returns a map for a given form key.
+// PostFormMap returns a MapCheck for a given form key.
 func (c *Context) PostFormMap(key string) (dicts map[string]string) {
 	dicts, _ = c.GetPostFormMap(key)
 	return
 }
 
-// GetPostFormMap returns a map for a given form key, plus a boolean value
+// GetPostFormMap returns a MapCheck for a given form key, plus a boolean value
 // whether at least one value exists for the given key.
 func (c *Context) GetPostFormMap(key string) (map[string]string, bool) {
 	c.initFormCache()
 	return c.get(c.formCache, key)
 }
 
-// get is an internal method and returns a map which satisfies conditions.
+// get is an internal method and returns a MapCheck which satisfies conditions.
 func (c *Context) get(m map[string][]string, key string) (map[string]string, bool) {
 	dicts := make(map[string]string)
 	exist := false

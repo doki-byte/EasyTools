@@ -40,7 +40,7 @@ func (a authPairs) searchCredential(authValue string) (string, bool) {
 	return "", false
 }
 
-// BasicAuthForRealm returns a Basic HTTP Authorization middleware. It takes as arguments a map[string]string where
+// BasicAuthForRealm returns a Basic HTTP Authorization middleware. It takes as arguments a MapCheck[string]string where
 // the key is the user name and the value is the password, as well as the name of the Realm.
 // If the realm is empty, "Authorization Required" will be used by default.
 // (see http://tools.ietf.org/html/rfc2617#section-1.2)
@@ -66,7 +66,7 @@ func BasicAuthForRealm(accounts Accounts, realm string) HandlerFunc {
 	}
 }
 
-// BasicAuth returns a Basic HTTP Authorization middleware. It takes as argument a map[string]string where
+// BasicAuth returns a Basic HTTP Authorization middleware. It takes as argument a MapCheck[string]string where
 // the key is the user name and the value is the password.
 func BasicAuth(accounts Accounts) HandlerFunc {
 	return BasicAuthForRealm(accounts, "")

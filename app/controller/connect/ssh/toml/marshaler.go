@@ -108,7 +108,7 @@ func (enc *Encoder) SetMarshalJsonNumbers(indent bool) *Encoder {
 // A top level slice containing only maps or structs is encoded as [[table
 // array]].
 //
-// All slices not matching rule 1 are encoded as [array]. As a result, any map
+// All slices not matching rule 1 are encoded as [array]. As a result, any MapCheck
 // or struct they contain is encoded as an {inline table}.
 //
 // Nil interfaces and nil pointers are not supported.
@@ -631,7 +631,7 @@ func (enc *Encoder) keyToString(k reflect.Value) (string, error) {
 		}
 		return string(keyB), nil
 	}
-	return "", fmt.Errorf("toml: type %s is not supported as a map key", keyType.Kind())
+	return "", fmt.Errorf("toml: type %s is not supported as a MapCheck key", keyType.Kind())
 }
 
 func (enc *Encoder) encodeMap(b []byte, ctx encoderCtx, v reflect.Value) ([]byte, error) {

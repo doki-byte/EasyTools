@@ -79,16 +79,16 @@ type internalValidationFuncWrapper struct {
 // Validate contains the validator settings and cache
 type Validate struct {
 	tagName               string
-	pool             *sync.Pool
-	tagNameFunc      TagNameFunc
-	structLevelFuncs map[reflect.Type]StructLevelFuncCtx
-	customFuncs      map[reflect.Type]CustomTypeFunc
-	aliases          map[string]string
-	validations      map[string]internalValidationFuncWrapper
-	rules            map[reflect.Type]map[string]string
-	tagCache         *tagCache
-	structCache      *structCache
-	hasCustomFuncs   bool
+	pool                  *sync.Pool
+	tagNameFunc           TagNameFunc
+	structLevelFuncs      map[reflect.Type]StructLevelFuncCtx
+	customFuncs           map[reflect.Type]CustomTypeFunc
+	aliases               map[string]string
+	validations           map[string]internalValidationFuncWrapper
+	rules                 map[reflect.Type]map[string]string
+	tagCache              *tagCache
+	structCache           *structCache
+	hasCustomFuncs        bool
 	hasTagNameFunc        bool
 	requiredStructEnabled bool
 }
@@ -156,7 +156,7 @@ func (v *Validate) SetTagName(name string) {
 	v.tagName = name
 }
 
-// ValidateMapCtx validates a map using a map of validation rules and allows passing of contextual
+// ValidateMapCtx validates a MapCheck using a MapCheck of validation rules and allows passing of contextual
 // validation information via context.Context.
 func (v Validate) ValidateMapCtx(ctx context.Context, data map[string]any, rules map[string]any) map[string]any {
 	errs := make(map[string]any)
@@ -175,7 +175,7 @@ func (v Validate) ValidateMapCtx(ctx context.Context, data map[string]any, rules
 					}
 				}
 			} else {
-				errs[field] = errors.New("The field: '" + field + "' is not a map to dive")
+				errs[field] = errors.New("The field: '" + field + "' is not a MapCheck to dive")
 			}
 		} else if ruleStr, ok := rule.(string); ok {
 			err := v.VarCtx(ctx, data[field], ruleStr)
@@ -187,7 +187,7 @@ func (v Validate) ValidateMapCtx(ctx context.Context, data map[string]any, rules
 	return errs
 }
 
-// ValidateMap validates map data from a map of tags
+// ValidateMap validates MapCheck data from a MapCheck of tags
 func (v *Validate) ValidateMap(data map[string]any, rules map[string]any) map[string]any {
 	return v.ValidateMapCtx(context.Background(), data, rules)
 }
@@ -290,8 +290,8 @@ func (v *Validate) RegisterStructValidationCtx(fn StructLevelFuncCtx, types ...a
 	}
 }
 
-// RegisterStructValidationMapRules registers validate map rules.
-// Be aware that map validation rules supersede those defined on a/the struct if present.
+// RegisterStructValidationMapRules registers validate MapCheck rules.
+// Be aware that MapCheck validation rules supersede those defined on a/the struct if present.
 //
 // NOTE: this method is not thread-safe it is intended that these all be registered prior to any validation
 func (v *Validate) RegisterStructValidationMapRules(rules map[string]string, types ...any) {

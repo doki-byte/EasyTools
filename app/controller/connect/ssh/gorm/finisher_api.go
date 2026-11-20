@@ -292,7 +292,7 @@ func (db *DB) assignInterfacesToValue(values ...any) {
 }
 
 // FirstOrInit finds the first matching record, otherwise if not found initializes a new instance with given conds.
-// Each conds must be a struct or map.
+// Each conds must be a struct or MapCheck.
 //
 // FirstOrInit never modifies the database. It is often used with Assign and Attrs.
 //
@@ -329,7 +329,7 @@ func (db *DB) FirstOrInit(dest any, conds ...any) (tx *DB) {
 }
 
 // FirstOrCreate finds the first matching record, otherwise if not found creates a new instance with given conds.
-// Each conds must be a struct or map.
+// Each conds must be a struct or MapCheck.
 //
 // Using FirstOrCreate in conjunction with Assign will result in an update to the database even if the record exists.
 //
@@ -403,7 +403,7 @@ func (db *DB) Update(column string, value any) (tx *DB) {
 	return tx.callbacks.Update().Execute(tx)
 }
 
-// Updates updates attributes using callbacks. values must be a struct or map. Reference: https://gorm.io/docs/update.html#Update-Changed-Fields
+// Updates updates attributes using callbacks. values must be a struct or MapCheck. Reference: https://gorm.io/docs/update.html#Update-Changed-Fields
 func (db *DB) Updates(values any) (tx *DB) {
 	tx = db.getInstance()
 	tx.Statement.Dest = values

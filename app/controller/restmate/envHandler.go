@@ -4,8 +4,7 @@ import (
 	"os"
 
 	"github.com/goccy/go-json"
-	"github.com/matoous/go-nanoid/v2"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 func (a *RestMate) GetEnvs() (resp JSResp) {
@@ -197,21 +196,6 @@ func (a *RestMate) AddEnv(name string) (resp JSResp) {
 
 func (a *RestMate) DeleteEnv(id string) (resp JSResp) {
 	if id == "" {
-		resp.Msg = "错误！无法删除env"
-		return
-	}
-	str, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Title:         "删除集合",
-		Message:       "您确定要删除环境吗？此环境中的所有变量都将被永久删除。",
-		Buttons:       []string{"Yes", "No"},
-		DefaultButton: "No",
-	})
-	if err != nil {
-		resp.Msg = "错误！无法删除env"
-		return
-	}
-	if str != "Yes" && str != "Ok" {
 		resp.Msg = "错误！无法删除env"
 		return
 	}

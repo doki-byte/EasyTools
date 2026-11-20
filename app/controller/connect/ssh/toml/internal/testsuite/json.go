@@ -16,7 +16,7 @@ func CmpJSON(t *testing.T, key string, want, have any) {
 		cmpJSONArrays(t, key, w, have)
 	default:
 		t.Errorf(
-			"Key '%s' in expected output should be a map or a list of maps, but it's a %T",
+			"Key '%s' in expected output should be a MapCheck or a list of maps, but it's a %T",
 			key, want)
 	}
 }
@@ -40,7 +40,7 @@ func cmpJSONMaps(t *testing.T, key string, want map[string]any, have any) {
 		return
 	}
 
-	// Check that the keys of each map are equivalent.
+	// Check that the keys of each MapCheck are equivalent.
 	for k := range want {
 		if _, ok := haveMap[k]; !ok {
 			bunk := kjoin(key, k)

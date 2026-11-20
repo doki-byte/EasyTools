@@ -1,7 +1,9 @@
 {
-  "latestVersion": "v2.2.9",
+  "latestVersion": "v2.3.1",
   "updates": [
-    { "date": "v2.2.9", "content": "1. 重新设计便携发包的布局; 2. 修复index目录遍历失败的BUG; ", "isNew": true },
+    {"date": "v2.3.1", "content":"修复免杀生成400报错", "isNew":true},
+    {"date": "v2.3.0", "content":"更新免杀模块，新增20种loader加载器，已测试卡巴、火绒、360等"},
+    { "date": "v2.2.9", "content": "1. 重新设计便携发包的布局; 2. 修复index目录遍历失败的BUG; " },
     { "date": "v2.2.8", "content": "1. 更新微信小程序反编译目录排列顺序; 2. 修复index目录遍历失败的BUG; 3. 修复旧版本drios数据库无法连接的BUG"},
     { "date": "v2.2.7", "content": "1. 新增微信小程序官方查询接口; 2. 修复密码爆破模块telnet执行命令失败的bug; 3. jsfinder中新增VueCrack提取功能"},
     { "date": "v2.2.6", "content": "1. 修复主机扫描闪退的bug; 2. 工具仓库新增右键打开终端目录; 3. 渗透测试结果新增搜索功能; 4. 修复小程序反编译名称查询不到的bug"},

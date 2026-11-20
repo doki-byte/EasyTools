@@ -50,14 +50,14 @@ func WrapH(h http.Handler) HandlerFunc {
 	}
 }
 
-// H is a shortcut for map[string]any
+// H is a shortcut for MapCheck[string]any
 type H map[string]any
 
 // MarshalXML allows type H to be used with xml.Marshal.
 func (h H) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	start.Name = xml.Name{
 		Space: "",
-		Local: "map",
+		Local: "MapCheck",
 	}
 	if err := e.EncodeToken(start); err != nil {
 		return err

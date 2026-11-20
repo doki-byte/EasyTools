@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -25,11 +26,14 @@ type IPQueryRequest struct {
 }
 
 type IPQueryResponse struct {
-	Success  bool   `json:"success"`
-	Original string `json:"original,omitempty"` // 添加原始输入
-	IP       string `json:"ip,omitempty"`
-	Location string `json:"location,omitempty"`
-	Error    string `json:"error,omitempty"`
+	Success  bool    `json:"success"`
+	Original string  `json:"original,omitempty"` // 添加原始输入
+	IP       string  `json:"ip,omitempty"`
+	Location string  `json:"location,omitempty"`
+	Detail   string  `json:"detail,omitempty"`   // 详细地址
+	Lat      float64 `json:"lat,omitempty"`      // 纬度
+	Lng      float64 `json:"lng,omitempty"`      // 经度
+	Error    string  `json:"error,omitempty"`
 }
 
 type IPExportRequest struct {
@@ -76,9 +80,31 @@ func NewQueryIp() *QueryIp {
 	return &QueryIp{}
 }
 
+// 统一日志事件发送：通过 log_event 推到前端全局日志
+func (i *QueryIp) sendLog(level, message string) {
+	ctx := i.GetCtx()
+	if ctx == nil {
+		return
+	}
+	eventData := map[string]interface{}{
+		"level":   level,
+		"message": message,
+		"time":    time.Now().Format("15:04:05"),
+		"source":  "信息处理/IP查询",
+	}
+	runtime.EventsEmit(ctx, "log_event", eventData)
+}
+
+// 授权接口查询请求
+type AuthorizedIPQueryRequest struct {
+	IP            string `json:"ip"`             // IP地址
+	UseAuthorized bool   `json:"useAuthorized"`  // 是否使用授权接口
+}
+
 // IP查询控制器方法 - 单条查询
 func (i *QueryIp) QueryIPLocation(req IPQueryRequest) IPQueryResponse {
 	if len(req.Targets) == 0 {
+		i.sendLog("warning", "IP查询请求为空，未提供任何目标")
 		return IPQueryResponse{
 			Success: false,
 			Error:   "请输入要查询的目标",
@@ -88,9 +114,12 @@ func (i *QueryIp) QueryIPLocation(req IPQueryRequest) IPQueryResponse {
 	// 只查询第一个目标
 	target := req.Targets[0]
 
+	i.sendLog("debug", fmt.Sprintf("开始单个IP查询: %s", target))
+
 	// 提取主机名或IP
 	host, err := extractHostFromInput(target)
 	if err != nil {
+		i.sendLog("error", fmt.Sprintf("IP查询输入格式错误: %s (%v)", target, err))
 		return IPQueryResponse{
 			Success:  false,
 			Original: target,
@@ -101,6 +130,7 @@ func (i *QueryIp) QueryIPLocation(req IPQueryRequest) IPQueryResponse {
 	// 解析域名获取IP
 	ip, err := resolveHost(host)
 	if err != nil {
+		i.sendLog("error", fmt.Sprintf("IP查询域名解析失败: %s (%v)", host, err))
 		return IPQueryResponse{
 			Success:  false,
 			Original: target,
@@ -111,12 +141,15 @@ func (i *QueryIp) QueryIPLocation(req IPQueryRequest) IPQueryResponse {
 	// 查询IP归属地
 	location, err := queryIPLocation(ip)
 	if err != nil {
+		i.sendLog("error", fmt.Sprintf("IP查询归属地查询失败: %s (%v)", ip, err))
 		return IPQueryResponse{
 			Success:  false,
 			Original: target,
 			Error:    fmt.Sprintf("归属地查询失败: %v", err),
 		}
 	}
+
+	i.sendLog("info", fmt.Sprintf("IP查询成功: %s -> %s (%s)", target, ip, location))
 
 	return IPQueryResponse{
 		Success:  true,
@@ -129,6 +162,7 @@ func (i *QueryIp) QueryIPLocation(req IPQueryRequest) IPQueryResponse {
 // 批量查询IP位置 - 多线程版本
 func (i *QueryIp) BatchQueryIPLocation(req IPQueryRequest, config BatchQueryConfig) []IPQueryResponse {
 	if len(req.Targets) == 0 {
+		i.sendLog("warning", "批量IP查询请求为空，未提供任何目标")
 		return []IPQueryResponse{}
 	}
 
@@ -139,6 +173,9 @@ func (i *QueryIp) BatchQueryIPLocation(req IPQueryRequest, config BatchQueryConf
 	if config.Timeout <= 0 {
 		config.Timeout = 30 // 默认30秒超时
 	}
+
+	i.sendLog("info", fmt.Sprintf("开始批量IP查询：总目标数 %d，并发数 %d，超时 %d 秒",
+		len(req.Targets), config.Concurrency, config.Timeout))
 
 	// 创建任务通道
 	taskChan := make(chan QueryTask, len(req.Targets))
@@ -157,6 +194,9 @@ func (i *QueryIp) BatchQueryIPLocation(req IPQueryRequest, config BatchQueryConf
 	go func() {
 		for idx, target := range req.Targets {
 			resultChan := make(chan *IPQueryResponse, 1)
+
+			// 记录每个目标的开始日志（debug 级）
+			i.sendLog("debug", fmt.Sprintf("开始查询目标[%d]: %s", idx+1, target))
 			taskChan <- QueryTask{
 				Index:  idx,
 				Target: target,
@@ -168,12 +208,18 @@ func (i *QueryIp) BatchQueryIPLocation(req IPQueryRequest, config BatchQueryConf
 			case result := <-resultChan:
 				if result != nil {
 					results[idx] = *result
+					if result.Success {
+						i.sendLog("info", fmt.Sprintf("IP查询成功: %s -> %s (%s)", result.Original, result.IP, result.Location))
+					} else {
+						i.sendLog("warning", fmt.Sprintf("IP查询失败: %s (%s)", result.Original, result.Error))
+					}
 				} else {
 					results[idx] = IPQueryResponse{
 						Success:  false,
 						Original: target,
 						Error:    "查询超时",
 					}
+					i.sendLog("warning", fmt.Sprintf("IP查询超时: %s", target))
 				}
 			case <-time.After(time.Duration(config.Timeout) * time.Second):
 				results[idx] = IPQueryResponse{
@@ -181,6 +227,7 @@ func (i *QueryIp) BatchQueryIPLocation(req IPQueryRequest, config BatchQueryConf
 					Original: target,
 					Error:    "查询超时",
 				}
+				i.sendLog("warning", fmt.Sprintf("IP查询超时: %s", target))
 			}
 		}
 		close(taskChan)
@@ -721,4 +768,150 @@ func (i *QueryIp) queryWorkerWithProgress(tasks <-chan QueryTask, wg *sync.WaitG
 			}
 		}
 	}
+}
+
+// 使用授权接口查询IP归属地
+func (i *QueryIp) QueryIPLocationWithAuthorized(req AuthorizedIPQueryRequest) IPQueryResponse {
+	_ = req.UseAuthorized
+
+	if req.IP == "" {
+		return IPQueryResponse{
+			Success: false,
+			Error:   "IP地址不能为空",
+		}
+	}
+
+	ip := req.IP
+
+	// 如果使用授权接口，尝试多个授权接口
+	if req.UseAuthorized {
+		location, detail, lat, lng, err := queryIPLocationWithAuthorizedAPI(ip)
+		if err == nil && location != "" {
+			// 构建归属地字符串
+			locationParts := []string{}
+			if location != "" {
+				locationParts = append(locationParts, location)
+			}
+			locationText := strings.Join(locationParts, " ")
+
+			return IPQueryResponse{
+				Success:  true,
+				IP:       ip,
+				Location: locationText,
+				Detail:   detail,
+				Lat:      lat,
+				Lng:      lng,
+			}
+		}
+		// 如果授权接口失败，回退到原有接口
+		i.sendLog("warning", fmt.Sprintf("授权接口查询失败，回退到原有接口: %s", ip))
+	}
+
+	// 使用原有接口
+	location, err := queryIPLocation(ip)
+	if err != nil {
+		return IPQueryResponse{
+			Success: false,
+			IP:      ip,
+			Error:   fmt.Sprintf("归属地查询失败: %v", err),
+		}
+	}
+
+	return IPQueryResponse{
+		Success:  true,
+		IP:       ip,
+		Location: location,
+	}
+}
+
+// 使用授权接口查询IP归属地
+func queryIPLocationWithAuthorizedAPI(ip string) (location, detail string, lat, lng float64, err error) {
+	// 授权接口列表
+	apiEndpoints := []string{
+		"https://ip.jsonsong.top:8443/api/query",
+		"https://mip.1o24.nyc.mn:2083/api/query",
+		"https://ip.iiik.net:2083/api/query",
+		"https://ipchecker.gonabru.me/api/query",
+		"http://geotrack.qiyonghan.icu:2095/api/query",
+		"https://ip.172310.xyz/api/query",
+		"https://ip.qwn3213.com/api/query",
+	}
+
+	client := proxy.GlobalProxyManager.GetHTTPClient()
+
+	// 准备请求体
+	requestBody := map[string]string{
+		"ip": ip,
+	}
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", "", 0, 0, err
+	}
+
+	// 尝试每个接口
+	for _, endpoint := range apiEndpoints {
+		req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonData))
+		if err != nil {
+			continue
+		}
+
+		// 设置请求头
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+		req.Header.Set("User-Agent", "EasyTools-Restmate/1.0")
+		req.Header.Set("Accept", "application/json, text/plain, */*")
+		req.Header.Set("Connection", "keep-alive")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			continue
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			continue
+		}
+
+		// 解析响应
+		var result struct {
+			IP       string `json:"ip"`
+			Location struct {
+				Country  string  `json:"country"`
+				Province string  `json:"province"`
+				City     string  `json:"city"`
+				District string  `json:"district"`
+				Detail   string  `json:"detail"`
+				Lat      float64 `json:"lat"`
+				Lng      float64 `json:"lng"`
+			} `json:"location"`
+		}
+
+		if err := json.Unmarshal(body, &result); err != nil {
+			continue
+		}
+
+		// 构建归属地字符串
+		parts := []string{}
+		if result.Location.Country != "" {
+			parts = append(parts, result.Location.Country)
+		}
+		if result.Location.Province != "" {
+			parts = append(parts, result.Location.Province)
+		}
+		if result.Location.City != "" {
+			parts = append(parts, result.Location.City)
+		}
+		if result.Location.District != "" {
+			parts = append(parts, result.Location.District)
+		}
+
+		return strings.Join(parts, " "), result.Location.Detail, result.Location.Lat, result.Location.Lng, nil
+	}
+
+	return "", "", 0, 0, fmt.Errorf("所有授权接口均失败")
 }

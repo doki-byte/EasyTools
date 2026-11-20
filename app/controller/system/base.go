@@ -59,6 +59,11 @@ func (b *Base) Log(content string) *Base {
 	return b
 }
 
+// GetCtx 获取当前上下文
+func (b *Base) GetCtx() context.Context {
+	return b.Ctx
+}
+
 // 初始化创建文件夹
 func (b *Base) initFile() *Base {
 	util.NewUtil().InitFile()

@@ -69,14 +69,14 @@ const CertTimeInfinity = 1<<64 - 1
 // PublicKey interface, so it can be unmarshaled using
 // ParsePublicKey.
 type Certificate struct {
-	Nonce       []byte
-	Key         PublicKey
-	Serial      uint64
+	Nonce           []byte
+	Key             PublicKey
+	Serial          uint64
 	CertType        uint32
 	KeyId           string
 	ValidPrincipals []string
 	ValidAfter      uint64
-	ValidBefore uint64
+	ValidBefore     uint64
 	Permissions
 	Reserved     []byte
 	SignatureKey PublicKey
@@ -118,7 +118,7 @@ type optionsTupleValue struct {
 	Value string
 }
 
-// serialize a map of critical options or extensions
+// serialize a MapCheck of critical options or extensions
 // issue #10569 - per [PROTOCOL.certkeys] and SSH implementation,
 // we need two length prefixes for a non-empty string value
 func marshalTuples(tups map[string]string) []byte {
@@ -483,7 +483,7 @@ func (c *Certificate) SignCert(rand io.Reader, authority Signer) error {
 // certKeyAlgoNames is a mapping from known certificate algorithm names to the
 // corresponding public key signature algorithm.
 //
-// This map must be kept in sync with the one in agent/client.go.
+// This MapCheck must be kept in sync with the one in agent/client.go.
 var certKeyAlgoNames = map[string]string{
 	CertAlgoRSAv01:        KeyAlgoRSA,
 	CertAlgoRSASHA256v01:  KeyAlgoRSASHA256,

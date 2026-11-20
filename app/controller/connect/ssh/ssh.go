@@ -3,58 +3,33 @@ package ssh
 import (
 	"EasyTools/app/controller/connect/ssh/app/config"
 	middleware2 "EasyTools/app/controller/connect/ssh/app/middleware"
+	model2 "EasyTools/app/controller/connect/ssh/app/model"
 	service2 "EasyTools/app/controller/connect/ssh/app/service"
 	gin2 "EasyTools/app/controller/connect/ssh/gin"
-	"embed"
-	"errors"
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
-	"strings"
+	"strconv"
 )
 
-// 使用go 1.16+ 新特性
-//
-//go:embed webroot
-var dir embed.FS
-
-// StaticFile 嵌入普通的静态资源
-type StaticFile struct {
-	// 静态资源
-	embedFS embed.FS
-
-	// 设置embed文件到静态资源的相对路径，也就是embed注释里的路径
-	path string
-}
-
-// Open 静态资源被访问的核心逻辑
-func (w StaticFile) Open(name string) (fs.File, error) {
-	if filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator) {
-		return nil, errors.New("http: invalid character in file path")
+func StartWebSSH() {
+	// 在启动时主动初始化数据库，确保表已创建
+	if err := model2.DbMigrate(config.DefaultConfig.DbType, config.DefaultConfig.DbDsn); err != nil {
+		slog.Error("数据库初始化失败", "err", err)
+		// 不退出，让中间件处理后续的数据库检查
 	}
 
-	fullName := filepath.Join(w.path, filepath.FromSlash(path.Clean("/"+name)))
-	fullName = strings.ReplaceAll(fullName, `\`, `/`)
-	file, err := w.embedFS.Open(fullName)
-	return file, err
-}
-
-func StartWebSSH() {
 	gin2.SetMode(gin2.ReleaseMode)
 	var engine = gin2.Default()
-	engine.Use(middleware2.DbCheck())
+	engine.Use(middleware2.Cors(), middleware2.DbCheck())
 
 	engine.NoRoute(func(c *gin2.Context) {
 		c.Redirect(http.StatusMovedPermanently, "/app")
 	})
 
 	// 不需要认证的路由
-	var open = engine.Group("")
-	open.StaticFS("/app", http.FS(StaticFile{embedFS: dir, path: "webroot"}))
+	engine.Group("")
 
 	// 需要认证的路由
 	var auth = engine.Group("", middleware2.JWTAuth())
@@ -81,7 +56,10 @@ func StartWebSSH() {
 		auth.POST("/api/sftp/create_dir", service2.SftpCreateDir)
 		auth.POST("/api/sftp/list", service2.SftpList)
 		auth.GET("/api/sftp/download", service2.SftpDownLoad)
+		auth.GET("/api/sftp/download_dir", service2.SftpDownLoadDir)
 		auth.PUT("/api/sftp/upload", service2.SftpUpload)
+		auth.GET("/api/sftp/upload/progress", service2.SftpUploadProgress)
+		auth.GET("/api/sftp/upload/cancel", service2.SftpUploadCancel)
 		auth.DELETE("/api/sftp/delete", service2.SftpDelete)
 		auth.GET("/api/ssh/conn", service2.NewSshConn)
 		auth.PATCH("/api/ssh/conn", service2.ResizeWindow)
@@ -112,4 +90,11 @@ func StartWebSSH() {
 			return
 		}
 	}
+}
+
+// StartWebSSHWithPort 使用指定端口启动SSH服务
+func StartWebSSHWithPort(port int) {
+	// 修改配置中的端口
+	config.DefaultConfig.Port = strconv.Itoa(port)
+	StartWebSSH()
 }

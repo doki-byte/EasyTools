@@ -1,0 +1,78 @@
+/**
+ * Element Plus Tabs 导航溢出优化
+ * 标签过多时 EP 会启用 is-scrollable，左右箭头折叠隐藏部分标签。
+ * 通用方案：隐藏箭头，nav-scroll 横向滚动；模块顶栏 et-module-tabs 改为换行展示。
+ */
+
+/* --- 通用：隐藏折叠箭头，改用横向滚动 --- */
+.el-tabs .el-tabs__nav-prev,
+.el-tabs .el-tabs__nav-next {
+  display: none !important;
+}
+
+.el-tabs .el-tabs__nav-wrap.is-scrollable {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.el-tabs .el-tabs__nav-scroll {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+.el-tabs .el-tabs__nav-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.el-tabs .el-tabs__nav-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.el-tabs .el-tabs__nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 2px;
+}
+
+.el-tabs .el-tabs__nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.el-tabs .el-tabs__nav {
+  transform: none !important;
+  float: none;
+}
+
+.el-tabs .el-tabs__item {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* --- 模块顶栏：标签自动换行，避免被折叠 --- */
+.et-module-tabs .el-tabs__nav-wrap {
+  overflow: visible !important;
+}
+
+.et-module-tabs .el-tabs__nav-scroll {
+  overflow: visible !important;
+}
+
+.et-module-tabs .el-tabs__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.et-module-tabs .el-tabs__item {
+  height: auto;
+  min-height: var(--el-tabs-header-height, 40px);
+  line-height: var(--el-tabs-header-height, 40px);
+}
+
+@media (max-width: 768px) {
+  .et-module-tabs .el-tabs__item {
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}

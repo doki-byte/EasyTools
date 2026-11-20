@@ -14,6 +14,10 @@ export function AddVar(arg1, arg2, arg3) {
   return window['go']['restmate']['RestMate']['AddVar'](arg1, arg2, arg3);
 }
 
+export function BatchInvokeRequests(arg1, arg2, arg3, arg4) {
+  return window['go']['restmate']['RestMate']['BatchInvokeRequests'](arg1, arg2, arg3, arg4);
+}
+
 export function ChoseFile() {
   return window['go']['restmate']['RestMate']['ChoseFile']();
 }
@@ -74,6 +78,14 @@ export function ImportCollection() {
   return window['go']['restmate']['RestMate']['ImportCollection']();
 }
 
+export function ImportSwaggerFromUrl(arg1) {
+  return window['go']['restmate']['RestMate']['ImportSwaggerFromUrl'](arg1);
+}
+
+export function ImportSwaggerFromUrlWithName(arg1, arg2) {
+  return window['go']['restmate']['RestMate']['ImportSwaggerFromUrlWithName'](arg1, arg2);
+}
+
 export function InitFile(arg1, arg2) {
   return window['go']['restmate']['RestMate']['InitFile'](arg1, arg2);
 }
@@ -106,8 +118,16 @@ export function SelectEnv(arg1) {
   return window['go']['restmate']['RestMate']['SelectEnv'](arg1);
 }
 
+export function SendBypassRequest(arg1, arg2, arg3) {
+  return window['go']['restmate']['RestMate']['SendBypassRequest'](arg1, arg2, arg3);
+}
+
 export function Startup(arg1) {
   return window['go']['restmate']['RestMate']['Startup'](arg1);
+}
+
+export function UploadBypassTest(arg1) {
+  return window['go']['restmate']['RestMate']['UploadBypassTest'](arg1);
 }
 
 export function UpsertRequest(arg1) {

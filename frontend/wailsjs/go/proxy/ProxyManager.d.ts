@@ -8,10 +8,22 @@ export function GetGlobalProxy():Promise<proxy.GlobalProxyResponse>;
 
 export function GetHTTPClient():Promise<http.Client>;
 
+export function GetProxyDialer():Promise<proxy.Dialer>;
+
 export function GetProxyStatus():Promise<proxy.ProxyStatus>;
+
+export function GetSOCKS5Dialer():Promise<proxy.Dialer>;
+
+export function GetSystemProxy():Promise<proxy.SystemProxyConfig>;
+
+export function Initialize():Promise<void>;
+
+export function IsSystemProxySupported():Promise<boolean>;
 
 export function SetCtx(arg1:context.Context):Promise<void>;
 
 export function SetGlobalProxy(arg1:proxy.ProxyConfig,arg2:boolean):Promise<boolean>;
+
+export function SetSystemProxy(arg1:proxy.ProxyConfig,arg2:boolean):Promise<boolean>;
 
 export function TestProxyConnection(arg1:proxy.ProxyConfig):Promise<boolean>;

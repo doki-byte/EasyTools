@@ -203,6 +203,11 @@ func (n *Note) SaveFile(filePath, content string) error {
 	if err != nil {
 		return err
 	}
+	// 确保目标目录存在（包括多级目录），避免 "The system cannot find the path specified" 错误
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("创建目录失败: %v", err)
+	}
 
 	return ioutil.WriteFile(filePath, []byte(finalContent), 0644)
 }
@@ -456,6 +461,33 @@ func (n *Note) OpenDirectory() (string, error) {
 	return result, nil
 }
 
+// LoadDirectory 加载指定目录并启动监听/文件服务
+func (n *Note) LoadDirectory(dirPath string) error {
+	if dirPath == "" {
+		return errors.New("目录不能为空")
+	}
+
+	info, err := os.Stat(dirPath)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return errors.New("目标路径不是文件夹")
+	}
+
+	// 启动文件服务器
+	if err := n.startFileServer(dirPath); err != nil {
+		fmt.Printf("启动文件服务器失败: %v\n", err)
+	}
+
+	// 开始监听目录
+	if err := n.WatchDirectory(dirPath); err != nil {
+		fmt.Printf("开始监听目录失败: %v\n", err)
+	}
+
+	return nil
+}
+
 // GetNotesDir 返回笔记根目录
 func (n *Note) GetNotesDir() (string, error) {
 	baseDir := n.GetAppPath()
@@ -472,20 +504,16 @@ func (n *Note) GetFiles(dirPath string) ([]FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	var fileList []FileInfo
 	for _, file := range files {
-		// 只显示文件夹和.md文件
-		if file.IsDir() || strings.HasSuffix(file.Name(), ".md") {
-			fileList = append(fileList, FileInfo{
-				Name:      file.Name(),
-				Path:      filepath.Join(dirPath, file.Name()),
-				IsDir:     file.IsDir(),
-				Size:      file.Size(),
-				Modified:  file.ModTime(),
-				Extension: filepath.Ext(file.Name()),
-			})
-		}
+		fileList = append(fileList, FileInfo{
+			Name:      file.Name(),
+			Path:      filepath.Join(dirPath, file.Name()),
+			IsDir:     file.IsDir(),
+			Size:      file.Size(),
+			Modified:  file.ModTime(),
+			Extension: filepath.Ext(file.Name()),
+		})
 	}
 	return fileList, nil
 }
@@ -512,8 +540,30 @@ func (n *Note) CreateFolder(dirPath, foldername string) error {
 }
 
 // DeleteItem 删除文件或文件夹
+// 安全策略：如果是非空文件夹，则不允许直接删除，防止误删整棵目录
 func (n *Note) DeleteItem(path string) error {
-	return os.RemoveAll(path)
+	info, err := os.Stat(path)
+	if err != nil {
+		// 文件不存在或其他错误，直接返回
+		return err
+	}
+
+	// 如果是目录，检查是否为空
+	if info.IsDir() {
+		entries, err := os.ReadDir(path)
+		if err != nil {
+			return err
+		}
+		if len(entries) > 0 {
+			// 目录非空，拒绝删除
+			return errors.New("该文件夹内仍包含文件或子文件夹，请先清空后再删除")
+		}
+		// 空目录可以安全删除
+		return os.Remove(path)
+	}
+
+	// 普通文件直接删除
+	return os.Remove(path)
 }
 
 // RenameItem 重命名文件或文件夹

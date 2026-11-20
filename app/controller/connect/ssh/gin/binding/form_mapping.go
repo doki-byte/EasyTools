@@ -19,11 +19,11 @@ import (
 var (
 	errUnknownType = errors.New("unknown type")
 
-	// ErrConvertMapStringSlice can not convert to map[string][]string
-	ErrConvertMapStringSlice = errors.New("can not convert to map slices of strings")
+	// ErrConvertMapStringSlice can not convert to MapCheck[string][]string
+	ErrConvertMapStringSlice = errors.New("can not convert to MapCheck slices of strings")
 
-	// ErrConvertToMapString can not convert to map[string]string
-	ErrConvertToMapString = errors.New("can not convert to map of strings")
+	// ErrConvertToMapString can not convert to MapCheck[string]string
+	ErrConvertToMapString = errors.New("can not convert to MapCheck of strings")
 )
 
 func mapURI(ptr any, m map[string][]string) error {
@@ -41,7 +41,7 @@ func MapFormWithTag(ptr any, form map[string][]string, tag string) error {
 var emptyField = reflect.StructField{}
 
 func mapFormByTag(ptr any, form map[string][]string, tag string) error {
-	// Check if ptr is a map
+	// Check if ptr is a MapCheck
 	ptrVal := reflect.ValueOf(ptr)
 	var pointed any
 	if ptrVal.Kind() == reflect.Ptr {
@@ -68,7 +68,7 @@ type formSource map[string][]string
 
 var _ setter = formSource(nil)
 
-// TrySet tries to set a value by request's form source (like map[string][]string)
+// TrySet tries to set a value by request's form source (like MapCheck[string][]string)
 func (form formSource) TrySet(value reflect.Value, field reflect.StructField, tagValue string, opt setOptions) (isSet bool, err error) {
 	return setByForm(value, field, form, tagValue, opt)
 }

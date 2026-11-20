@@ -13,7 +13,7 @@ import (
 
 // MemStore is an in-memory implementation of gorilla/sessions, suitable
 // for use in tests and development environments. Do not use in production.
-// Values are cached in a map. The cache is protected and can be used by
+// Values are cached in a MapCheck. The cache is protected and can be used by
 // multiple goroutines.
 type MemStore struct {
 	Codecs  []securecookie.Codec

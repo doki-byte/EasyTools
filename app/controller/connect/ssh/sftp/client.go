@@ -146,7 +146,7 @@ func UseConcurrentReads(value bool) ClientOption {
 //
 // Another reason to read the file until its end and Fstat doesn't work is
 // that in some servers, reading a full file will automatically delete the
-// file as some of these mainframes map the file to a message in a queue.
+// file as some of these mainframes MapCheck the file to a message in a queue.
 // Once the file has been read it will get deleted.
 func UseFstat(value bool) ClientOption {
 	return func(c *Client) error {

@@ -5,10 +5,12 @@ import (
 	"EasyTools/app/controller/system"
 	"EasyTools/app/model"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"io"
+	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -194,7 +196,7 @@ func (s *Site) GetSearchSites(title string) ([]SiteCategory, error) {
 }
 
 // FetchSiteInfo 自动获取标题、描述并下载 favicon 到 ./icon 目录。
-// 返回 map[string]string 包含 keys: "title", "remark", "icon"（icon 是保存的文件名，如 "a1b2c3d4.png"）
+// 返回 MapCheck[string]string 包含 keys: "title", "remark", "icon"（icon 是保存的文件名，如 "a1b2c3d4.png"）
 func (s *Site) FetchSiteInfo(rawURL string) (map[string]string, error) {
 	result := map[string]string{
 		"title":  "",
@@ -646,4 +648,39 @@ func (s *Site) MoveCommandToCategory(request map[string]interface{}) error {
 	}
 
 	return nil
+}
+
+func (s *Site) ReadImageAsBase64(path string) string {
+	// 添加详细错误日志
+	log.Printf("Reading image: %s", path)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("读取文件错误: %v", err) // 添加错误详情
+		return ""                           // 确保返回空字符串而不是 nil
+	}
+
+	// 添加内容类型检测
+	mimeType := http.DetectContentType(data)
+	if !strings.HasPrefix(mimeType, "image/") {
+		log.Printf("非图片文件: %s, MIME: %s", path, mimeType)
+		return ""
+	}
+	log.Printf("Reading image: %s", base64.StdEncoding.EncodeToString(data))
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+// 通用类型转换函数
+func GetUint(value interface{}) (uint, error) {
+	switch v := value.(type) {
+	case float64:
+		if v < 0 {
+			return 0, fmt.Errorf("负值转换错误")
+		}
+		return uint(v), nil
+	case int:
+		return uint(v), nil
+	default:
+		return 0, fmt.Errorf("无法转换类型: %T", v)
+	}
 }

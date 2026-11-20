@@ -34,6 +34,10 @@ export function Info(arg1) {
   return window['go']['proxy']['Proxy']['Info'](arg1);
 }
 
+export function LoadFileFromPath(arg1) {
+  return window['go']['proxy']['Proxy']['LoadFileFromPath'](arg1);
+}
+
 export function SaveConfig(arg1) {
   return window['go']['proxy']['Proxy']['SaveConfig'](arg1);
 }

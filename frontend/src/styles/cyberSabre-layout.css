@@ -1,0 +1,121 @@
+/**
+ * 渗透测试模块共用：压缩配置区、结果区表格占主导（挂在 .cyber-sabre-main 下生效）
+ */
+
+.cyber-sabre-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 2px !important;
+}
+
+.cyber-sabre-main > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 各页根容器 */
+.cyber-sabre-main .hostscan-container,
+.cyber-sabre-main .dirsearch-container,
+.cyber-sabre-main .browser-scan-page,
+.cyber-sabre-main .webscan-page,
+.cyber-sabre-main .fingerprint-container,
+.cyber-sabre-main .poc-page,
+.cyber-sabre-main .password-crack-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 6px;
+}
+
+.cyber-sabre-main .top-toolbar {
+  flex-shrink: 0;
+  padding: 6px 0;
+}
+
+.cyber-sabre-main .top-toolbar .toolbar-content {
+  padding-bottom: 2px;
+}
+
+.cyber-sabre-main .panel-card.main-tabs.el-tabs,
+.cyber-sabre-main .main-tabs.el-tabs {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cyber-sabre-main .main-tabs .el-tabs__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.cyber-sabre-main .main-tabs .el-tabs__content > .el-tab-pane-wrapper,
+.cyber-sabre-main .main-tabs .el-tab-pane__panel {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Element Plus tabs 渲染为 #pane-xxx ID 的 pane */
+.cyber-sabre-main .main-tabs .el-tabs__content > div[role='tabpanel'] {
+  flex: 1 1 auto;
+  min-height: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cyber-sabre-main .config-section {
+  flex: 0 1 auto !important;
+  max-height: min(38vh, 380px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 4px !important;
+}
+
+.cyber-sabre-main .config-section .el-card__body {
+  padding: 10px 12px !important;
+}
+
+.cyber-sabre-main .config-layout {
+  gap: 8px !important;
+}
+
+.cyber-sabre-main .results-section,
+.cyber-sabre-main .result-section {
+  flex: 1 1 auto !important;
+  min-height: 220px !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cyber-sabre-main .results-section .el-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 8px 10px !important;
+}
+
+.cyber-sabre-main .table-wrapper {
+  flex: 1 1 auto;
+  min-height: 160px;
+  overflow: hidden;
+}
+
+.cyber-sabre-main .results-table.el-table {
+  width: 100%;
+}

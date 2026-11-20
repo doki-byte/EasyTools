@@ -1,5 +1,18 @@
 <template>
-  <div class="system">
+  <div class="system" @contextmenu="handleGlobalContextMenu" @drop.prevent="handleFileDrop" @dragover.prevent="handleDragOver">
+    <div
+        v-show="isDragOver"
+        class="drop-zone-overlay"
+        @drop="handleFileDrop"
+        @dragover.prevent
+        @dragleave="handleDragLeave"
+    >
+      <div class="drop-zone-content">
+        <el-icon size="50"><UploadFilled /></el-icon>
+        <div class="drop-text">释放文件到此处添加工具</div>
+      </div>
+    </div>
+
     <!-- 1. 右上角目录树 -->
     <div ref="treeWrapper" class="cate-tree">
       <el-tree
@@ -16,13 +29,15 @@
       />
     </div>
 
-    <!-- 右键菜单 - 分类树节点 -->
-    <ul class="context-menu" v-if="treeContextMenuVisible"
-        :style="{ top: `${treeContextMenuPosition.y}px`, left: `${treeContextMenuPosition.x}px` }">
-      <li v-for="(option, index) in treeContextMenuOptions" :key="index" @click="option.action">
-        <i :class="option.icon"></i> {{ option.label }}
-      </li>
-    </ul>
+    <!-- 统一的右键菜单（Teleport 到 body，避免定位偏移） -->
+    <Teleport to="body">
+      <ul class="context-menu" v-if="contextMenuVisible"
+          :style="contextMenuStyle">
+        <li v-for="(option, index) in contextMenuOptions" :key="index" @click="option.action">
+          <i :class="option.icon"></i> {{ option.label }}
+        </li>
+      </ul>
+    </Teleport>
 
     <!-- 搜索框：图标/展开切换，支持拖拽 -->
     <div
@@ -59,24 +74,59 @@
       </transition>
     </div>
 
+    <!-- 软件中心提示卡片 -->
+    <transition name="fade">
+      <div 
+        v-if="showSoftwareCenterTip" 
+        class="software-center-tip"
+        :style="tipStyle"
+      >
+        <el-icon class="tip-icon"><InfoFilled /></el-icon>
+        <span class="tip-text">不知道从哪里获取工具？可以查看软件中心哦</span>
+        <el-button 
+          text 
+          class="tip-jump-btn"
+          @click.stop="goToSoftwareCenter"
+        >
+          前往
+        </el-button>
+        <el-button 
+          text 
+          class="tip-close-btn"
+          @click.stop="closeSoftwareCenterTip"
+        >
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </div>
+    </transition>
+
     <!-- 工具列表 -->
-    <div class="nav" v-for="(category, catIndex) in processedToolList" :key="catIndex"
-         draggable="true"
-         @dragstart.stop="handleDragStart($event, 'category', catIndex)"
-         @dragover.prevent="handleDragOver($event, 'category', catIndex)"
-         @drop="handleDrop($event, 'category', catIndex)">
-      <div class="cate" :data-index="catIndex">{{ category.title }}</div>
-      <div class="site-list">
+    <div class="nav" v-for="(category, catIndex) in processedToolList" :key="catIndex">
+      <div class="cate"
+           :data-index="catIndex"
+           @contextmenu.stop="showCategoryContextMenu($event, category, catIndex)"
+           @mouseenter="showCategoryActions = catIndex"
+           @mouseleave="showCategoryActions = -1">
+        {{ category.title }}
+        <!-- 分类移动按钮 -->
+        <div class="category-actions" v-show="showCategoryActions === catIndex">
+          <el-icon class="move-btn up" @click.stop="moveCategoryUp(catIndex)">
+            <ArrowUp />
+          </el-icon>
+          <el-icon class="move-btn down" @click.stop="moveCategoryDown(catIndex)">
+            <ArrowDown />
+          </el-icon>
+        </div>
+      </div>
+      <div class="tool-list">
         <div
             class="item"
             v-for="(cmd, cmdIndex) in category.list"
             :key="cmdIndex"
-            draggable="true"
-            @dragstart.stop="handleDragStart($event, 'command', catIndex, cmdIndex)"
-            @dragover.prevent.stop="handleDragOver($event, 'command', catIndex, cmdIndex)"
-            @drop.stop="handleDrop($event, 'command', catIndex, cmdIndex)"
             @click="runCmd(cmd.path, cmd.cmd, cmd.param, cmd.terminal)"
-            @contextmenu.prevent="showContextMenu($event, cmd, index)"
+            @contextmenu.stop="showToolContextMenu($event, cmd, catIndex)"
+            @mouseenter="showToolActions[catIndex] = cmdIndex"
+            @mouseleave="hideToolActions(catIndex, cmdIndex)"
         >
           <div class="image">
             <!-- 使用解析后的图标 -->
@@ -98,17 +148,18 @@
             <span class="title">{{ cmd.name }}</span>
             <span class="remark">{{ cmd.desc }}</span>
           </div>
+          <!-- 工具移动按钮 -->
+          <div class="tool-actions" v-show="showToolActions[catIndex] === cmdIndex">
+            <el-icon class="move-btn left" @click.stop="moveToolLeft(catIndex, cmdIndex)">
+              <ArrowLeft />
+            </el-icon>
+            <el-icon class="move-btn right" @click.stop="moveToolRight(catIndex, cmdIndex)">
+              <ArrowRight />
+            </el-icon>
+          </div>
         </div>
       </div>
     </div>
-
-    <!-- 右键菜单 -->
-    <ul class="context-menu" v-if="contextMenuVisible"
-        :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }">
-      <li v-for="(option, index) in contextMenuOptions" :key="index" @click="option.action">
-        <i :class="option.icon"></i> {{ option.label }}
-      </li>
-    </ul>
 
     <!-- 弹出框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
@@ -122,44 +173,44 @@
 
         <!-- 工具新增/编辑表单 -->
         <template v-else>
-            <el-form-item label="分类" prop="category">
-              <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                <el-autocomplete
-                    v-model="form.category"
-                    :fetch-suggestions="queryCategories"
-                    placeholder="请输入或选择分类"
-                    @select="handleCategorySelect"
-                ></el-autocomplete>
-                <el-tooltip
-                    effect="dark"
-                    content="若分类不存在则会自动创建并保存"
-                    placement="bottom-start"
-                >
-                  <el-icon><QuestionFilled /></el-icon>
-                </el-tooltip>
-              </div>
+          <el-form-item label="分类" prop="category">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+              <el-autocomplete
+                  v-model="form.category"
+                  :fetch-suggestions="queryCategories"
+                  placeholder="请输入或选择分类"
+                  @select="handleCategorySelect"
+              ></el-autocomplete>
+              <el-tooltip
+                  effect="dark"
+                  content="若分类不存在则会自动创建并保存"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </el-form-item>
 
           <el-form-item label="路径" prop="path">
-              <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                <el-input
-                    v-model="form.path"
-                    placeholder="请输入工具路径"
-                    style="flex: 1;"
-                ></el-input>
-                <el-button
-                    type="primary"
-                    @click="browseForFolder"
-                    style="height: 30px; padding: 0 10px;"
-                >浏览</el-button>
-                <el-tooltip
-                    effect="dark"
-                    content="指定工具执行文件所在的完整路径(eg: C:\EasyTools\tools\Godzilla)"
-                    placement="bottom-start"
-                >
-                  <el-icon><QuestionFilled /></el-icon>
-                </el-tooltip>
-              </div>
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+              <el-input
+                  v-model="form.path"
+                  placeholder="请输入工具路径"
+                  style="flex: 1;"
+              ></el-input>
+              <el-button
+                  type="primary"
+                  @click="browseForFolder"
+                  style="height: 30px; padding: 0 10px;"
+              >浏览</el-button>
+              <el-tooltip
+                  effect="dark"
+                  content="指定工具执行文件所在的完整路径(eg: C:\EasyTools\tools\Godzilla)"
+                  placement="bottom-start"
+              >
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </el-form-item>
 
           <el-form-item label="命令" prop="cmd">
@@ -290,38 +341,49 @@ import {
   GetOpenDir,
   GetOpenFilePath,
   OpenPath,
+  OpenTerminalInDir,
   ShellCMD
 } from "../../wailsjs/go/system/System";
 import {
-  AddTool,
+  AddTool, AnalyzeFilePath, AutoGenerateIcon,
   DeleteTool,
   DeleteToolCategory,
   GetAllTools,
   GetCategoryList,
   GetSearchTools,
-  MoveCommandToCategory,
   ReadImageAsBase64,
-  UpdateCategorySorts,
-  UpdateCommandSorts,
   UpdateTool,
   UpdateToolCategory,
+  UpdateCategorySorts,
+  UpdateCommandSorts
 } from "../../wailsjs/go/controller/Tool";
-import {QuestionFilled, Search} from "@element-plus/icons-vue";
+import {QuestionFilled, Search, UploadFilled, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, InfoFilled, Close} from "@element-plus/icons-vue";
 import {ElNotification, ElTree} from "element-plus";
-
+import {GetPortConfig} from "../../wailsjs/go/controller/Server";
+import {OnFileDrop} from "../../wailsjs/runtime";
+import { confirmDangerousAction, DANGER_DELETE_TOKEN } from '@/utils/dangerConfirm';
 export default {
   name: "ToolsView",
-  components: {QuestionFilled, ElTree,Search },
+  components: {UploadFilled, QuestionFilled, ElTree, Search, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, InfoFilled, Close },
   data() {
     return {
+      portConfig: null,
       toolList: [], // 初始化命令列表
       resolvedIcons: {}, // 图标缓存 {id: resolvedPath}
+
+      // 移动按钮显示状态
+      showCategoryActions: -1,
+      showToolActions: {},
 
       // 搜索框状态
       searchExpanded: false,
       // 拖拽相关
       dragging: false,
       dragOffset: { x: 0, y: 0 },
+      isDragOver: false,
+      isAutoGenerateIcon: true,
+      showSoftwareCenterTip: false, // 软件中心提示卡片显示状态（随机显示）
+
       // 当前位置
       searchPosition: {
         x: window.innerWidth - 80,
@@ -331,18 +393,18 @@ export default {
 
       defaultExpandedKeys: [],
 
-      // 工具项右键菜单
+      // 统一的右键菜单
       contextMenuVisible: false,
-      contextMenuOptions: [], // 动态右键菜单选项
+      contextMenuOptions: [],
       contextMenuPosition: { x: 0, y: 0 },
+      menuItemHeight: 40, // 每个菜单项的大致高度
+      menuWidth: 200, // 菜单宽度
+
+      // 当前选中的项
       selectedCmd: null,
       selectedIndex: null,
-
-      // 分类树右键菜单
-      treeContextMenuVisible: false,
-      treeContextMenuOptions: [],
-      treeContextMenuPosition: { x: 0, y: 0 },
       selectedTreeNode: null,
+      selectedCategory: null,
 
       dialogVisible: false,
       dialogMode: "add", // 'add' or 'edit'
@@ -350,15 +412,14 @@ export default {
         id: null,
         category: "",
         cmd: "",
-        param: "",
         name: "",
+        param: "",
         path: "",
         desc: "",
         icon: "",
         terminal: 1,
       },
       categories: [], // 初始化为空数组
-      selectedCategory: "",
       dragData: {
         type: null,    // 'category' 或 'command'
         catIndex: -1,
@@ -366,10 +427,12 @@ export default {
       },
     };
   },
+  mounted() {
+  },
   computed: {
     dialogTitle() {
       switch (this.dialogMode) {
-        case "add": return "新增工具";
+        case "add": return "新增工具(支持拖拽添加工具哦)";
         case "toolEdit": return "修改工具";
         case "cateEdit": return "修改分类";
         default: return "编辑";
@@ -383,6 +446,43 @@ export default {
         zIndex: 999,
         cursor: this.dragging ? "grabbing" : "move",
         transition: this.dragging ? "none" : "all 0.2s",
+      };
+    },
+    tipStyle() {
+      return {
+        position: "fixed",
+        left: "50%",
+        top: "50px",
+        transform: "translateX(-50%) translateY(0)",
+        zIndex: 998,
+      };
+    },
+    // 统一的右键菜单样式计算
+    contextMenuStyle() {
+      let { x, y } = this.contextMenuPosition;
+      const menuHeight = this.contextMenuOptions.length * this.menuItemHeight;
+
+      // 边界检测逻辑
+      if (x + this.menuWidth > window.innerWidth) {
+        x = window.innerWidth - this.menuWidth - 10;
+      }
+
+      if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 10;
+      }
+
+      if (x < 10) {
+        x = 10;
+      }
+
+      if (y < 10) {
+        y = 10;
+      }
+
+      return {
+        top: `${y}px`,
+        left: `${x}px`,
+        position: 'fixed'
       };
     },
     treeData() {
@@ -415,13 +515,367 @@ export default {
     },
   },
   methods: {
+
+    // 修改分类移动方法，添加错误处理和回滚
+    async moveCategoryUp(catIndex) {
+      if (catIndex <= 0) return;
+
+      // 保存原始顺序用于回滚
+      const originalOrder = [...this.toolList];
+
+      try {
+        // 交换分类位置 - 直接使用数组操作
+        const temp = this.toolList[catIndex - 1];
+        this.toolList[catIndex - 1] = this.toolList[catIndex];
+        this.toolList[catIndex] = temp;
+
+        // 触发响应式更新
+        this.toolList = [...this.toolList];
+
+        // 更新分类顺序到后端
+        await this.updateCategoryOrder();
+
+        this.$message.success('分类顺序已更新');
+      } catch (error) {
+        // 回滚到原始顺序
+        this.toolList = originalOrder;
+        console.error('移动分类失败:', error);
+        this.$message.error('移动分类失败');
+      }
+    },
+
+    async moveCategoryDown(catIndex) {
+      if (catIndex >= this.toolList.length - 1) return;
+
+      // 保存原始顺序用于回滚
+      const originalOrder = [...this.toolList];
+
+      try {
+        // 交换分类位置 - 直接使用数组操作
+        const temp = this.toolList[catIndex + 1];
+        this.toolList[catIndex + 1] = this.toolList[catIndex];
+        this.toolList[catIndex] = temp;
+
+        // 触发响应式更新
+        this.toolList = [...this.toolList];
+
+        // 更新分类顺序到后端
+        await this.updateCategoryOrder();
+
+        this.$message.success('分类顺序已更新');
+      } catch (error) {
+        // 回滚到原始顺序
+        this.toolList = originalOrder;
+        console.error('移动分类失败:', error);
+        this.$message.error('移动分类失败');
+      }
+    },
+
+    // 修改工具移动方法，添加错误处理和回滚
+    async moveToolLeft(catIndex, cmdIndex) {
+      if (cmdIndex <= 0) return;
+
+      const category = this.toolList[catIndex];
+      // 保存原始顺序用于回滚
+      const originalOrder = [...category.list];
+
+      try {
+        // 交换工具位置 - 直接使用数组操作
+        const temp = category.list[cmdIndex - 1];
+        category.list[cmdIndex - 1] = category.list[cmdIndex];
+        category.list[cmdIndex] = temp;
+
+        // 触发响应式更新
+        category.list = [...category.list];
+
+        // 更新工具顺序到后端
+        await this.updateToolOrder(catIndex);
+
+        this.$message.success('工具顺序已更新');
+      } catch (error) {
+        // 回滚到原始顺序
+        category.list = originalOrder;
+        console.error('移动工具失败:', error);
+        this.$message.error('移动工具失败');
+      }
+    },
+
+    async moveToolRight(catIndex, cmdIndex) {
+      const category = this.toolList[catIndex];
+      if (cmdIndex >= category.list.length - 1) return;
+
+      // 保存原始顺序用于回滚
+      const originalOrder = [...category.list];
+
+      try {
+        // 交换工具位置 - 直接使用数组操作
+        const temp = category.list[cmdIndex + 1];
+        category.list[cmdIndex + 1] = category.list[cmdIndex];
+        category.list[cmdIndex] = temp;
+
+        // 触发响应式更新
+        category.list = [...category.list];
+
+        // 更新工具顺序到后端
+        await this.updateToolOrder(catIndex);
+
+        this.$message.success('工具顺序已更新');
+      } catch (error) {
+        // 回滚到原始顺序
+        category.list = originalOrder;
+        console.error('移动工具失败:', error);
+        this.$message.error('移动工具失败');
+      }
+    },
+
+    // 隐藏工具操作按钮
+    hideToolActions(catIndex, cmdIndex) {
+      this.showToolActions[catIndex] = -1;
+    },
+
+
+    // 更新分类顺序到后端
+    async updateCategoryOrder() {
+      try {
+        // 构造分类顺序数据，匹配后端 UpdateCategorySorts 方法期望的数据结构
+        const categorySorts = this.toolList.map((category, index) => ({
+          category: category.title,
+          cateSort: this.toolList.length - index  // 按显示顺序设置排序值，第一个分类排序值最大
+        }));
+
+        await UpdateCategorySorts(categorySorts);
+        console.log('分类顺序更新成功');
+      } catch (error) {
+        console.error('更新分类顺序失败:', error);
+        this.$message.error('更新分类顺序失败');
+      }
+    },
+
+    // 更新工具顺序到后端
+    async updateToolOrder(catIndex) {
+      try {
+        const category = this.toolList[catIndex];
+        // 构造工具顺序数据，匹配后端 UpdateCommandSorts 方法期望的数据结构
+        const commandSorts = category.list.map((tool, index) => ({
+          id: tool.id,
+          cmdSort: category.list.length - index,  // 按显示顺序设置排序值，第一个工具排序值最大
+          category: category.title
+        }));
+
+        await UpdateCommandSorts(commandSorts);
+        console.log('工具顺序更新成功');
+      } catch (error) {
+        console.error('更新工具顺序失败:', error);
+        this.$message.error('更新工具顺序失败');
+      }
+    },
+
+    // 新增拖拽相关方法
+    handleDragOver(event) {
+      event.preventDefault();
+      this.isDragOver = true;
+    },
+
+    handleDragLeave(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        this.isDragOver = false;
+      }
+    },
+
+    async handleFileDrop(event) {
+      event.preventDefault();
+      this.isDragOver = false;
+
+      let filePaths = [];
+
+      // 处理两种拖拽情况：浏览器文件对象和 Wails 路径数组
+      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        // 浏览器文件拖拽
+        console.log('浏览器文件拖拽事件:', event.dataTransfer.files);
+        const files = Array.from(event.dataTransfer.files);
+        filePaths = files.map(file => file.path);
+      } else if (event.detail && event.detail.paths) {
+        // Wails 文件拖拽 (通过自定义事件)
+        console.log('Wails 文件拖拽事件:', event.detail.paths);
+        filePaths = event.detail.paths;
+      } else {
+        // 直接通过 Wails OnFileDrop 调用
+        console.log('直接 Wails 拖拽事件');
+        // 这里需要从事件参数中获取路径
+        if (event.paths && Array.isArray(event.paths)) {
+          filePaths = event.paths;
+        }
+      }
+
+      console.log('最终处理的文件路径:', filePaths);
+
+      if (filePaths.length === 0) {
+        console.log('没有找到有效的文件路径');
+        return;
+      }
+
+      // 只处理第一个文件
+      const filePath = filePaths[0];
+      console.log('处理文件路径:', filePath);
+
+      try {
+        // 分析文件路径
+        const fileInfo = await this.analyzeFilePath(filePath);
+        console.log('文件分析结果:', fileInfo);
+
+        // 重置表单
+        this.resetForm();
+
+        // 自动填充表单，默认使用第一个分类
+        this.form.path = fileInfo.directory;
+        this.form.cmd = fileInfo.suggestedCmd;
+        this.form.name = fileInfo.suggestedName || fileInfo.filenameWithoutExt;
+
+        // 设置默认分类为第一个分类
+        if (this.toolList.length > 0) {
+          this.form.category = this.toolList[0].title;
+        }
+
+        // 自动生成图标
+        if (this.isAutoGenerateIcon) {
+          try {
+            const iconFileName = await this.autoGenerateIcon(filePath);
+            if (iconFileName) {
+              this.form.icon = iconFileName;
+              console.log('已设置图标:', iconFileName);
+            }
+          } catch (iconError) {
+            console.warn('自动生成图标失败:', iconError);
+          }
+        }
+
+        // 根据文件类型设置终端选项
+        const terminalExtensions = ['jar', 'py', 'bat', 'cmd', 'ps1', 'sh'];
+        if (terminalExtensions.includes(fileInfo.extension)) {
+          this.form.terminal = 1; // 需要终端
+        } else {
+          this.form.terminal = 0; // 不需要终端
+        }
+
+        // 直接设置对话框模式和显示对话框，不调用 openDialog
+        this.dialogMode = "add";
+        this.dialogVisible = true;
+
+        console.log('表单填充完成:', this.form);
+        this.$message.success(`已自动填充文件信息: ${fileInfo.filename}`);
+
+      } catch (error) {
+        console.error('处理拖拽文件失败:', error);
+        // this.$message.error('处理文件失败: ' + error.message);
+      }
+    },
+
+    async analyzeFilePath(filePath) {
+      try {
+        // 调用后端的 AnalyzeFilePath 方法
+        const fileInfo = await AnalyzeFilePath(filePath);
+        console.log('后端文件分析结果:', fileInfo);
+        return fileInfo;
+      } catch (error) {
+        console.error('后端分析文件路径失败:', error);
+      }
+    },
+
+    async autoGenerateIcon(filePath) {
+      try {
+        const iconFileName = await AutoGenerateIcon(filePath);
+        if (iconFileName) {
+          console.log('图标生成成功:', iconFileName);
+          return iconFileName;
+        } else {
+          console.log('未生成图标，将使用默认图标');
+          return null;
+        }
+      } catch (error) {
+        console.warn('自动生成图标失败:', error);
+        // 生成失败时返回 null，前端会使用默认图标
+        return null;
+      }
+    },
+
+    async loadPortConfig() {
+      try {
+        this.portConfig = await GetPortConfig();
+        console.log('端口配置:', this.portConfig);
+      } catch (error) {
+        console.error('获取端口配置失败:', error);
+        // 使用默认端口作为后备
+        this.portConfig = {
+          mainPort: 52867,
+        };
+      }
+    },
     // 树节点点击
     onTreeNodeClick(node) {
       if (node.id === 'root') return;
-      const target = document.querySelector(`.cate[data-index=\"${node.id}\"]`);
+      const target = document.querySelector(`.cate[data-index="${node.id}"]`);
       if (target) {
         target.closest('.nav').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+    },
+
+    // 当前是否处于可见状态（限制拖拽触发范围）
+    isViewActive() {
+      if (!this.$el || !document.body.contains(this.$el)) return false;
+      return this.$el.offsetParent !== null;
+    },
+
+    // 工具项右键菜单
+    showToolContextMenu(event, cmd = null, catIndex = null) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      this.selectedCmd = cmd; // 仍然设置，以防其他地方使用，但删除操作不再依赖它
+      this.selectedIndex = catIndex;
+      this.selectedCategory = null;
+
+      this.contextMenuOptions = [
+        { label: "新增", icon: "el-icon-circle-plus", action: () => this.openDialog("add") },
+        { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("toolEdit", cmd) },
+        { label: "删除", icon: "el-icon-delete", action: () => this.deleteCmd(cmd) },
+        { label: "打开文件位置", icon: "el-icon-folder-opened", action: () => this.openPath(cmd.path) },
+        { label: "打开所在目录终端", icon: "el-icon-monitor", action: () => this.openTerminalInDir(cmd.path) },
+      ];
+
+      this.showContextMenu(event.clientX, event.clientY);
+    },
+
+    // 分类右键菜单
+    showCategoryContextMenu(event, category, catIndex) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      this.selectedIndex = catIndex;
+      this.selectedCmd = { category: category.title };
+      this.selectedCategory = category;
+
+      this.contextMenuOptions = [
+        { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("cateEdit") },
+        {
+          label: "删除",
+          icon: "el-icon-delete",
+          action: async () => {
+            this.hideContextMenu();
+            try {
+              await confirmDangerousAction({
+                title: '警告',
+                message: `是否确认删除分类「${category.title}」？该分类下的所有工具也会被删除。`,
+                expectedInput: DANGER_DELETE_TOKEN
+              });
+              await this.deleteToolCategory(category.title);
+            } catch {
+              /* 取消 */
+            }
+          },
+        },
+      ];
+
+      this.showContextMenu(event.clientX, event.clientY);
     },
 
     // 树节点右键菜单
@@ -433,9 +887,10 @@ export default {
       if (node.id === 'root') return;
 
       this.selectedTreeNode = node;
+      this.selectedCategory = { title: node.category || node.label };
 
       // 设置分类树右键菜单选项
-      this.treeContextMenuOptions = [
+      this.contextMenuOptions = [
         {
           label: "重命名",
           icon: "el-icon-edit",
@@ -448,16 +903,27 @@ export default {
         }
       ];
 
-      this.treeContextMenuPosition = {
-        x: event.clientX,
-        y: event.clientY
-      };
-      this.treeContextMenuVisible = true;
+      this.showContextMenu(event.clientX, event.clientY);
+    },
+
+    // 显示右键菜单
+    showContextMenu(x, y) {
+      this.contextMenuPosition = { x, y };
+      this.contextMenuVisible = true;
+    },
+
+    // 隐藏右键菜单
+    hideContextMenu() {
+      this.contextMenuVisible = false;
+      this.selectedCmd = null;
+      this.selectedIndex = null;
+      this.selectedTreeNode = null;
+      this.selectedCategory = null;
     },
 
     // 重命名分类
     renameCategory(node) {
-      this.hideTreeContextMenu();
+      this.hideContextMenu();
 
       const categoryTitle = node.category || node.label;
       this.selectedCategory = categoryTitle;
@@ -474,19 +940,15 @@ export default {
 
     // 删除分类
     async deleteCategory(node) {
-      this.hideTreeContextMenu();
+      this.hideContextMenu();
 
       const categoryTitle = node.category || node.label;
 
       try {
         await this.$confirm(
-            `是否确认删除分类「${categoryTitle}」？该分类下的所有工具也会被删除！`,
-            '警告',
-            {
-              confirmButtonText: '确定',
-              cancelButtonText: '取消',
-              type: 'warning',
-            }
+          `是否确认删除分类「${categoryTitle}」？该分类下的所有工具也会被删除。`,
+          '警告',
+          { type: 'warning' }
         );
 
         await this.deleteToolCategory(categoryTitle);
@@ -496,10 +958,29 @@ export default {
       }
     },
 
-    // 隐藏树节点右键菜单
-    hideTreeContextMenu() {
-      this.treeContextMenuVisible = false;
+    // 全局右键菜单处理
+    handleGlobalContextMenu(event) {
+      // 检查是否点击在已有的右键菜单上
+      const contextMenuElement = event.target.closest(".context-menu");
+      if (contextMenuElement) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      // 重置选中状态
+      this.selectedCmd = null;
+      this.selectedIndex = null;
       this.selectedTreeNode = null;
+      this.selectedCategory = null;
+
+      // 全局菜单只显示新增选项
+      this.contextMenuOptions = [
+        { label: "新增", icon: "el-icon-circle-plus", action: () => this.openDialog("add") },
+      ];
+
+      this.showContextMenu(event.clientX, event.clientY);
     },
 
     // 打开并自动调整到边缘
@@ -622,16 +1103,23 @@ export default {
 
     // 解析图标路径（保持异步）
     async resolveIconPath(icon) {
-      // console.log("开始解析图标:", icon);
+      console.log("开始解析图标:", icon);
 
       if (!icon) {
-        // console.log("图标为空，返回默认图标");
+        console.log("图标为空，返回默认图标");
         return "/assets/tool/default.png";
+      }
+
+      // 自动生成的图标（在 icon 目录下）
+      if (icon.startsWith("auto_") || !icon.includes("/") && !icon.includes("\\")) {
+        const remoteUrl = `http://127.0.0.1:${this.portConfig.mainPort}/icon/${icon}`;
+        console.log("返回自动生成的图标URL:", remoteUrl);
+        return remoteUrl;
       }
 
       // 本地资源或完整 URL
       if (icon.startsWith("/assets") || /^https?:\/\//.test(icon)) {
-        // console.log("直接返回本地/网络图标:", icon);
+        console.log("直接返回本地/网络图标:", icon);
         return icon;
       }
 
@@ -641,17 +1129,18 @@ export default {
 
       if (isWinAbsPath || isUnixAbsPath) {
         const normalizedIcon = icon.replace(/\\/g, '/');
-        // console.log("处理绝对路径:", normalizedIcon);
+        console.log("处理绝对路径:", normalizedIcon);
 
         try {
           const base64 = await ReadImageAsBase64(normalizedIcon);
-          // console.log("获取到base64数据:", base64 ? `长度: ${base64.length}` : "空");
+          console.log("获取到base64数据:", base64 ? `长度: ${base64.length}` : "空");
 
           if (base64) {
             const extension = normalizedIcon.split('.').pop()?.toLowerCase() || 'png';
             const mimeType = this.getMimeType(extension);
-            // console.log("生成Data URL:", dataUrl.substring(0, 50) + "...");
-            return `data:${mimeType};base64,${base64}`;
+            const dataUrl = `data:${mimeType};base64,${base64}`;
+            console.log("生成Data URL成功");
+            return dataUrl;
           }
         } catch (err) {
           console.error("图标加载失败:", err);
@@ -659,9 +1148,10 @@ export default {
         return "/assets/tool/default.png";
       }
 
-      // 其他情况
-      // console.log("返回远程路径:", remoteUrl);
-      return `http://127.0.0.1:52867/icon/${icon}`;
+      // 其他情况视为相对路径图标
+      const remoteUrl = `http://127.0.0.1:${this.portConfig.mainPort}/icon/${icon}`;
+      console.log("返回远程路径:", remoteUrl);
+      return remoteUrl;
     },
 
     getMimeType(ext) {
@@ -680,70 +1170,10 @@ export default {
     handleImageError(cmd) {
       console.error(`图标加载失败: ${cmd.icon}`);
       const cmdId = cmd.id || cmd.name;
-      // 更新为默认图标
-      this.$set(this.resolvedIcons, cmd.id, "/assets/tool/default.png");
-      this.resolvedIcons = {
-        ...this.resolvedIcons,
-        [cmdId]: "/assets/tool/default.png"
-      };
-    },
-
-    // 显示右键菜单
-    showContextMenu(event, cmd = null, index = null) {
-      event.preventDefault();
-
-      const itemElement = event.target.closest(".item");
-      const cateElement = event.target.closest(".cate");
-
-      if (itemElement) {
-        // 点击的是工具
-        this.selectedCmd = cmd;
-        this.selectedIndex = index;
-        this.contextMenuOptions = [
-          { label: "新增", icon: "el-icon-circle-plus", action: () => this.openDialog("add") },
-          { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("toolEdit") },
-          { label: "删除", icon: "el-icon-delete", action: this.deleteCmd },
-          { label: "打开文件位置", icon: "el-icon-folder-opened", action: () => this.openPath(cmd.path) },
-        ];
-      } else if (cateElement) {
-        // 点击的是分类
-        const indexAttr = cateElement.getAttribute("data-index");
-        const catIndex = Number(indexAttr);
-        const category = this.toolList[catIndex];
-
-        this.selectedIndex = catIndex;
-        this.selectedCmd = { category: category.title }; // 把分类名塞进 selectedCmd
-
-        this.contextMenuOptions = [
-          { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("cateEdit") },
-          {
-            label: "删除",
-            icon: "el-icon-delete",
-            action: () => {
-              this.$confirm(
-                  `是否确认删除分类「${category.title}」？该分类下的所有工具也会被删除！`,
-                  '警告',
-                  {
-                    confirmButtonText: '确定',
-                    cancelButtonText: '取消',
-                    type: 'warning',
-                  }
-              )
-                  .then(() => this.deleteToolCategory(category.title))
-                  .catch(() => {});
-            },
-          },
-        ];
-      } else {
-        this.selectedCmd = null;
-        this.selectedIndex = null;
-        this.contextMenuOptions = [
-          { label: "新增", icon: "el-icon-circle-plus", action: () => this.openDialog("add") },
-        ];
-      }
-
-      this.contextMenuPosition = { x: event.clientX, y: event.clientY };
-      this.contextMenuVisible = true;
+      // 更新为默认图标 - 直接赋值
+      this.resolvedIcons[cmd.id] = "/assets/tool/default.png";
+      // 触发响应式更新
+      this.resolvedIcons = {...this.resolvedIcons};
     },
 
     // 打开文件位置
@@ -759,6 +1189,20 @@ export default {
       }).catch(err => {
         this.$message.error('打开文件夹失败: ' + err.message);
         console.error('打开文件夹失败:', err);
+      });
+    },
+
+    // 在工具路径所在目录打开终端（路径可为可执行文件或目录）
+    openTerminalInDir(path) {
+      if (!path) {
+        this.$message.warning('该工具未设置路径');
+        return;
+      }
+      OpenTerminalInDir(path).then(() => {
+        console.log('终端已在目录打开:', path);
+      }).catch(err => {
+        this.$message.error('打开终端失败: ' + (err?.message || String(err)));
+        console.error('打开终端失败:', err);
       });
     },
 
@@ -820,44 +1264,24 @@ export default {
       }
     },
 
-    // 隐藏右键菜单
-    hideContextMenu() {
-      this.contextMenuVisible = false;
-    },
-
-    // 全局右键点击处理
-    handleGlobalContextMenu(event) {
-      const itemElement = event.target.closest(".item");
-      const treeElement = event.target.closest(".cate-tree");
-
-      // 如果点击的是树区域，不显示全局右键菜单
-      if (treeElement) {
-        return;
-      }
-
-      if (!itemElement) {
-        // 点击的不是 .item 时显示 "新增" 菜单
-        this.showContextMenu(event);
-      }
-      event.preventDefault(); // 阻止默认右键菜单
-    },
-
     // 打开弹出框
-    openDialog(mode) {
+    openDialog(mode, cmd = null) {
       this.dialogMode = mode;
 
-      if (mode === "toolEdit" && this.selectedCmd) {
-        // 编辑工具
-        this.form = { ...this.selectedCmd };
-      } else if (mode === "cateEdit" && this.selectedIndex !== null) {
-        // 编辑分类，只需要设置 oldCategory 和 category 字段
-        this.selectedCategory = this.toolList[this.selectedIndex].title;
+      if (mode === "toolEdit" && cmd) {
+        this.form = { ...cmd };
+      } else if (mode === "cateEdit" && this.selectedCategory) {
+        const categoryTitle = this.selectedCategory.title;
         this.form = {
-          oldCategory: this.selectedCategory,
-          category: this.selectedCategory,
+          oldCategory: categoryTitle,
+          category: categoryTitle,
         };
       } else {
         this.resetForm();
+        // 新增工具时默认选择第一个分类
+        if (mode === "add" && this.toolList.length > 0) {
+          this.form.category = this.toolList[0].title;
+        }
       }
 
       this.dialogVisible = true;
@@ -870,8 +1294,8 @@ export default {
         id: null,
         category: "",
         cmd: "",
-        param: "",
         name: "",
+        param: "",
         path: "",
         desc: "",
         icon: "",
@@ -955,39 +1379,43 @@ export default {
     },
 
     // 删除命令
-    async deleteCmd() {
+    async deleteCmd(cmd) {
       this.hideContextMenu();
-      if (this.selectedCmd && this.selectedCmd.id) {
-        try {
-          await this.$confirm("确认要删除此命令吗？", "删除确认", {
-            confirmButtonText: "删除",
-            cancelButtonText: "取消",
-            type: "warning",
-          });
-          await DeleteTool(this.selectedCmd.id);
-          this.$message.success("删除命令成功");
-          console.log("删除命令成功:", this.selectedCmd);
 
-          // 更新前端数据：从 toolList 中移除已删除的项
-          for (let i = 0; i < this.toolList.length; i++) {
-            const group = this.toolList[i];
-            const index = group.list.findIndex((site) => site.id === this.selectedCmd.id);
-            if (index !== -1) {
-              group.list.splice(index, 1);
-              // 如果该分类下没有站点，移除分类
-              if (group.list.length === 0) {
-                this.toolList.splice(i, 1);
-              }
-              break;
-            }
-          }
+      if (!cmd || !cmd.id) {
+        console.error('没有选中的命令或命令ID为空:', cmd);
+        this.$message.warning('请选择要删除的命令');
+        return;
+      }
 
-          this.selectedCmd = null; // 重置选中项
-        } catch (error) {
-          console.error("删除命令失败:", error);
+      try {
+        await confirmDangerousAction({
+          title: '删除确认',
+          message: '确认要删除此命令吗？',
+          expectedInput: DANGER_DELETE_TOKEN,
+          confirmButtonText: '删除'
+        });
+
+        console.log('开始删除命令:', cmd);
+
+        await DeleteTool(cmd.id);
+        this.$message.success("删除命令成功");
+        console.log("删除命令成功:", cmd);
+
+        // 重新加载数据
+        await this.loadToolList();
+        await this.loadAllIcons();
+
+      } catch (error) {
+        if (error === 'cancel') {
+          console.log('用户取消了删除操作');
+          return;
         }
+        console.error("删除命令失败:", error);
+        this.$message.error("删除命令失败");
       }
     },
+
     // 删除分类
     async deleteToolCategory(category) {
       try {
@@ -1010,128 +1438,117 @@ export default {
       }
     },
 
-    handleDragStart(e, type, catIndex, cmdIndex = -1) {
-      this.dragData = {
-        type,
-        catIndex,
-        cmdIndex
-      }
-      e.dataTransfer.effectAllowed = 'move'
+    // 关闭软件中心提示
+    closeSoftwareCenterTip() {
+      this.showSoftwareCenterTip = false;
     },
 
-    handleDragOver(e, type, targetCatIndex, targetCmdIndex = -1) {
-      // 添加可视化反馈
-      e.target.classList.add('drag-over')
-      e.dataTransfer.dropEffect = 'move'
-    },
-    async handleDrop(e, type, targetCatIndex, targetCmdIndex = -1) {
-      e.stopPropagation();                  // 阻止冒泡
-      e.currentTarget.classList.remove('drag-over');
-
-      const { type: dragType, catIndex: srcCat, cmdIndex: srcCmd } = this.dragData;
-
-      if (dragType === 'category' && type === 'category') {
-        // —— 分类 ↔ 分类 互换 ——
-        const moved = this.toolList.splice(srcCat, 1)[0];
-        this.toolList.splice(targetCatIndex, 0, moved);
-        await this.updateCategorySort();
-
-      } else if (dragType === 'command' && type === 'command') {
-        // —— 命令 ↔ 命令 同分类内部移动 ——
-        const cmds = this.toolList[srcCat].list;
-        const moved = cmds.splice(srcCmd, 1)[0];
-        cmds.splice(targetCmdIndex, 0, moved);
-        await this.updateCommandSort(srcCat);
-
-      } else if (dragType === 'command' && type === 'category') {
-        // —— 跨分类移动命令 ——
-        const srcCmds    = this.toolList[srcCat].list;
-        const targetCmds = this.toolList[targetCatIndex].list;
-        const moved      = srcCmds.splice(srcCmd, 1)[0];
-        targetCmds.push(moved);
-        await this.moveCommandToCategory(moved.id, targetCatIndex);
-      }
-    },
-
-    // 更新分类排序到后端
-    // 确保发送正确的数据类型
-    async updateCategorySort() {
-      const sortData = this.toolList.map((cat, index) => ({
-        category: cat.title,
-        cateSort: Number(this.toolList.length - index) // 明确转换为Number
-      }))
-
-      console.log('排序数据:', JSON.stringify(sortData))
-
-      try {
-        await UpdateCategorySorts(sortData)
-      } catch (err) {
-        console.error('保存失败:', err)
-      }
-    },
-
-    // 更新命令排序
-    async updateCommandSort(catIndex) {
-      const commands = this.toolList[catIndex].list
-      const sortData = commands.map((cmd, index) => ({
-        id: cmd.id,
-        cmdSort: commands.length - index,
-        category: this.toolList[catIndex].title
-      }))
-
-      try {
-        await UpdateCommandSorts(sortData)
-      } catch (err) {
-        console.error('命令排序保存失败:', err)
-      }
-    },
-    async moveCommandToCategory(commandId, targetCatIndex) {
-      const targetCategory = this.toolList[targetCatIndex].title
-
-      try {
-        // 调用后端接口
-        await MoveCommandToCategory({
-          id: commandId,
-          newCategory: targetCategory,
-          // 添加到新分类的末尾，可根据需要调整排序值
-          newCmdSort: this.toolList[targetCatIndex].list.length + 1
-        })
-
-        // 刷新数据
-        await this.loadToolList()
-        await this.loadAllIcons()
-        this.$message.success('命令移动成功')
-      } catch (err) {
-        console.error('移动命令失败:', err)
-        this.$message.error('命令移动失败：' + err.message)
-        // 回退本地数据
-        await this.loadToolList()
-        await this.loadAllIcons()
-      }
+    // 跳转到软件中心
+    goToSoftwareCenter() {
+      this.$router.push({
+        name: 'systemManage',
+        query: { tab: 'software-center' }
+      });
+      // 关闭提示
+      this.showSoftwareCenterTip = false;
     },
   },
 
-  mounted() {
-    this.loadToolList();   // 加载工具列表
-    this.loadAllIcons();
-    this.loadCategories(); // 加载分类列表
-    // 监听全局 contextmenu 事件
-    document.addEventListener("contextmenu", this.handleGlobalContextMenu);
-    document.addEventListener("click", this.hideContextMenu);
-    // 添加树节点右键菜单的隐藏监听
-    document.addEventListener("click", this.hideTreeContextMenu);
+  async mounted() {
+    // 随机显示提示（30% 概率）
+    const shouldShowTip = Math.random() < 0.3;
+    this.showSoftwareCenterTip = shouldShowTip;
+
+    await this.loadPortConfig();
+    await this.loadToolList();
+    await this.loadAllIcons();
+    await this.loadCategories();
+
+    this.$nextTick(() => {
+      // 设置文件拖拽事件 - 直接调用处理方法
+      OnFileDrop((x, y, paths) => {
+        // 仅在当前页面可见时处理
+        if (!this.isViewActive()) return;
+        console.log('Wails OnFileDrop 收到拖拽文件:', paths);
+        console.log('位置:', x, y);
+
+        if (paths && paths.length > 0) {
+          // 直接调用 handleFileDrop 方法，传递路径
+          const mockEvent = {
+            preventDefault: () => {},
+            paths: paths // 直接传递 paths
+          };
+          this.handleFileDrop(mockEvent);
+        }
+      });
+    });
+
+    // 点击其他地方隐藏右键菜单
+    document.addEventListener("click", () => {
+      this.hideContextMenu();
+    });
+
+    // ESC键隐藏右键菜单
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.hideContextMenu();
+      }
+    });
   },
+
   beforeUnmount() {
-    // 移除全局 contextmenu 和 click 事件监听
-    document.removeEventListener("contextmenu", this.handleGlobalContextMenu);
     document.removeEventListener("click", this.hideContextMenu);
-    document.removeEventListener("click", this.hideTreeContextMenu);
+    document.removeEventListener("keydown", this.hideContextMenu);
   },
 };
 </script>
 
-
 <style lang="scss" scoped>
+/* 拖拽区域样式 */
+.drop-zone-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px dashed #409EFF;
+}
+
+.drop-zone-content {
+  text-align: center;
+  color: white;
+  padding: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.drop-text {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* 系统元素支持拖拽 */
+.system {
+  --wails-drop-target: drop;
+  min-height: 100vh;
+}
+
+
+/* 确保.system元素覆盖整个可用区域 */
+.system {
+  margin: 10px 0 10px 10px;
+  min-height: calc(100vh - 20px); /* 确保有足够的高度 */
+  position: relative; /* 为右键菜单定位提供参考 */
+  --wails-drop-target: drop;
+}
+
 /* 右上角小目录树 */
 .cate-tree {
   position: fixed;
@@ -1140,7 +1557,10 @@ export default {
   width: 140px;
   max-height: 30px; /* 默认收起状态的高度 */
   overflow: hidden; /* 隐藏超出内容 */
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(209, 193, 193, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   z-index: 1000;
@@ -1159,190 +1579,356 @@ export default {
   padding: 2px 0;
 }
 
-.system {
-  margin: 10px 0 10px 10px;
+.nav {
+  .cate {
+    margin: 10px 0;
+    font-size: 16px;
+    color: #ffffff;
+    font-weight: 700;
+    position: relative;
+    padding-right: 60px; /* 为移动按钮留出空间 */
 
-  .nav {
-    .cate {
-      margin: 10px 0;
-      font-size: 16px;
-      color: #000000;
-      font-weight: 600;
-    }
-
-    .site-list {
+    .category-actions {
+      position: absolute;
+      left: 120px;
+      top: 50%;
+      transform: translateY(-50%);
       display: flex;
-      flex-wrap: wrap;
+      gap: 8px;
+      color: #ba0f08;
 
-      .item {
-        padding: 10px;
-        background: #f5fafd;
-        margin: 10px 10px 0 0;
-        width: calc(33.33% - 30px);
-        min-height: 40px;
+      .move-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
         display: flex;
         align-items: center;
+        justify-content: center;
+        background: #f5f5f5;
+        border: 1px solid #ddd;
         cursor: pointer;
-        border-radius: 8px;
         transition: all 0.2s;
+        font-size: 12px;
 
         &:hover {
-          box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
-          transform: translateY(-3px);
-        }
-
-        .desc {
-          margin-left: 10px;
-          display: flex;
-          flex-direction: column;
-          font-size: 14px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-
-          .title {
-            white-space: nowrap;
-            height: 22px;
-            color: #242f40;
-            font-weight: 500;
-          }
-
-          .remark {
-            height: 38px;          /* 增加高度以容纳更大的行间距 */
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            color: #b2b0c0;
-            font-size: 12px;
-            line-height: 18px;     /* 新增：设置行间距为20px */
-            overflow: hidden;      /* 确保超出部分被隐藏 */
-          }
+          background: #409EFF;
+          color: white;
+          border-color: #409EFF;
         }
       }
     }
   }
 
-  .search-bar {
+  .tool-list {
     display: flex;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.63);   // 收起时半透明黑
-    border-radius: 15px;
-    border: 1px solid transparent; /* 占位，方便后面 override */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 5px;
-    user-select: none;
+    flex-wrap: wrap;
 
-    &:focus-within {
-      outline: none;
-      box-shadow: none;
-    }
-
-    &.expanded {
-      /* 外壳改灰色 & 去阴影 */
-      background: rgb(44, 43, 43) !important;
-      box-shadow: none !important;
-      border: none !important;
-
-      /* 覆盖 el-input 的 wrapper */
-      :deep(.el-input__wrapper) {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-      }
-      /* 覆盖真正的 input */
-      :deep(.el-input__inner) {
-        border: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-      }
-    }
-
-    .search-icon-collapsed {
-      font-size: 24px;
-      color: #ffffff;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .custom-search-input-expanded {
-      width: 200px;
-      transition: width 0.2s ease, opacity 0.2s ease;
-
-      /* 整个 wrapper 用灰色底 */
-      :deep(.el-input__wrapper) {
-        background: transparent !important;
-      }
-
-      /* 覆盖 el-input__wrapper 聚焦样式 */
-      :deep(.el-input__wrapper:focus-within) {
-        outline: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-      }
-
-      /* 输入框本身也设置灰底 */
-      :deep(.el-input__inner) {
-        height: 36px;
-        background: transparent !important;
-        border: none;
-        padding-left: 30px;
-        color: #ffffff !important;
-      }
-
-      :deep(.el-input__inner:focus) {
-        outline: none !important;
-        box-shadow: none !important;
-      }
-
-      :deep(.el-input__clear) {
-        font-size: 18px;
-      }
-
-      :deep(.search-icon-expanded) {
-        font-size: 18px;
-        color: #ffffff;
-      }
-    }
-  }
-
-  .context-menu {
-    position: fixed;
-    z-index: 1000;
-    background-color: #ffffff;
-    border: 1px solid #e6e6e6;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    list-style: none;
-    padding: 8px 0;
-    margin: 0;
-
-    li {
-      padding: 10px 16px;
-      font-size: 14px;
-      color: #333333;
+    .item {
+      padding: 10px;
+      /* background 由 themeBackground.js 动态控制 */
+      margin: 10px 10px 0 0;
+      width: calc(33.33% - 30px);
+      min-height: 40px;
       display: flex;
       align-items: center;
       cursor: pointer;
-      transition: background-color 0.2s, color 0.2s;
-
-      i {
-        margin-right: 8px;
-        font-size: 16px;
-        color: #666666;
-      }
+      border-radius: 8px;
+      transition: all 0.2s;
+      position: relative;
 
       &:hover {
-        background-color: #f5f5f5;
-        color: #1e80ff;
+        box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-3px);
+      }
 
-        i {
-          color: #1e80ff;
+      .desc {
+        margin-left: 10px;
+        display: flex;
+        flex-direction: column;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        .title {
+          white-space: nowrap;
+          height: 22px;
+          color: #242f40;
+          font-weight: 700;
+        }
+
+        .remark {
+          height: 38px;          /* 增加高度以容纳更大的行间距 */
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          line-clamp: 2;         /* 标准属性，提高兼容性 */
+          -webkit-box-orient: vertical;
+          color: #42404f;
+          font-size: 12px;
+          line-height: 18px;     /* 新增：设置行间距为20px */
+          overflow: hidden;      /* 确保超出部分被隐藏 */
+        }
+      }
+
+      .tool-actions {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        gap: 8px;
+        color: #ba0f08;
+
+        .move-btn {
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f5f5f5;
+          border: 1px solid #ddd;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 12px;
+
+          &:hover {
+            background: #409EFF;
+            color: white;
+            border-color: #409EFF;
+          }
         }
       }
     }
   }
+}
 
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.63);   // 收起时半透明黑
+  border-radius: 15px;
+  border: 1px solid transparent; /* 占位，方便后面 override */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  user-select: none;
+
+  &:focus-within {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &.expanded {
+    /* 外壳改灰色 & 去阴影 */
+    background: rgb(44, 43, 43) !important;
+    box-shadow: none !important;
+    border: none !important;
+
+    /* 覆盖 el-input 的 wrapper */
+    :deep(.el-input__wrapper) {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    /* 覆盖真正的 input */
+    :deep(.el-input__inner) {
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+  }
+
+  .search-icon-collapsed {
+    font-size: 24px;
+    color: #ffffff;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .custom-search-input-expanded {
+    width: 200px;
+    transition: width 0.2s ease, opacity 0.2s ease;
+
+    /* 整个 wrapper 用灰色底 */
+    :deep(.el-input__wrapper) {
+      background: transparent !important;
+    }
+
+    /* 覆盖 el-input__wrapper 聚焦样式 */
+    :deep(.el-input__wrapper:focus-within) {
+      outline: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+
+    /* 输入框本身也设置灰底 */
+    :deep(.el-input__inner) {
+      height: 36px;
+      background: transparent !important;
+      border: none;
+      padding-left: 30px;
+      color: #ffffff !important;
+    }
+
+    :deep(.el-input__inner:focus) {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    :deep(.el-input__clear) {
+      font-size: 18px;
+    }
+
+    :deep(.search-icon-expanded) {
+      font-size: 18px;
+      color: #ffffff;
+    }
+  }
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 9999;
+  background-color: #ffffff;
+  border: 1px solid #e6e6e6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+  width: 150px;
+  overflow: visible;
+
+  li {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #333333;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    i {
+      margin-right: 8px;
+      font-size: 16px;
+      color: #666666;
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background-color: #f5f5f5;
+      color: #1e80ff;
+
+      i {
+        color: #1e80ff;
+      }
+    }
+  }
+}
+
+/* 软件中心提示卡片 - 参考搜索框样式 */
+.software-center-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.63);
+  border-radius: 15px;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  user-select: none;
+  max-width: 450px;
+  transition: all 0.3s ease;
+
+  .tip-icon {
+    font-size: 20px;
+    color: #ffffff;
+    flex-shrink: 0;
+    animation: tipPulse 2s ease-in-out infinite;
+  }
+
+  .tip-text {
+    font-size: 13px;
+    color: #ffffff;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+
+  .tip-jump-btn {
+    flex-shrink: 0;
+    padding: 4px 12px;
+    height: 28px;
+    font-size: 12px;
+    color: #409EFF;
+    background: rgba(64, 158, 255, 0.1);
+    border: 1px solid rgba(64, 158, 255, 0.3);
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(64, 158, 255, 0.2);
+      border-color: rgba(64, 158, 255, 0.5);
+      color: #66B1FF;
+    }
+  }
+
+  .tip-close-btn {
+    flex-shrink: 0;
+    padding: 4px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+
+    :deep(.el-icon) {
+      font-size: 16px;
+    }
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.75);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* 提示卡片淡入动画 */
+.fade-enter-active {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.fade-leave-active {
+  animation: fadeIn 0.3s ease-out reverse;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tipPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 </style>

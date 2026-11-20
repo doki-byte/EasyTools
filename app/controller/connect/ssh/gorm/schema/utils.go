@@ -105,7 +105,7 @@ func GetRelationsValues(ctx context.Context, reflectValue reflect.Value, rels []
 	return
 }
 
-// GetIdentityFieldValuesMap get identity map from fields
+// GetIdentityFieldValuesMap get identity MapCheck from fields
 func GetIdentityFieldValuesMap(ctx context.Context, reflectValue reflect.Value, fields []*Field) (map[string][]reflect.Value, [][]any) {
 	var (
 		results       = [][]any{}
@@ -168,7 +168,7 @@ func GetIdentityFieldValuesMap(ctx context.Context, reflectValue reflect.Value, 
 	return dataResults, results
 }
 
-// GetIdentityFieldValuesMapFromValues get identity map from fields
+// GetIdentityFieldValuesMapFromValues get identity MapCheck from fields
 func GetIdentityFieldValuesMapFromValues(ctx context.Context, values []any, fields []*Field) (map[string][]reflect.Value, [][]any) {
 	resultsMap := map[string][]reflect.Value{}
 	results := [][]any{}

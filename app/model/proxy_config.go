@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const TableNameProxyConfig = "proxy_config"
+const TableNameProxyConfig = "system_proxy_config"
 
 type ProxyConfig struct {
 	Id             int    `json:"id" gorm:"column:id;primaryKey;autoIncrement:true"`

@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -45,6 +46,7 @@ func (u *Util) InitFile() *Util {
 	_ = u.PathExist(fmt.Sprintf("%s\\icon", u.GetAppPath()))
 	_ = u.PathExist(fmt.Sprintf("%s\\tools", u.GetAppPath()))
 	_ = u.PathExist(fmt.Sprintf("%s\\file", u.GetAppPath()))
+	_ = u.PathExist(fmt.Sprintf("%s\\config", u.GetAppPath()))
 	return u
 }
 
@@ -139,6 +141,45 @@ func (u *Util) PathExist(path string) string {
 
 // ShellCMD 以shell方式运行cmd命令，支持终端和无终端两种模式
 func (u *Util) ShellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
+	// 处理 .lnk 文件 - 使用 start 命令
+	if strings.HasSuffix(strings.ToLower(cmdStr), ".lnk") {
+		// 清理路径
+		cleanPath := strings.Trim(cmdStr, "\"")
+
+		// 检查文件是否存在
+		fullPath := cleanPath
+		if !filepath.IsAbs(cleanPath) && cmdPath != "" {
+			fullPath = filepath.Join(cmdPath, cleanPath)
+		}
+
+		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+			fmt.Printf("错误: 文件不存在: %s\n", fullPath)
+			return
+		}
+
+		fmt.Printf("执行命令: start \"\" \"%s\"\n", fullPath)
+
+		// 直接使用 start 命令
+		var cmd *exec.Cmd
+		if terminal == 1 {
+			// 终端模式 - 使用 cmd /K start
+			cmd = exec.Command("cmd", "/K", "start", "", fullPath)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Stdin = os.Stdin
+		} else {
+			// 非终端模式
+			cmd = exec.Command("cmd", "/C", "start", "", fullPath)
+			cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+		}
+
+		err := cmd.Run()
+		if err != nil {
+			fmt.Printf("Error executing command: %v\n", err)
+		}
+		return
+	}
+
 	// 拼接完整命令
 	var command string
 	if cmdPath == "" {

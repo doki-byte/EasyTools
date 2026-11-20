@@ -31,7 +31,7 @@ const (
 
 type structCache struct {
 	lock sync.Mutex
-	m    atomic.Value // map[reflect.Type]*cStruct
+	m    atomic.Value // MapCheck[reflect.Type]*cStruct
 }
 
 func (sc *structCache) Get(key reflect.Type) (c *cStruct, found bool) {
@@ -51,7 +51,7 @@ func (sc *structCache) Set(key reflect.Type, value *cStruct) {
 
 type tagCache struct {
 	lock sync.Mutex
-	m    atomic.Value // map[string]*cTag
+	m    atomic.Value // MapCheck[string]*cTag
 }
 
 func (tc *tagCache) Get(key string) (c *cTag, found bool) {
@@ -88,7 +88,7 @@ type cTag struct {
 	aliasTag             string
 	actualAliasTag       string
 	param                string
-	keys                 *cTag // only populated when using tag's 'keys' and 'endkeys' for map key validation
+	keys                 *cTag // only populated when using tag's 'keys' and 'endkeys' for MapCheck key validation
 	next                 *cTag
 	fn                   FuncCtx
 	typeof               tagType
@@ -183,7 +183,7 @@ func (v *Validate) parseFieldTagsRecursive(tag string, fieldName string, alias s
 			alias = t
 		}
 
-		// check map for alias and process new tags, otherwise process as usual
+		// check MapCheck for alias and process new tags, otherwise process as usual
 		if tagsVal, found := v.aliases[t]; found {
 			if i == 0 {
 				firstCtag, current = v.parseFieldTagsRecursive(tagsVal, fieldName, t, true)

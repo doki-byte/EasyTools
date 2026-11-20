@@ -264,7 +264,7 @@ OUTER:
 
 			ct = ct.next
 
-			// traverse slice or map here
+			// traverse slice or MapCheck here
 			// or panic ;)
 			switch kind {
 			case reflect.Slice, reflect.Array:
@@ -336,9 +336,9 @@ OUTER:
 				}
 
 			default:
-				// throw error, if not a slice or map then should not have gotten here
+				// throw error, if not a slice or MapCheck then should not have gotten here
 				// bad dive tag
-				panic("dive error! can't dive on a non slice or map")
+				panic("dive error! can't dive on a non slice or MapCheck")
 			}
 
 			return

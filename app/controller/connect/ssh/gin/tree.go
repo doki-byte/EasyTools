@@ -415,7 +415,7 @@ type skippedNode struct {
 }
 
 // Returns the handle registered with the given path (key). The values of
-// wildcards are saved to a map.
+// wildcards are saved to a MapCheck.
 // If no handle can be found, a TSR (trailing slash redirect) recommendation is
 // made if a handle exists with an extra (without the) trailing slash for the
 // given path.

@@ -1,0 +1,106 @@
+[
+  {
+    "id": "tool-1763481461576",
+    "name": "python",
+    "command": "python",
+    "description": "python脚本执行器",
+    "workingDir": "",
+    "parameters": [
+      {
+        "id": "param-1763481488295-7asco",
+        "name": "",
+        "label": "python脚本",
+        "type": "input",
+        "argType": "positional",
+        "required": true
+      }
+    ],
+    "createdAt": "2025-11-18T15:57:41.576Z",
+    "updatedAt": "2025-11-19T13:46:46.744Z"
+  },
+  {
+    "id": "tool-1763517731924",
+    "name": "upx工具",
+    "command": "upx",
+    "description": "upx加壳与脱壳",
+    "workingDir": "",
+    "parameters": [
+      {
+        "id": "param-1763517762028-94o8v",
+        "name": "-d",
+        "label": "加/脱壳",
+        "type": "switch",
+        "argType": "flag",
+        "required": false,
+        "defaultValue": false
+      },
+      {
+        "id": "param-1763518061987-aaa4o",
+        "name": "",
+        "label": "处理文件",
+        "type": "input",
+        "argType": "positional",
+        "required": true
+      }
+    ],
+    "createdAt": "2025-11-19T02:02:11.924Z",
+    "updatedAt": "2025-11-19T12:42:35.978Z"
+  },
+  {
+    "id": "tool-1763518531051",
+    "name": "dirsearch目录扫描",
+    "command": "python",
+    "description": "MCP tool 'dirsearch': Web directory and file scanner. Call this tool with tool name 'dirsearch' and ONLY the 'url' parameter set to the target website URL. Example: {'url': 'http://127.0.0.1/pikachu'}. The 'url' parameter is the only required parameter - all other parameters have default values and should not be provided.",
+    "workingDir": "",
+    "parameters": [
+      {
+        "id": "param-1763518903179-5k21m",
+        "name": "",
+        "label": "执行脚本",
+        "type": "input",
+        "argType": "positional",
+        "required": true,
+        "defaultValue": "dirsearch.py"
+      },
+      {
+        "id": "param-1763518532675-9betq",
+        "name": "-u",
+        "label": "url",
+        "type": "input",
+        "argType": "key-value",
+        "required": true
+      }
+    ],
+    "createdAt": "2025-11-19T02:15:31.051Z",
+    "updatedAt": "2025-11-19T02:29:35.570Z"
+  },
+  {
+    "id": "tool-1764561072030",
+    "name": "fscan",
+    "command": "fscan.exe",
+    "description": "MCP tool 'fscan': Host scanning and intranet scanning tool. When calling this tool, use the tool name 'fscan' and set the 'url/ip' parameter to the target IP address or URL. For example: {'ip ':' 127.0.0.1 '}. The 'h' parameter is a required parameter, and all other parameters have default values. If submitted, overwrite them, and if not, use the default values.",
+    "workingDir": "",
+    "parameters": [
+      {
+        "id": "param-1764561110125-5zw49",
+        "name": "-h",
+        "label": "url/ip",
+        "type": "input",
+        "argType": "key-value",
+        "required": true,
+        "defaultValue": "127.0.0.1"
+      },
+      {
+        "id": "param-1764561198205-edqb1",
+        "name": "-o",
+        "label": "保存日志",
+        "type": "input",
+        "argType": "key-value",
+        "required": false,
+        "placeholder": "aaa1.txt"
+      }
+    ],
+    "createdAt": "2025-12-01T03:51:12.030Z",
+    "updatedAt": "2025-12-01T03:53:44.173Z"
+  }
+]

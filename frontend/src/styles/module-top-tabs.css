@@ -1,0 +1,41 @@
+/**
+ * 各业务模块外层「子功能切换」共用：<el-tabs class="et-module-tabs" :style="tabsStyle" />
+ * 风格：透明底 + 阴影 + 主题字色（与历史各页 .tabs 一致），不强制玻璃/圆角条、不隐藏底部分隔线。
+ * 依赖各页 tabsStyle 注入：--tabs-font-color、--tabs-font-weight、--tabs-shadow
+ */
+.et-module-tabs.el-tabs {
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: transparent;
+  margin-bottom: 10px;
+  padding-left: 10px;
+  border-radius: 10px;
+  box-shadow: var(--tabs-shadow, 0px 2px 2px rgba(0, 0, 0, 0.1));
+}
+
+.et-module-tabs .el-tabs__header {
+  margin: 0;
+}
+
+/* 仅顶栏、下方内容由业务自己用 v-show 承载 */
+.et-module-tabs.et-module-tabs--header-only > .el-tabs__content {
+  display: none !important;
+}
+
+.et-module-tabs .el-tabs__item {
+  color: var(--tabs-font-color, #fff);
+  font-weight: var(--tabs-font-weight, bold);
+}
+
+.et-module-tabs .el-tabs__item.is-active {
+  color: var(--tabs-font-color, #fff);
+  font-weight: var(--tabs-font-weight, bold);
+}
+
+@media (max-width: 480px) {
+  .et-module-tabs.el-tabs {
+    margin-bottom: 8px;
+    padding-left: 6px;
+  }
+}

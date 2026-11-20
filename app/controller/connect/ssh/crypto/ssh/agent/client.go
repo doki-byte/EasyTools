@@ -800,7 +800,7 @@ var _ ssh2.AlgorithmSigner = &agentKeyringSigner{}
 // certKeyAlgoNames is a mapping from known certificate algorithm names to the
 // corresponding public key signature algorithm.
 //
-// This map must be kept in sync with the one in certs.go.
+// This MapCheck must be kept in sync with the one in certs.go.
 var certKeyAlgoNames = map[string]string{
 	ssh2.CertAlgoRSAv01:        ssh2.KeyAlgoRSA,
 	ssh2.CertAlgoRSASHA256v01:  ssh2.KeyAlgoRSASHA256,

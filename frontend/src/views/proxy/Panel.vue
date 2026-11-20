@@ -1,34 +1,34 @@
 <template>
-  <a-layout style="height: 95.6vh;">
-    <a-layout-header class="header">
-      <a-alert center :type="alertType">
-        <p>{{ statusMessage }}</p>
-      </a-alert>
-    </a-layout-header>
+  <el-container class="proxy-panel-layout">
+    <el-header class="header">
+      <el-alert :type="alertType" :closable="false" show-icon>
+        <template #title>{{ statusMessage }}</template>
+      </el-alert>
+    </el-header>
 
-    <a-layout-content class="content">
-      <a-tabs v-model:active-key="activeTab">
-        <a-tab-pane key="1">
-          <template #title>
-            <icon-poweroff/> 运行
+    <el-main class="content">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane name="1">
+          <template #label>
+            <span class="proxy-tab-label"><el-icon><SwitchButton /></el-icon> 运行</span>
           </template>
           <Run/>
-        </a-tab-pane>
-        <a-tab-pane key="2">
-          <template #title>
-            <icon-clock-circle/> 获取
+        </el-tab-pane>
+        <el-tab-pane name="2">
+          <template #label>
+            <span class="proxy-tab-label"><el-icon><Download /></el-icon> 获取</span>
           </template>
           <Fetch @switch-tab="handleSwitchTab"/>
-        </a-tab-pane>
-        <a-tab-pane key="3">
-          <template #title>
-            <icon-settings/> 配置
+        </el-tab-pane>
+        <el-tab-pane name="3">
+          <template #label>
+            <span class="proxy-tab-label"><el-icon><Setting /></el-icon> 配置</span>
           </template>
           <Config/>
-        </a-tab-pane>
-      </a-tabs>
-    </a-layout-content>
-  </a-layout>
+        </el-tab-pane>
+      </el-tabs>
+    </el-main>
+  </el-container>
 </template>
 
 
@@ -37,6 +37,7 @@ defineOptions({
   name: 'ProxyView'
 })
 
+import { SwitchButton, Download, Setting } from '@element-plus/icons-vue'
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import Run from "./Run.vue";
 import Fetch from "./Fetch.vue";
@@ -96,11 +97,49 @@ onUnmounted(() => {
 
 
 <style scoped>
-.header {
-  margin: 4px;
-  background-color: rgb(255, 255, 255);
+.proxy-panel-layout {
+  /* 由外部容器决定高度：嵌在辅助工具/独立页时均铺满可用区域，
+     不再使用 95.6vh 之类的视口硬编码，避免被模块页签/标题栏挤压后裁切 */
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
+
+.header {
+  flex: none;
+  margin: 0;
+  background-color: rgb(255, 255, 255);
+  height: auto !important;
+  padding: 0 8px;
+}
+
 .content {
+  flex: 1 1 auto;
+  min-height: 0;
   margin: 4px;
+  background-color: #faf9f6;
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  overflow-y: auto; /* 页面过长时由内容区整体滚动，保证底部内容可达 */
+  overflow-x: hidden;
+}
+
+.proxy-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 取消 Element Plus 对内容区的内部隐藏裁切：让高度跟随内容，由外层滚动接管 */
+.content :deep(.el-tabs__content) {
+  overflow: visible;
+  background-color: #faf9f6;
+}
+
+.content :deep(.el-tabs__header) {
+  margin: 0 0 10px;
 }
 </style>

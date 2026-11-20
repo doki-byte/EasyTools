@@ -10,6 +10,22 @@ export function GetAppPath() {
   return window['go']['controller']['Server']['GetAppPath']();
 }
 
+export function GetCLIMCPEnabled() {
+  return window['go']['controller']['Server']['GetCLIMCPEnabled']();
+}
+
+export function GetCtx() {
+  return window['go']['controller']['Server']['GetCtx']();
+}
+
+export function GetLocalServiceToken() {
+  return window['go']['controller']['Server']['GetLocalServiceToken']();
+}
+
+export function GetPortConfig() {
+  return window['go']['controller']['Server']['GetPortConfig']();
+}
+
 export function InitMianSha() {
   return window['go']['controller']['Server']['InitMianSha']();
 }
@@ -20,6 +36,10 @@ export function Log(arg1) {
 
 export function Schema(arg1) {
   return window['go']['controller']['Server']['Schema'](arg1);
+}
+
+export function SetCLIMCPEnabled(arg1) {
+  return window['go']['controller']['Server']['SetCLIMCPEnabled'](arg1);
 }
 
 export function SetCtx(arg1) {

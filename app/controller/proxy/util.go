@@ -2,11 +2,12 @@ package proxy
 
 import (
 	"fmt"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	runtime2 "runtime"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // 获取应用基础目录
@@ -39,7 +40,8 @@ func PathExist(path string) string {
 
 func Db() *gorm.DB {
 	//打开数据库，如果不存在，则创建
-	db, err := gorm.Open(sqlite.Open(fmt.Sprintf("%s\\config.db", GetAppBaseDir())), &gorm.Config{})
+	dbPath := filepath.Join(GetAppBaseDir(), "config.db")
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		fmt.Println("数据库连接失败")
 	}

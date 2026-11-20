@@ -22,6 +22,10 @@ export function GetAppPath() {
   return window['go']['infoDeal']['QueryIp']['GetAppPath']();
 }
 
+export function GetCtx() {
+  return window['go']['infoDeal']['QueryIp']['GetCtx']();
+}
+
 export function InitMianSha() {
   return window['go']['infoDeal']['QueryIp']['InitMianSha']();
 }
@@ -32,6 +36,10 @@ export function Log(arg1) {
 
 export function QueryIPLocation(arg1) {
   return window['go']['infoDeal']['QueryIp']['QueryIPLocation'](arg1);
+}
+
+export function QueryIPLocationWithAuthorized(arg1) {
+  return window['go']['infoDeal']['QueryIp']['QueryIPLocationWithAuthorized'](arg1);
 }
 
 export function Schema(arg1) {

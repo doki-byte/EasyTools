@@ -1,67 +1,81 @@
 <template>
-  <!-- 原有代码保持不变 -->
-  <a-row :gutter="12">
-    <a-col :span="18">
-      <a-alert type='info'>如欲使用Hunter等进行搜索，请先配置好Key哦</a-alert>
-    </a-col>
-    <a-col :span="6">
-      <a-button-group>
-        <a-button type="outline" size="large" :disabled="loading" @click="getProxies">
-          {{ loading ? '获取中...' : '获取' }}
-        </a-button>
-        <a-button type="outline" status="success" size="large" :disabled="loading || datasets.length === 0" @click="useFetchedDatasets">使用</a-button>
-        <a-button type="outline" status="danger" size="large" :disabled="!loading" @click="cancelFetch">取消</a-button>
-      </a-button-group>
-    </a-col>
-  </a-row>
+  <el-row :gutter="12">
+    <el-col :span="18">
+      <el-alert type="info" :closable="false" show-icon>
+        便携代理模块已直接复用空间测绘的搜索能力，API Key 请在配置页统一管理。
+      </el-alert>
+    </el-col>
+    <el-col :span="6">
+      <div class="fetch-actions">
+        <el-button :disabled="loading" @click="getProxies">{{ loading ? '获取中...' : '获取' }}</el-button>
+        <el-button type="success" plain :disabled="loading || datasets.length === 0" @click="useFetchedDatasets">使用</el-button>
+        <el-button type="danger" plain :disabled="!loading" @click="cancelFetch">取消</el-button>
+      </div>
+    </el-col>
+  </el-row>
   <br/>
 
-  <!-- 日志显示区域 -->
   <div v-if="loading" class="log-container">
-    <a-alert type="info" :closable="false">
-      <template #icon>
-        <a-spin :size="16" />
-      </template>
-      <div class="log-content">
-        <div class="log-header">
-          <span class="log-title">获取进度</span>
-          <span class="log-count" v-if="datasets.length > 0">已获取 {{ datasets.length }} 条数据</span>
-        </div>
-        <div class="log-messages">
-          <div
+    <el-alert type="info" :closable="false">
+      <template #default>
+        <div class="log-content">
+          <div class="log-header">
+            <el-icon class="is-loading fetch-spin"><Loading /></el-icon>
+            <span class="log-title">获取进度</span>
+            <span class="log-count" v-if="datasets.length > 0">已获取 {{ datasets.length }} 条数据</span>
+          </div>
+          <div class="log-messages">
+            <div
               v-for="(log, index) in displayedLogs"
               :key="index"
               class="log-item"
               :class="getLogClass(log)"
-          >
-            <span class="log-time">{{ log.time }}</span>
-            <span class="log-text">{{ log.message }}</span>
+            >
+              <span class="log-time">{{ log.time }}</span>
+              <span class="log-text">{{ log.message }}</span>
+            </div>
           </div>
+          <p class="log-tips et-muted-tip">如长时间无响应，可点击「取消」按钮中断操作</p>
         </div>
-        <div class="log-tips">
-          <a-typography-text type="secondary">
-            如长时间无响应，可点击"取消"按钮中断操作
-          </a-typography-text>
-        </div>
-      </div>
-    </a-alert>
+      </template>
+    </el-alert>
   </div>
 
-  <a-table
-      :columns="columns"
-      :loading="loading"
-      :data="displayedData"
-      :pagination="paginationConfig"
-      :scroll="{ y: '615px' }"
-      @page-change="handlePageChange"
-      @page-size-change="handlePageSizeChange"
-  />
+  <div class="table-wrapper">
+    <div class="proxy-table-wrap glass-card">
+      <el-table
+        :data="displayedData"
+        v-loading="loading"
+        stripe
+        border
+        class="proxy-table-inner"
+        style="width: 100%"
+        max-height="520"
+      >
+        <el-table-column prop="key" label="序号" width="150" />
+        <el-table-column prop="kind" label="类型" width="220" />
+        <el-table-column prop="source" label="来源" width="220" />
+        <el-table-column prop="address" label="IP" min-width="200" show-overflow-tooltip />
+      </el-table>
+      <div class="proxy-table-pagination">
+        <el-pagination
+          v-model:current-page="paginationState.current"
+          v-model:page-size="paginationState.pageSize"
+          :total="datasets.length"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          background
+        />
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import {ref, onMounted, onUnmounted, nextTick, computed, reactive} from "vue";
 import {FetchProxies, UseFetchedDatasets} from "../../../wailsjs/go/proxy/Proxy";
-import {Notification} from '@arco-design/web-vue';
+import { ElMessage } from 'element-plus';
+import { Loading } from '@element-plus/icons-vue';
 import {useConfigStore} from "./store/types";
 import { EventsOn, EventsOff } from '../../../wailsjs/runtime'
 
@@ -103,7 +117,7 @@ const currentSource = ref('')
 const eventStatus = ref('等待事件...')
 const fallbackProgress = ref(false)
 const cancelToken = ref<any>(null)
-const timeoutRef = ref<NodeJS.Timeout | null>(null)
+const timeoutRef = ref<ReturnType<typeof setTimeout> | null>(null)
 
 // 分页状态管理
 const paginationState = reactive({
@@ -124,53 +138,8 @@ const displayedLogs = computed(() => {
   return logs.value.slice(-10)
 })
 
-// 分页配置 - 使用响应式
-const paginationConfig = computed(() => ({
-  current: paginationState.current,
-  pageSize: paginationState.pageSize,
-  total: datasets.value.length,
-  showPageSize: true,
-  showJumper: true,
-  showTotal: true,
-  pageSizeOptions: [10, 20, 50, 100],
-  pageSizeText: '每页条数',
-  totalText: '总计',
-  jumpText: '跳至'
-}))
-
-const columns = [
-  {
-    title: '序号',
-    dataIndex: 'key',
-    width: 80,
-  },
-  {
-    title: '类型',
-    dataIndex: 'kind',
-    width: 120,
-  },
-  {
-    title: '来源',
-    dataIndex: 'source',
-    width: 120,
-  },
-  {
-    title: 'IP',
-    dataIndex: 'address',
-    width: 150,
-    ellipsis: true,
-    tooltip: true,
-  },
-]
-
-// 分页事件处理
-const handlePageChange = (page: number) => {
-  paginationState.current = page
-}
-
-const handlePageSizeChange = (size: number) => {
-  paginationState.pageSize = size
-  paginationState.current = 1
+const ensureAuthorized = async (): Promise<boolean> => {
+  return true;
 }
 
 // 添加日志
@@ -203,9 +172,10 @@ const getLogClass = (log: LogEntry) => {
   }
 }
 
-// 获取当前xui模式
+// 获取当前xui模式（1或2表示开启）
 const getCurrentXuiMode = () => {
-  return configStore.getXui() === '1'
+  const xuiMode = configStore.getXui();
+  return xuiMode === '1' || xuiMode === '2';
 }
 
 // 监听后端进度事件
@@ -317,17 +287,9 @@ const setupProgressListener = () => {
 
       // 根据模式显示不同的成功消息
       if (xuiMode) {
-        Notification.success({
-          title: 'X-UI扫描完成',
-          content: 'X-UI面板扫描完成，请查看Excel文件获取节点信息',
-          duration: 3000,
-        })
+        ElMessage.success('X-UI面板扫描完成，请查看Excel文件获取节点信息')
       } else {
-        Notification.success({
-          title: '获取完成',
-          content: message,
-          duration: 2000,
-        })
+        ElMessage.success(message)
       }
     })
   })
@@ -351,11 +313,7 @@ const setupProgressListener = () => {
       timeoutRef.value = null
     }
 
-    Notification.error({
-      title: '获取失败',
-      content: errorMessage,
-      duration: 3000,
-    })
+    ElMessage.error(errorMessage)
   })
 
   console.log('✅ 事件监听器设置完成')
@@ -375,11 +333,7 @@ const cancelFetch = () => {
       timeoutRef.value = null
     }
 
-    Notification.info({
-      title: '已取消',
-      content: '数据获取操作已被取消',
-      duration: 2000,
-    })
+    ElMessage.info('数据获取操作已被取消')
   }
 }
 
@@ -392,8 +346,17 @@ const cleanup = () => {
   cancelToken.value = { cancelled: true }
 }
 
-function getProxies() {
+async function getProxies() {
   console.log('🚀 开始获取代理数据')
+
+  // 启动前做一次授权检查（只有 X-UI 模式才需要校验）
+  const xuiMode = getCurrentXuiMode();
+  if (xuiMode) {
+    const ok = await ensureAuthorized();
+    if (!ok) {
+      return;
+    }
+  }
 
   // 先清理之前的资源
   cleanup()
@@ -429,35 +392,17 @@ function getProxies() {
         addLog(`已获取 ${datasets.value.length} 条代理数据`, 'success')
 
         if (currentXuiMode) {
-          Notification.success({
-            title: 'X-UI扫描部分完成',
-            content: `由于部分面板响应超时，已扫描 ${datasets.value.length} 个X-UI面板`,
-            duration: 3000,
-          })
+          ElMessage.success(`由于部分面板响应超时，已扫描 ${datasets.value.length} 个X-UI面板`)
         } else {
-          Notification.success({
-            title: '部分数据获取完成',
-            content: `由于部分API响应超时，已获取 ${datasets.value.length} 条代理数据`,
-            duration: 3000,
-          })
+          ElMessage.success(`由于部分API响应超时，已获取 ${datasets.value.length} 条代理数据`)
         }
       } else {
         // 完全没有数据
         addLog('请求超时，未获取到任何数据', 'warning')
         if (currentXuiMode) {
-          Notification.warning({
-            title: '扫描超时',
-            content: '扫描X-UI面板时间过长，可能是网络问题或面板服务不稳定，请稍后重试',
-            duration: 3000,
-            closable: true,
-          })
+          ElMessage.warning('扫描X-UI面板时间过长，可能是网络问题或面板服务不稳定，请稍后重试')
         } else {
-          Notification.warning({
-            title: '请求超时',
-            content: '获取代理数据时间过长，可能是网络问题或API服务不稳定，请稍后重试',
-            duration: 3000,
-            closable: true,
-          })
+          ElMessage.warning('获取代理数据时间过长，可能是网络问题或API服务不稳定，请稍后重试')
         }
       }
     }
@@ -481,12 +426,7 @@ function getProxies() {
 
     if (res.Code !== 200) {
       addLog(`错误: ${res.Message}`, 'error')
-      Notification.error({
-        title: '错误',
-        content: res.Message,
-        duration: 3000,
-        closable: true,
-      })
+      ElMessage.error(res.Message)
       loading.value = false
       return
     }
@@ -494,7 +434,28 @@ function getProxies() {
     // 处理最终数据
     try {
       if (res.Data) {
-        const finalData = JSON.parse(res.Data) as ProxyInfo[]
+        let parsed: any
+        try {
+          parsed = JSON.parse(res.Data)
+        } catch (e) {
+          console.error('解析最终数据 JSON 失败:', e, '原始数据:', res.Data)
+          addLog('解析返回数据 JSON 时发生错误', 'error')
+          loading.value = false
+          ElMessage.error('解析返回数据 JSON 时发生错误')
+          return
+        }
+
+        // 后端可能返回 null / 对象等非数组结构，这里统一做兼容
+        let finalData: ProxyInfo[] = []
+        if (Array.isArray(parsed)) {
+          finalData = parsed
+        } else if (parsed && Array.isArray(parsed?.proxies)) {
+          // 兼容形如 { proxies: [...] } 的结构
+          finalData = parsed.proxies
+        } else {
+          console.warn('最终数据不是数组，按无数据处理。parsed =', parsed)
+        }
+
         console.log('🎯 最终数据长度:', finalData.length)
 
         if (finalData.length > 0) {
@@ -511,17 +472,9 @@ function getProxies() {
           addLog(successMessage, 'success')
 
           if (currentXuiMode) {
-            Notification.success({
-              title: 'X-UI扫描完成',
-              content: `共扫描 ${finalData.length} 个X-UI面板，节点信息已保存到Excel`,
-              duration: 3000,
-            })
+            ElMessage.success(`共扫描 ${finalData.length} 个X-UI面板，节点信息已保存到Excel`)
           } else {
-            Notification.success({
-              title: '获取完成',
-              content: `共获取 ${finalData.length} 条代理数据`,
-              duration: 2000,
-            })
+            ElMessage.success(`共获取 ${finalData.length} 条代理数据`)
           }
         } else {
           loading.value = false
@@ -529,22 +482,14 @@ function getProxies() {
           const noDataMessage = currentXuiMode ? '未扫描到任何可用的X-UI面板' : '未获取到任何代理数据'
 
           addLog(noDataMessage, 'warning')
-          Notification.warning({
-            title: '无数据',
-            content: noDataMessage,
-            duration: 2000,
-          })
+          ElMessage.warning(noDataMessage)
         }
       }
     } catch (error) {
       console.error('解析最终数据失败:', error)
       addLog('解析返回数据时发生错误', 'error')
       loading.value = false
-      Notification.error({
-        title: '数据处理失败',
-        content: '解析返回数据时发生错误',
-        duration: 2000,
-      })
+      ElMessage.error('解析返回数据时发生错误')
     }
 
     configStore.setStatus(1)
@@ -566,12 +511,7 @@ function getProxies() {
     console.error('❌ FetchProxies请求失败:', error)
     loading.value = false
     addLog('获取代理数据失败: ' + error.message, 'error')
-    Notification.error({
-      title: '请求失败',
-      content: error.message,
-      duration: 3000,
-      closable: true,
-    })
+    ElMessage.error(error.message)
   })
 }
 
@@ -594,64 +534,46 @@ onUnmounted(() => {
   cleanup()
 })
 
-function useFetchedDatasets() {
+async function useFetchedDatasets() {
   if (datasets.value.length === 0) {
-    Notification.warning({
-      title: '无数据',
-      content: '请先获取代理数据',
-      duration: 2000,
-    })
+    ElMessage.error('请先获取代理数据信息')
     return
+  }
+
+  // 使用数据前也做一次授权确认（只有 X-UI 模式才需要校验）
+  const currentXuiMode = getCurrentXuiMode();
+  if (currentXuiMode) {
+    const ok = await ensureAuthorized();
+    if (!ok) {
+      return;
+    }
   }
 
   // 立即触发跳转到运行模块
   emit('switchTab', '1')
 
-  // 根据xui模式显示不同的消息
-  const currentXuiMode = getCurrentXuiMode()
+  // 根据xui模式显示不同的消息（如果上面已经获取过，这里可以复用）
   const startMessage = currentXuiMode ?
       'X-UI面板信息已保存到Excel，正在跳转到运行页面...' :
       '正在跳转到运行页面...'
 
-  Notification.info({
-    title: '任务开始',
-    content: startMessage,
-    duration: 1500,
-    closable: true,
-  });
+  ElMessage.info(startMessage);
 
   UseFetchedDatasets().then(res => {
     if (res.Code !== 200) {
-      Notification.error({
-        title: '错误',
-        content: res.Message,
-        duration: 2000,
-        closable: true,
-      });
+      ElMessage.error(res.Message);
       configStore.setStatus(3)
       return;
     }
 
     // 根据xui模式显示不同的成功消息
     if (currentXuiMode) {
-      Notification.success({
-        title: 'X-UI扫描完成',
-        content: 'X-UI面板信息已保存到Excel文件，请手动查看使用',
-        duration: 3000,
-      });
+      ElMessage.success('X-UI面板信息已保存到Excel文件，请手动查看使用');
     } else {
-      Notification.success({
-        title: '任务完成',
-        content: res.Message,
-        duration: 2000,
-      });
+      ElMessage.success(res.Message);
     }
   }).catch(error => {
-    Notification.error({
-      title: '请求失败',
-      content: error.message,
-      duration: 2000,
-    })
+    ElMessage.error(error.message)
   })
 }
 </script>
@@ -747,70 +669,54 @@ function useFetchedDatasets() {
   text-align: center;
 }
 
-/* 添加表格行进入动画 */
-:deep(.arco-table-tr) {
-  transition: all 0.3s ease;
+.fetch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
-:deep(.arco-table-tr) {
-  animation: fadeIn 0.5s ease-in;
+.fetch-spin {
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.debug-info {
-  margin-bottom: 16px;
-}
-
-.debug-info :deep(.arco-alert-content) {
+.et-muted-tip {
+  margin: 8px 0 0;
   font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
-/* 表格样式优化 */
-:deep(.arco-table-pagination) {
-  margin-top: 16px;
+.table-wrapper {
+  position: relative;
+  width: 100%;
 }
 
-:deep(.arco-table-cell) {
-  word-break: break-all;
+.proxy-table-wrap.glass-card {
+  background-color: #faf9f6;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
 }
 
-/* 响应式调整 */
+.proxy-table-inner :deep(.el-table__body-wrapper) {
+  max-height: calc(100vh - 520px);
+}
+
+.proxy-table-pagination {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
   .log-content {
     font-size: 12px;
   }
-
-  :deep(.arco-table) {
+  .proxy-table-inner {
     font-size: 12px;
   }
-}
-
-/* 滚动条样式 */
-.log-messages::-webkit-scrollbar {
-  width: 4px;
-}
-
-.log-messages::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 2px;
-}
-
-.log-messages::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 2px;
-}
-
-.log-messages::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
 }
 </style>

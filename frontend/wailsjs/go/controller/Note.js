@@ -22,6 +22,10 @@ export function GetAppPath() {
   return window['go']['controller']['Note']['GetAppPath']();
 }
 
+export function GetCtx() {
+  return window['go']['controller']['Note']['GetCtx']();
+}
+
 export function GetFiles(arg1) {
   return window['go']['controller']['Note']['GetFiles'](arg1);
 }
@@ -32,6 +36,10 @@ export function GetNotesDir() {
 
 export function InitMianSha() {
   return window['go']['controller']['Note']['InitMianSha']();
+}
+
+export function LoadDirectory(arg1) {
+  return window['go']['controller']['Note']['LoadDirectory'](arg1);
 }
 
 export function Log(arg1) {

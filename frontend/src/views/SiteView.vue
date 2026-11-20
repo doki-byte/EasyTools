@@ -95,7 +95,7 @@
 
     <!-- 右键菜单 -->
     <ul class="context-menu" v-if="contextMenuVisible"
-      :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }">
+        :style="contextMenuStyle">
       <li v-for="(option, index) in contextMenuOptions" :key="index" @click="option.action">
         <i :class="option.icon"></i> {{ option.label }}
       </li>
@@ -168,17 +168,19 @@ import {
   UpdateSiteCategory,
   FetchSiteInfo // <- 新增导入
 } from "../../wailsjs/go/controller/Site";
-import {ReadImageAsBase64} from "../../wailsjs/go/controller/Tool";
+import {ReadImageAsBase64} from "../../wailsjs/go/controller/Site";
 import {BrowserOpenURL} from "../../wailsjs/runtime"; // 打开链接的方法
 import {Search} from "@element-plus/icons-vue";
 import {ElNotification, ElTree} from "element-plus";
 import {GetConfigDir, GetOpenFilePath, OpenPath} from "../../wailsjs/go/system/System";
-
+import {GetPortConfig} from "../../wailsjs/go/controller/Server";
+import { confirmDangerousAction, DANGER_DELETE_TOKEN } from '@/utils/dangerConfirm';
 export default {
   name: "SiteView",
   components: { ElTree,Search },
   data() {
     return {
+      portConfig: null,
       siteList: [],
       resolvedIcons: {}, // 图标缓存 {id: resolvedPath}
 
@@ -199,6 +201,8 @@ export default {
       contextMenuVisible: false,
       contextMenuOptions: [], // 动态右键菜单选项
       contextMenuPosition: { x: 0, y: 0 },
+      menuItemHeight: 40, // 每个菜单项的大致高度
+      menuWidth: 200, // 菜单宽度
       selectedCmd: null,
       selectedIndex: null,
       dialogVisible: false,
@@ -249,6 +253,37 @@ export default {
         }
       ];
     },
+    // 新增：计算菜单位置样式，包含边界检测
+    contextMenuStyle() {
+      let { x, y } = this.contextMenuPosition;
+      const menuHeight = this.contextMenuOptions.length * this.menuItemHeight;
+
+      // 检测右边界
+      if (x + this.menuWidth > window.innerWidth) {
+        x = window.innerWidth - this.menuWidth - 10;
+      }
+
+      // 检测下边界
+      if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 10;
+      }
+
+      // 检测左边界
+      if (x < 10) {
+        x = 10;
+      }
+
+      // 检测上边界
+      if (y < 10) {
+        y = 10;
+      }
+
+      return {
+        top: `${y}px`,
+        left: `${x}px`,
+        position: 'fixed' // 确保使用固定定位
+      };
+    },
     // 处理后的工具列表，包含解析后的图标
     processedSiteList() {
       return this.siteList.map(category => {
@@ -265,6 +300,18 @@ export default {
     },
   },
   methods: {
+    async loadPortConfig() {
+      try {
+        this.portConfig = await GetPortConfig();
+        console.log('端口配置:', this.portConfig);
+      } catch (error) {
+        console.error('获取端口配置失败:', error);
+        // 使用默认端口作为后备
+        this.portConfig = {
+          mainPort: 52867,
+        };
+      }
+    },
     // 打开并自动调整到边缘
     openSearch() {
       this.searchExpanded = true;
@@ -442,7 +489,7 @@ export default {
 
       // 其他情况
       // console.log("返回远程路径:", remoteUrl);
-      return `http://127.0.0.1:52867/icon/${icon}`;
+      return `http://127.0.0.1:${this.portConfig.mainPort}/icon/${icon}`;
     },
 
     getMimeType(ext) {
@@ -472,16 +519,16 @@ export default {
 
       const itemElement = event.target.closest(".item");
       const cateElement = event.target.closest(".cate");
+
       if (itemElement) {
-        // console.log("点击了站点菜单");
-        // 点击的是 .item 元素
+        // 点击的是站点项
         this.selectedCmd = cmd;
         this.selectedIndex = index;
         this.contextMenuOptions = [
           { label: "新增", icon: "el-icon-circle-plus", action: () => this.openDialog("add") },
           { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("siteEdit") },
           { label: "删除", icon: "el-icon-delete", action: this.deleteCmd },
-          { label: "打开图标文件夹", icon: "el-icon-delete", action: this.openIconDir },
+          { label: "打开图标文件夹", icon: "el-icon-folder-opened", action: this.openIconDir },
         ];
       } else if (cateElement) {
         // 点击的是分类
@@ -490,30 +537,29 @@ export default {
         const category = this.siteList[catIndex];
 
         this.selectedIndex = catIndex;
-        this.selectedCmd = { category: category.title }; // 把分类名塞进 selectedCmd
+        this.selectedCmd = { category: category.title };
 
         this.contextMenuOptions = [
           { label: "修改", icon: "el-icon-edit", action: () => this.openDialog("cateEdit") },
           {
             label: "删除",
             icon: "el-icon-delete",
-            action: () => {
-              this.$confirm(
-                  `是否确认删除分类「${category.title}」？该分类下的所有网址也会被删除！`,
-                  '警告',
-                  {
-                    confirmButtonText: '确定',
-                    cancelButtonText: '取消',
-                    type: 'warning',
-                  }
-              )
-                  .then(() => this.deleteSiteCategory(category.title))
-                  .catch(() => {});
+            action: async () => {
+              try {
+                await confirmDangerousAction({
+                  title: '警告',
+                  message: `是否确认删除分类「${category.title}」？该分类下的所有网址也会被删除。`,
+                  expectedInput: DANGER_DELETE_TOKEN
+                });
+                await this.deleteSiteCategory(category.title);
+              } catch {
+                /* 取消 */
+              }
             },
           },
         ];
       } else {
-        // 点击的不是 .item 元素
+        // 点击空白区域
         this.selectedCmd = null;
         this.selectedIndex = null;
         this.contextMenuOptions = [
@@ -521,7 +567,12 @@ export default {
         ];
       }
 
-      this.contextMenuPosition = { x: event.clientX, y: event.clientY };
+      // 设置初始位置
+      this.contextMenuPosition = {
+        x: event.clientX,
+        y: event.clientY
+      };
+
       this.contextMenuVisible = true;
     },
 
@@ -674,10 +725,11 @@ export default {
       this.hideContextMenu();
       if (this.selectedCmd && this.selectedCmd.id) {
         try {
-          await this.$confirm("确认要删除此命令吗？", "删除确认", {
-            confirmButtonText: "删除",
-            cancelButtonText: "取消",
-            type: "warning",
+          await confirmDangerousAction({
+            title: '删除确认',
+            message: '确认要删除此命令吗？',
+            expectedInput: DANGER_DELETE_TOKEN,
+            confirmButtonText: '删除'
           });
           await DeleteSite(this.selectedCmd.id);
           console.log("删除命令成功:", this.selectedCmd);
@@ -865,10 +917,11 @@ export default {
     },
   },
 
-  mounted() {
-    this.loadSiteList();
-    this.loadAllIcons();
-    this.loadCategories();
+  async mounted() {
+    await this.loadPortConfig();
+    await this.loadSiteList();
+    await this.loadAllIcons();
+    await this.loadCategories();
     // 全局右键菜单与点击隐藏
     document.addEventListener('contextmenu', this.handleGlobalContextMenu);
     document.addEventListener('click', this.hideContextMenu);
@@ -890,7 +943,10 @@ export default {
   width: 140px;
   max-height: 30px; /* 默认收起状态的高度 */
   overflow: hidden; /* 隐藏超出内容 */
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(255, 93, 93, 0.21);
   z-index: 1000;
@@ -916,7 +972,7 @@ export default {
     .cate {
       margin: 10px 0;
       font-size: 16px;
-      color: #000000;
+      color: #ffffff;
       font-weight: 600;
     }
 
@@ -926,7 +982,7 @@ export default {
 
       .item {
         padding: 10px;
-        background: #f5fafd;
+        /* background 由 themeBackground.js 动态控制 */
         margin: 10px 10px 0 0;
         width: calc(33.33% - 30px);
         min-height: 40px;
@@ -953,7 +1009,7 @@ export default {
             white-space: nowrap;
             height: 22px;
             color: #242f40;
-            font-weight: 500;
+            font-weight: 700;
           }
 
           .remark {
@@ -961,7 +1017,7 @@ export default {
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            color: #b2b0c0;
+            color: #42404f;
             font-size: 12px;
             line-height: 18px;     /* 新增：设置行间距为20px */
             overflow: hidden;      /* 确保超出部分被隐藏 */
@@ -1070,14 +1126,17 @@ export default {
 
   .context-menu {
     position: fixed;
-    z-index: 1000;
+    z-index: 9999; /* 提高 z-index 确保在最上层 */
     background-color: #ffffff;
     border: 1px solid #e6e6e6;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     list-style: none;
     padding: 8px 0;
     margin: 0;
+    width: 150px; /* 固定宽度 */
+    max-height: 200px; /* 最大高度限制 */
+    overflow-y: auto; /* 如果菜单项太多，允许滚动 */
 
     li {
       padding: 10px 16px;
@@ -1087,11 +1146,15 @@ export default {
       align-items: center;
       cursor: pointer;
       transition: background-color 0.2s, color 0.2s;
+      white-space: nowrap; /* 防止文字换行 */
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       i {
         margin-right: 8px;
         font-size: 16px;
         color: #666666;
+        flex-shrink: 0; /* 防止图标被压缩 */
       }
 
       &:hover {
@@ -1101,39 +1164,6 @@ export default {
         i {
           color: #1e80ff;
         }
-      }
-    }
-  }
-
-  .custom-dialog {
-    .el-dialog__header {
-      background-color: #f5f5f5;
-      border-bottom: 1px solid #e6e6e6;
-      border-radius: 8px 8px 0 0;
-      font-weight: 600;
-    }
-
-    .el-dialog__footer {
-      border-top: none;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .el-form-item {
-      .el-input__inner {
-        border-radius: 4px;
-      }
-
-      .el-switch {
-        width: 60px;
-      }
-    }
-
-    .el-button {
-      border-radius: 4px;
-
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
   }

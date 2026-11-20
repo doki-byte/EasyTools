@@ -109,7 +109,7 @@ func (rs *RequestServer) getRequest(handle string) (*Request, bool) {
 	return r, ok
 }
 
-// Close the Request and clear from openRequests map
+// Close the Request and clear from openRequests MapCheck
 func (rs *RequestServer) closeRequest(handle string) error {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()

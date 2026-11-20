@@ -20,6 +20,8 @@ export function GetProfile():Promise<config.Config>;
 
 export function Info(arg1:Array<any>):Promise<void>;
 
+export function LoadFileFromPath(arg1:string):Promise<config.Config>;
+
 export function SaveConfig(arg1:config.Config):Promise<string>;
 
 export function SetCtx(arg1:context.Context):Promise<void>;

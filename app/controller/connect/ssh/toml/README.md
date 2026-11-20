@@ -328,7 +328,7 @@ the result looks like:
 toml.Unmarshal([]byte(data), &d)
 fmt.Printf("toml v2: %#v\n", d)
 
-// toml v2: main.doc{A:map[string]interface {}{"B":"After"}}
+// toml v2: main.doc{A:MapCheck[string]interface {}{"B":"After"}}
 ```
 
 This is to match `encoding/json`'s behavior. There is no way to make the v2

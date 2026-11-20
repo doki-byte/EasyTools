@@ -3,12 +3,11 @@
 package unwxapp
 
 import (
+	"EasyTools/app/controller/proxy"
 	"EasyTools/app/controller/system"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -18,68 +17,27 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"gorm.io/gorm"
+
+	"EasyTools/app/model"
 )
 
-var ansiRegex = regexp.MustCompile(`\x1B\[[0-9;]*[mKJH]`)
-
-// 微信配置表
-type WechatConfig struct {
-	ID            int    `gorm:"primarykey" json:"id"`
-	AppletPath    string `json:"applet_path" gorm:"column:applet_path"`
-	Rules         string `json:"rules" gorm:"column:rules"` // JSON格式存储规则
-	AutoDecompile bool   `json:"auto_decompile" gorm:"column:auto_decompile"`
-}
-
-func (*WechatConfig) TableName() string {
-	return "wechat_config"
-}
-
-// 小程序信息表
-type MiniAppInfo struct {
-	ID            int       `gorm:"primarykey" json:"id"`
-	AppID         string    `json:"app_id" gorm:"column:app_id;index"`
-	Nickname      string    `json:"nickname" gorm:"column:nickname"`
-	Username      string    `json:"username" gorm:"column:username"`
-	Description   string    `json:"description" gorm:"column:description"`
-	Avatar        string    `json:"avatar" gorm:"column:avatar"`
-	UsesCount     string    `json:"uses_count" gorm:"column:uses_count"`
-	PrincipalName string    `json:"principal_name" gorm:"column:principal_name"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-}
-
-func (*MiniAppInfo) TableName() string {
-	return "mini_app_info"
-}
-
-// 版本任务表
-type VersionTask struct {
-	ID              int       `gorm:"primarykey" json:"id"`
-	AppID           string    `json:"app_id" gorm:"column:app_id;index"`
-	Version         string    `json:"version" gorm:"column:version"`
-	DecompileStatus string    `json:"decompile_status" gorm:"column:decompile_status"`
-	MatchStatus     string    `json:"match_status" gorm:"column:match_status"`
-	Message         string    `json:"message" gorm:"column:message"`
-	Matched         string    `json:"matched" gorm:"column:matched;type:text"`
-	UpdateDate      string    `json:"update_date" gorm:"column:update_date"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
-}
-
-func (*VersionTask) TableName() string {
-	return "version_task"
-}
+// 使用 model 包中的类型定义
+type WechatConfig = model.WechatConfig
+type MiniAppInfo = model.MiniAppInfo
+type VersionTask = model.VersionTask
 
 type VersionTaskStatus struct {
-	Number          string `json:"Number"`
-	DecompileStatus string `json:"DecompileStatus"`
-	MatchStatus     string `json:"MatchStatus"`
-	Message         string `json:"Message"`
+	Number          string   `json:"Number"`
+	DecompileStatus string   `json:"DecompileStatus"`
+	MatchStatus     string   `json:"MatchStatus"`
+	Message         string   `json:"Message"`
+	WxapkgTags      []string `json:"WxapkgTags"`
 }
 
 type InfoToFront struct {
@@ -96,11 +54,19 @@ type UnWxapp struct {
 	mutex               sync.Mutex
 	autoDecompileTicker *time.Ticker
 	stopAutoDecompile   chan bool
+	appidQuotaEmitState int32 // 由 appid_query 用 atomic：本批 GetAllMiniApp 内额度提示仅发一次
+	appidKeyStatusMu    sync.Mutex
+	appidKeyStatuses    []appidKeyRuntimeStatus // 与配置中有效密钥行一一对应，由 appid_query 更新
+	appidMPEmbedMu      sync.Mutex
+	appidMPEmbedLast    time.Time
+	// 单次 GetAllMiniApp 批次内：内嵌 MP 连续失败达阈值后跳过后续 searchWxaembedded（仍可走 Open API）
+	mpEmbedBatchConsecutiveFails atomic.Int32
+	mpEmbedBatchSkipMP          atomic.Bool
 }
 
 func NewUnWxapp() *UnWxapp {
 	app := &UnWxapp{
-		http: &http.Client{},
+		http: proxy.GlobalProxyManager.GetHTTPClient(),
 	}
 	return app
 }
@@ -131,11 +97,40 @@ func (u *UnWxapp) saveConfig(config *WechatConfig) error {
 // ============ 公开接口 ============
 
 func (u *UnWxapp) InitCheck() bool {
-	if _, err := exec.LookPath("node"); err != nil {
-		log.Println("Node.js未安装或不在PATH中")
-		return false
+	if u.checkNodeInPath() {
+		return true
 	}
-	return true
+
+	if u.checkCommonNodePaths() {
+		return true
+	}
+
+	return false
+}
+
+func (u *UnWxapp) checkNodeInPath() bool {
+	if _, err := exec.LookPath("node"); err == nil {
+		log.Println("检测到 Node.js")
+		return true
+	}
+	return false
+}
+
+func (u *UnWxapp) checkCommonNodePaths() bool {
+	commonPaths := []string{
+		filepath.Join(os.Getenv("ProgramFiles"), "nodejs", "node.exe"),
+		filepath.Join(os.Getenv("ProgramFiles(x86)"), "nodejs", "node.exe"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "nodejs", "node.exe"),
+		filepath.Join(os.Getenv("APPDATA"), "npm", "node.exe"),
+	}
+
+	for _, path := range commonPaths {
+		if _, err := os.Stat(path); err == nil {
+			log.Printf("✓ 在 %s 检测到 Node.js\n", path)
+			return true
+		}
+	}
+	return false
 }
 
 func (u *UnWxapp) SetAppletPath(path string) error {
@@ -219,14 +214,83 @@ func (u *UnWxapp) ClearApplet() error {
 		return errors.New("Applet路径未设置")
 	}
 
-	// 删除整个小程序目录
-	if err := os.RemoveAll(config.AppletPath); err != nil {
-		return fmt.Errorf("删除Applet目录失败: %v", err)
+	appletPath, err := filepath.Abs(config.AppletPath)
+	if err != nil {
+		return fmt.Errorf("获取绝对路径失败: %v", err)
 	}
 
-	// 重新创建空目录
-	if err := os.MkdirAll(config.AppletPath, 0755); err != nil {
-		return fmt.Errorf("重新创建Applet目录失败: %v", err)
+	log.Printf("开始清空Applet目录: %s", appletPath)
+
+	// 检查路径是否是users目录（新版本路径结构）
+	normalizedPath := strings.ToLower(strings.TrimRight(appletPath, "\\/"))
+	baseName := strings.ToLower(filepath.Base(appletPath))
+	isUsersDir := baseName == "users" || strings.HasSuffix(normalizedPath, "users")
+
+	if isUsersDir {
+		// log.Printf("检测到users目录，只删除packages目录内容，保留数据库文件")
+
+		// 遍历所有用户目录，只删除packages目录下的内容
+		userEntries, err := os.ReadDir(appletPath)
+		if err != nil {
+			return fmt.Errorf("读取users目录失败: %v", err)
+		}
+
+		var deleteErrors []string
+		for _, userEntry := range userEntries {
+			if !userEntry.IsDir() {
+				continue
+			}
+
+			userDirName := userEntry.Name()
+			// 构建 packages 目录路径
+			packagesPath := filepath.Join(appletPath, userDirName, "applet", "packages")
+
+			// 检查packages目录是否存在
+			if isDir, err := u.isDir(packagesPath); err == nil && isDir {
+				log.Printf("删除用户 %s 的packages目录: %s", userDirName, packagesPath)
+				// 只删除packages目录下的内容，不删除整个目录结构
+				entries, err := os.ReadDir(packagesPath)
+				if err != nil {
+					log.Printf("读取packages目录失败: %s, %v", packagesPath, err)
+					continue
+				}
+
+				for _, entry := range entries {
+					entryPath := filepath.Join(packagesPath, entry.Name())
+					if err := os.RemoveAll(entryPath); err != nil {
+						// 记录错误但继续处理其他文件
+						deleteErrors = append(deleteErrors, fmt.Sprintf("%s: %v", entryPath, err))
+						log.Printf("删除失败（可能被占用）: %s, %v", entryPath, err)
+					}
+				}
+			}
+		}
+
+		if len(deleteErrors) > 0 {
+			log.Printf("部分文件删除失败（可能被其他进程占用）: %d 个错误", len(deleteErrors))
+			// 不返回错误，因为部分文件可能被微信占用，这是正常的
+		}
+	} else {
+		// 旧版本路径结构，直接删除整个目录
+		// log.Printf("使用旧版本路径结构，删除整个目录: %s", appletPath)
+		if err := os.RemoveAll(appletPath); err != nil {
+			// 如果删除失败，尝试只删除目录下的内容
+			// log.Printf("删除整个目录失败，尝试删除目录内容: %v", err)
+			entries, err := os.ReadDir(appletPath)
+			if err == nil {
+				for _, entry := range entries {
+					entryPath := filepath.Join(appletPath, entry.Name())
+					if err := os.RemoveAll(entryPath); err != nil {
+						log.Printf("删除失败（可能被占用）: %s, %v", entryPath, err)
+					}
+				}
+			}
+		} else {
+			// 重新创建空目录
+			if err := os.MkdirAll(appletPath, 0755); err != nil {
+				log.Printf("重新创建目录失败: %v", err)
+			}
+		}
 	}
 
 	// 清空任务表
@@ -236,7 +300,7 @@ func (u *UnWxapp) ClearApplet() error {
 	}
 
 	if err := db.Exec("DELETE FROM version_task").Error; err != nil {
-		return err
+		log.Printf("清空任务表失败: %v", err)
 	}
 
 	// 清空小程序信息表（可选，根据需求决定）
@@ -244,6 +308,7 @@ func (u *UnWxapp) ClearApplet() error {
 		log.Printf("清空小程序信息表失败: %v", err)
 	}
 
+	log.Printf("Applet目录清空完成")
 	return nil
 }
 
@@ -257,46 +322,109 @@ func (u *UnWxapp) ClearDecompiled() error {
 		return errors.New("Applet路径未设置")
 	}
 
-	// 获取所有小程序目录
-	entries, err := os.ReadDir(config.AppletPath)
+	appletPath, err := filepath.Abs(config.AppletPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("获取绝对路径失败: %v", err)
 	}
 
-	// 遍历所有小程序目录
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
+	log.Printf("开始清空反编译文件: %s", appletPath)
 
-		appID := entry.Name()
-		appPath := filepath.Join(config.AppletPath, appID)
+	// 检查路径是否是users目录（新版本路径结构）
+	normalizedPath := strings.ToLower(strings.TrimRight(appletPath, "\\/"))
+	baseName := strings.ToLower(filepath.Base(appletPath))
+	isUsersDir := baseName == "users" || strings.HasSuffix(normalizedPath, "users")
 
-		// 遍历版本目录
-		versionEntries, err := os.ReadDir(appPath)
+	var packagesDirs []string
+
+	if isUsersDir {
+		// log.Printf("检测到users目录，遍历所有用户目录下的packages目录")
+
+		// 遍历所有用户目录，找到packages目录
+		userEntries, err := os.ReadDir(appletPath)
 		if err != nil {
+			return fmt.Errorf("读取users目录失败: %v", err)
+		}
+
+		for _, userEntry := range userEntries {
+			if !userEntry.IsDir() {
+				continue
+			}
+
+			userDirName := userEntry.Name()
+			// 构建 packages 目录路径
+			packagesPath := filepath.Join(appletPath, userDirName, "applet", "packages")
+
+			// 检查packages目录是否存在
+			if isDir, err := u.isDir(packagesPath); err == nil && isDir {
+				// log.Printf("找到用户 %s 的packages目录: %s", userDirName, packagesPath)
+				packagesDirs = append(packagesDirs, packagesPath)
+			}
+		}
+	} else {
+		// 旧版本路径结构，直接使用传入的路径
+		// log.Printf("使用旧版本路径结构: %s", appletPath)
+		packagesDirs = append(packagesDirs, appletPath)
+	}
+
+	if len(packagesDirs) == 0 {
+		// log.Printf("未找到任何packages目录")
+		return nil
+	}
+
+	// 遍历所有packages目录，删除反编译文件
+	for _, packagesDir := range packagesDirs {
+		// log.Printf("处理packages目录: %s", packagesDir)
+
+		// 获取所有小程序目录
+		entries, err := os.ReadDir(packagesDir)
+		if err != nil {
+			log.Printf("读取packages目录失败: %s, %v", packagesDir, err)
 			continue
 		}
 
-		for _, versionEntry := range versionEntries {
-			if !versionEntry.IsDir() {
+		// 遍历所有小程序目录
+		for _, entry := range entries {
+			if !entry.IsDir() {
 				continue
 			}
 
-			version := versionEntry.Name()
-			// 获取动态包名
-			packageNames, err := u.getPackageNames(filepath.Join(appPath, version))
+			appID := entry.Name()
+			if !strings.HasPrefix(appID, "wx") {
+				continue
+			}
+
+			appPath := filepath.Join(packagesDir, appID)
+
+			// 遍历版本目录
+			versionEntries, err := os.ReadDir(appPath)
 			if err != nil {
+				log.Printf("读取版本目录失败: %s, %v", appPath, err)
 				continue
 			}
 
-			// 删除所有包名的反编译输出目录
-			for _, pkgName := range packageNames {
-				decompiledDir := filepath.Join(appPath, version, pkgName)
-				if _, err := os.Stat(decompiledDir); err == nil {
-					log.Printf("删除反编译目录: %s", decompiledDir)
-					if err := os.RemoveAll(decompiledDir); err != nil {
-						log.Printf("删除反编译目录失败: %s, %v", decompiledDir, err)
+			for _, versionEntry := range versionEntries {
+				if !versionEntry.IsDir() {
+					continue
+				}
+
+				version := versionEntry.Name()
+				versionPath := filepath.Join(appPath, version)
+
+				// 获取动态包名
+				packageNames, err := u.getPackageNames(versionPath)
+				if err != nil {
+					log.Printf("获取包名失败: %s, %v", versionPath, err)
+					continue
+				}
+
+				// 删除所有包名的反编译输出目录
+				for _, pkgName := range packageNames {
+					decompiledDir := filepath.Join(versionPath, pkgName)
+					if _, err := os.Stat(decompiledDir); err == nil {
+						log.Printf("删除反编译目录: %s", decompiledDir)
+						if err := os.RemoveAll(decompiledDir); err != nil {
+							log.Printf("删除反编译目录失败: %s, %v", decompiledDir, err)
+						}
 					}
 				}
 			}
@@ -310,7 +438,7 @@ func (u *UnWxapp) ClearDecompiled() error {
 	}
 
 	if err := db.Exec("DELETE FROM version_task").Error; err != nil {
-		return err
+		log.Printf("清空任务表失败: %v", err)
 	}
 
 	// 同时清空匹配结果
@@ -318,6 +446,7 @@ func (u *UnWxapp) ClearDecompiled() error {
 		log.Printf("清空匹配结果失败: %v", err)
 	}
 
+	log.Printf("反编译文件清空完成")
 	return nil
 }
 
@@ -339,6 +468,10 @@ func (u *UnWxapp) GetAllMiniApp() ([]InfoToFront, error) {
 		return nil, err
 	}
 
+	u.resetAppidQueryQuotaNoticeForBatch()
+	u.beginAppidKeyStatusBatch(len(splitAppidQueryAPIKeys(config.AppidQueryAPIKeys)))
+	u.resetMPEmbedBatchGate()
+
 	var result []InfoToFront
 	for _, mp := range miniPrograms {
 		versionsTask := u.createVersionTasks(mp)
@@ -346,6 +479,15 @@ func (u *UnWxapp) GetAllMiniApp() ([]InfoToFront, error) {
 		if err != nil {
 			log.Printf("处理版本任务失败: %v", err)
 			continue
+		}
+
+		for _, st := range versionStatuses {
+			pkgPath, err := u.findActualPackagePath(config.AppletPath, mp.AppID, st.Number)
+			if err != nil {
+				log.Printf("wxapkg 标签: 解析路径失败 %s %s: %v", mp.AppID, st.Number, err)
+				continue
+			}
+			st.WxapkgTags = wxapkgTagsFromDir(pkgPath)
 		}
 
 		info, err := u.findOrCreateInfo(mp.AppID)
@@ -423,6 +565,26 @@ func (u *UnWxapp) SelectDirectory() (string, error) {
 	})
 }
 
+// GetPackagePath 获取实际的package路径（用于前端打开文件夹等功能）
+func (u *UnWxapp) GetPackagePath(appID, version string) (string, error) {
+	config, err := u.getConfig()
+	if err != nil {
+		return "", fmt.Errorf("获取配置失败: %v", err)
+	}
+
+	if config.AppletPath == "" {
+		return "", errors.New("Applet路径未设置")
+	}
+
+	// 使用findActualPackagePath查找实际的package路径
+	packagePath, err := u.findActualPackagePath(config.AppletPath, appID, version)
+	if err != nil {
+		return "", err
+	}
+
+	return packagePath, nil
+}
+
 func (u *UnWxapp) ExtractSensitiveInfo(appID, version string) error {
 
 	task, err := u.findVersionTask(appID, version)
@@ -441,8 +603,15 @@ func (u *UnWxapp) ExtractSensitiveInfo(appID, version string) error {
 		return fmt.Errorf("获取配置失败: %v", err)
 	}
 
+	// 查找实际的package路径（支持新版本users目录和旧版本路径）
+	packagePath, err := u.findActualPackagePath(config.AppletPath, task.AppID, task.Version)
+	if err != nil {
+		return fmt.Errorf("查找package路径失败: %v", err)
+	}
+
+	log.Printf("提取敏感信息，使用package路径: %s", packagePath)
+
 	// 动态获取包名
-	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
 	packageNames, err := u.getPackageNames(packagePath)
 	if err != nil {
 		return fmt.Errorf("获取包名失败: %v", err)
@@ -497,8 +666,13 @@ func (u *UnWxapp) CheckDecompileStatus(appID, version string) (string, error) {
 		return "", err
 	}
 
+	// 查找实际的package路径（支持新版本users目录和旧版本路径）
+	packagePath, err := u.findActualPackagePath(config.AppletPath, task.AppID, task.Version)
+	if err != nil {
+		return "", fmt.Errorf("查找package路径失败: %v", err)
+	}
+
 	// 动态获取包名
-	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
 	packageNames, err := u.getPackageNames(packagePath)
 	if err != nil {
 		return "", err
@@ -528,6 +702,27 @@ func (u *UnWxapp) CheckDecompileStatus(appID, version string) (string, error) {
 	return fmt.Sprintf("数据库状态: %s, 文件数量: %d", task.DecompileStatus, fileCount), nil
 }
 
+// GetTaskStatus 获取单个任务的状态（用于轮询，避免刷新整个列表）
+func (u *UnWxapp) GetTaskStatus(appID, version string) (*VersionTaskStatus, error) {
+	task, err := u.findVersionTask(appID, version)
+	if err != nil {
+		return nil, err
+	}
+
+	status := &VersionTaskStatus{
+		Number:          task.Version,
+		DecompileStatus: task.DecompileStatus,
+		MatchStatus:     task.MatchStatus,
+		Message:         task.Message,
+	}
+	if config, err := u.getConfig(); err == nil && config.AppletPath != "" {
+		if pkgPath, err := u.findActualPackagePath(config.AppletPath, appID, version); err == nil {
+			status.WxapkgTags = wxapkgTagsFromDir(pkgPath)
+		}
+	}
+	return status, nil
+}
+
 // ============ 内部方法 ============
 
 type MiniProgram struct {
@@ -544,81 +739,231 @@ type Version struct {
 func (u *UnWxapp) getAllMiniApp(appletPath string) ([]*MiniProgram, error) {
 	applet, err := filepath.Abs(appletPath)
 	if err != nil {
+		log.Printf("获取绝对路径失败: %v", err)
 		return nil, err
 	}
+
+	// log.Printf("开始处理路径: %s", applet)
 
 	var items []*MiniProgram
-	entries, err := os.ReadDir(applet)
-	if err != nil {
-		return nil, err
+	var packagesDirs []string
+
+	// 检查路径是否是users目录（新版本路径结构）
+	// 路径格式: D:\Users\doki\AppData\Roaming\Tencent\xwechat\radium\users
+	// 用户只需要输入到users目录，程序自动遍历所有用户目录并拼接applet\packages
+	normalizedPath := strings.ToLower(strings.TrimRight(applet, "\\/"))
+	baseName := strings.ToLower(filepath.Base(applet))
+	isUsersDir := baseName == "users" || strings.HasSuffix(normalizedPath, "users")
+
+	if isUsersDir {
+		log.Printf("✓ 检测到users目录，自动遍历所有用户目录: %s", applet)
+
+		// 读取users目录下的所有子目录（用户目录）
+		userEntries, err := os.ReadDir(applet)
+		if err != nil {
+			log.Printf("✗ 读取users目录失败: %v", err)
+			return nil, fmt.Errorf("读取users目录失败: %v", err)
+		}
+
+		log.Printf("找到 %d 个用户目录，开始自动拼接路径...", len(userEntries))
+
+		// 先对用户目录进行排序，确保遍历顺序稳定
+		sort.Slice(userEntries, func(i, j int) bool {
+			return userEntries[i].Name() < userEntries[j].Name()
+		})
+
+		// 遍历所有用户目录，自动拼接 applet\packages 路径
+		for _, userEntry := range userEntries {
+			if !userEntry.IsDir() {
+				continue
+			}
+
+			userDirName := userEntry.Name()
+			// 自动拼接完整路径: users\用户目录\applet\packages
+			userPackagesPath := filepath.Join(applet, userDirName, "applet", "packages")
+
+			log.Printf("  检查用户: %s -> 拼接路径: %s", userDirName, userPackagesPath)
+
+			// 检查packages目录是否存在
+			if isDir, err := u.isDir(userPackagesPath); err == nil && isDir {
+				log.Printf("  ✓ 找到packages目录: %s", userPackagesPath)
+				packagesDirs = append(packagesDirs, userPackagesPath)
+			} else {
+				if err != nil {
+					log.Printf("  ✗ 路径不存在或无法访问: %s (错误: %v)", userPackagesPath, err)
+				} else {
+					log.Printf("  ✗ packages目录不存在: %s", userPackagesPath)
+				}
+			}
+		}
+
+		log.Printf("✓ 遍历完成，共找到 %d 个有效的packages目录", len(packagesDirs))
+
+		// 对packages目录列表进行排序，确保处理顺序稳定
+		sort.Strings(packagesDirs)
+	} else {
+		// 旧版本路径结构，直接使用传入的路径（兼容旧版本）
+		// log.Printf("使用旧版本路径结构（直接指向packages目录）: %s", applet)
+		packagesDirs = append(packagesDirs, applet)
 	}
 
-	// 按修改时间排序
-	sort.Slice(entries, func(i, j int) bool {
-		infoI, _ := entries[i].Info()
-		infoJ, _ := entries[j].Info()
-		return infoI.ModTime().After(infoJ.ModTime())
-	})
+	// 如果没找到任何packages目录，返回空列表
+	if len(packagesDirs) == 0 {
+		log.Printf("警告: 未找到任何packages目录，返回空列表")
+		return items, nil
+	}
 
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
+	// 用于去重，因为不同用户目录可能包含相同的小程序
+	appMap := make(map[string]*MiniProgram)
 
-		appid := entry.Name()
-		if !strings.HasPrefix(appid, "wx") {
-			continue
-		}
-
-		versionsDir := filepath.Join(applet, appid)
-		if isDir, err := u.isDir(versionsDir); err != nil || !isDir {
-			continue
-		}
-
-		versionEntries, err := os.ReadDir(versionsDir)
+	// 遍历所有找到的packages目录
+	for _, packagesDir := range packagesDirs {
+		// log.Printf("处理第 %d/%d 个packages目录: %s", idx+1, len(packagesDirs), packagesDir)
+		entries, err := os.ReadDir(packagesDir)
 		if err != nil {
+			log.Printf("✗ 读取packages目录失败: %s (错误: %v)", packagesDir, err)
 			continue
 		}
-
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
+		// log.Printf("packages目录中有 %d 个条目", len(entries))
 
 		// 按修改时间排序
-		sort.Slice(versionEntries, func(i, j int) bool {
-			infoI, _ := versionEntries[i].Info()
-			infoJ, _ := versionEntries[j].Info()
+		sort.Slice(entries, func(i, j int) bool {
+			infoI, _ := entries[i].Info()
+			infoJ, _ := entries[j].Info()
 			return infoI.ModTime().After(infoJ.ModTime())
 		})
 
-		var versions []*Version
-		for _, versionEntry := range versionEntries {
-			versionPath := filepath.Join(versionsDir, versionEntry.Name())
+		appCount := 0
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
 
-			// 动态检查包文件
-			hasWxapkg, err := u.hasWxapkgFiles(versionPath)
+			appid := entry.Name()
+			if !strings.HasPrefix(appid, "wx") {
+				continue
+			}
+
+			versionsDir := filepath.Join(packagesDir, appid)
+			if isDir, err := u.isDir(versionsDir); err != nil || !isDir {
+				log.Printf("跳过，版本目录不存在或不是目录: %s", versionsDir)
+				continue
+			}
+
+			versionEntries, err := os.ReadDir(versionsDir)
+			if err != nil {
+				log.Printf("读取版本目录失败: %s (错误: %v)", versionsDir, err)
+				continue
+			}
+			appCount++
+
+			info, err := entry.Info()
 			if err != nil {
 				continue
 			}
 
-			if hasWxapkg {
-				info, err := versionEntry.Info()
+			// 按修改时间排序
+			sort.Slice(versionEntries, func(i, j int) bool {
+				infoI, _ := versionEntries[i].Info()
+				infoJ, _ := versionEntries[j].Info()
+				return infoI.ModTime().After(infoJ.ModTime())
+			})
+
+			var versions []*Version
+			for _, versionEntry := range versionEntries {
+				versionPath := filepath.Join(versionsDir, versionEntry.Name())
+
+				// 动态检查包文件
+				hasWxapkg, err := u.hasWxapkgFiles(versionPath)
 				if err != nil {
 					continue
 				}
-				version := &Version{
-					Number:     info.Name(),
-					UpdateDate: info.ModTime().Format("2006/01/02 15:04"),
+
+				if hasWxapkg {
+					info, err := versionEntry.Info()
+					if err != nil {
+						continue
+					}
+					version := &Version{
+						Number:     info.Name(),
+						UpdateDate: info.ModTime().Format("2006/01/02 15:04"),
+					}
+					versions = append(versions, version)
 				}
-				versions = append(versions, version)
+			}
+
+			// 如果已存在该小程序，合并版本列表（保留最新的修改时间）
+			if existingApp, exists := appMap[appid]; exists {
+				// 合并版本，去重
+				versionMap := make(map[string]*Version)
+				for _, v := range existingApp.Versions {
+					versionMap[v.Number] = v
+				}
+				for _, v := range versions {
+					if existingVersion, ok := versionMap[v.Number]; ok {
+						// 如果版本已存在，解析日期字符串比较，保留更新日期更晚的
+						existingTime, _ := time.Parse("2006/01/02 15:04", existingVersion.UpdateDate)
+						newTime, _ := time.Parse("2006/01/02 15:04", v.UpdateDate)
+						if newTime.After(existingTime) {
+							versionMap[v.Number] = v
+						}
+					} else {
+						versionMap[v.Number] = v
+					}
+				}
+				// 重新构建版本列表
+				mergedVersions := make([]*Version, 0, len(versionMap))
+				for _, v := range versionMap {
+					mergedVersions = append(mergedVersions, v)
+				}
+				// 按修改时间排序，如果时间相同则按版本号排序（确保排序稳定）
+				sort.Slice(mergedVersions, func(i, j int) bool {
+					timeI, _ := time.Parse("2006/01/02 15:04", mergedVersions[i].UpdateDate)
+					timeJ, _ := time.Parse("2006/01/02 15:04", mergedVersions[j].UpdateDate)
+					if !timeI.Equal(timeJ) {
+						return timeI.After(timeJ)
+					}
+					// 如果时间相同，按版本号排序（确保排序稳定）
+					return mergedVersions[i].Number < mergedVersions[j].Number
+				})
+				existingApp.Versions = mergedVersions
+				// 更新修改时间为最新的
+				existingTime, _ := time.Parse("2006/01/02 15:04", existingApp.UpdateDate)
+				if info.ModTime().After(existingTime) {
+					existingApp.UpdateDate = info.ModTime().Format("2006/01/02 15:04")
+				}
+			} else {
+				// 新小程序，添加到map
+				appMap[appid] = &MiniProgram{
+					AppID:      appid,
+					UpdateDate: info.ModTime().Format("2006/01/02 15:04"),
+					Versions:   versions,
+				}
 			}
 		}
 
-		items = append(items, &MiniProgram{
-			AppID:      appid,
-			UpdateDate: info.ModTime().Format("2006/01/02 15:04"),
-			Versions:   versions,
+		// log.Printf("从packages目录 %s 中找到 %d 个小程序", packagesDir, appCount)
+	}
+
+	// 将map转换为slice
+	for _, app := range appMap {
+		items = append(items, app)
+	}
+
+	// log.Printf("总共找到 %d 个不重复的小程序", len(items))
+
+	// 按小程序目录最近修改时间降序，最新在上；相同时用 AppID 稳定排序
+	if len(items) > 0 {
+		sort.Slice(items, func(i, j int) bool {
+			timeI, errI := time.Parse("2006/01/02 15:04", items[i].UpdateDate)
+			timeJ, errJ := time.Parse("2006/01/02 15:04", items[j].UpdateDate)
+			if errI != nil || errJ != nil {
+				return items[i].AppID < items[j].AppID
+			}
+			if !timeI.Equal(timeJ) {
+				return timeI.After(timeJ)
+			}
+			return items[i].AppID < items[j].AppID
 		})
 	}
 
@@ -770,90 +1115,34 @@ func (u *UnWxapp) findOrCreateInfo(appID string) (*MiniAppInfo, error) {
 			// 同步查询小程序信息，而不是异步
 			newInfo, err := u.queryMimiAPPInfo(appID)
 			if err != nil {
-				log.Printf("查询小程序信息失败: %v", err)
-				// 即使查询失败也返回一个基本的信息对象
+				if errors.Is(err, ErrAppidQueryQuotaExhausted) {
+					log.Printf("AppidQuery 全部 API Key 不可用，appid %s 以原始 ID 展示", appID)
+					u.maybeEmitAppidQueryQuotaNotice()
+					return &MiniAppInfo{AppID: appID}, nil
+				}
+				if errors.Is(err, errAppidQueryNoAPIKeys) {
+					return &MiniAppInfo{AppID: appID}, nil
+				}
+				// API查询失败（可能是API服务器问题），返回基本信息对象，不影响功能使用
+				log.Printf("从API查询小程序信息失败（这是API服务器端的问题，不影响本地功能）: %v", err)
 				return &MiniAppInfo{
 					AppID: appID,
 				}, nil
 			}
 
-			// 保存到数据库
+			// 尝试保存到数据库，但失败不影响返回结果
 			if err := db.Create(newInfo).Error; err != nil {
-				log.Printf("保存小程序信息失败: %v", err)
+				// 即使保存失败，也返回查询到的信息
 			}
 
 			return newInfo, nil
 		}
-		return nil, err
+		return &MiniAppInfo{
+			AppID: appID,
+		}, nil
 	}
 
 	return &info, nil
-}
-
-func (u *UnWxapp) queryMiniAPPInfoAsync(appID string) {
-	info, err := u.queryMimiAPPInfo(appID)
-	if err != nil {
-		return
-	}
-
-	db := u.Db()
-	if db == nil {
-		return
-	}
-
-	// 使用事务和锁来避免并发插入
-	err = db.Transaction(func(tx *gorm.DB) error {
-		// 先检查是否已存在
-		var existing MiniAppInfo
-		if err := tx.Where("app_id = ?", appID).First(&existing).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// 不存在则创建
-				return tx.Create(info).Error
-			}
-			return err
-		}
-		// 已存在则更新
-		return tx.Model(&MiniAppInfo{}).Where("app_id = ?", appID).Updates(info).Error
-	})
-
-	if err != nil {
-		log.Printf("保存小程序信息失败: %v", err)
-	}
-}
-
-func (u *UnWxapp) queryMimiAPPInfo(appid string) (*MiniAppInfo, error) {
-	req, err := http.NewRequest("POST", "https://kainy.cn/api/weapp/info/", strings.NewReader("appid="+appid))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	response, err := u.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	bytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	code := gjson.Get(string(bytes), "code").Int()
-	msg := gjson.Get(string(bytes), "error").String()
-	if code != 0 && code != 2 {
-		return nil, errors.New(msg)
-	}
-
-	return &MiniAppInfo{
-		AppID:         appid,
-		Nickname:      gjson.Get(string(bytes), "data.nickname").String(),
-		Username:      gjson.Get(string(bytes), "data.username").String(),
-		Description:   gjson.Get(string(bytes), "data.description").String(),
-		Avatar:        gjson.Get(string(bytes), "data.avatar").String(),
-		UsesCount:     gjson.Get(string(bytes), "data.uses_count").String(),
-		PrincipalName: gjson.Get(string(bytes), "data.principal_name").String(),
-	}, nil
 }
 
 func (u *UnWxapp) findVersionTask(appID, version string) (*VersionTask, error) {
@@ -935,6 +1224,50 @@ func (u *UnWxapp) checkVersionTaskStatus(task *VersionTask, allowedStoppedStatus
 	return result
 }
 
+// findActualPackagePath 根据AppID和Version查找实际的package路径
+// 支持新版本（users目录）和旧版本路径结构
+func (u *UnWxapp) findActualPackagePath(appletPath, appID, version string) (string, error) {
+	applet, err := filepath.Abs(appletPath)
+	if err != nil {
+		return "", fmt.Errorf("获取绝对路径失败: %v", err)
+	}
+
+	// 检查路径是否是users目录（新版本路径结构）
+	normalizedPath := strings.ToLower(strings.TrimRight(applet, "\\/"))
+	baseName := strings.ToLower(filepath.Base(applet))
+	isUsersDir := baseName == "users" || strings.HasSuffix(normalizedPath, "users")
+
+	if isUsersDir {
+		// 遍历所有用户目录，找到包含该AppID和Version的packages路径
+		userEntries, err := os.ReadDir(applet)
+		if err != nil {
+			return "", fmt.Errorf("读取users目录失败: %v", err)
+		}
+
+		for _, userEntry := range userEntries {
+			if !userEntry.IsDir() {
+				continue
+			}
+
+			userDirName := userEntry.Name()
+			// 构建完整的package路径: users\用户目录\applet\packages\AppID\Version
+			packagePath := filepath.Join(applet, userDirName, "applet", "packages", appID, version)
+
+			// 检查路径是否存在
+			if _, err := os.Stat(packagePath); err == nil {
+				log.Printf("找到package路径: %s", packagePath)
+				return packagePath, nil
+			}
+		}
+
+		return "", fmt.Errorf("未找到AppID=%s, Version=%s的package路径", appID, version)
+	} else {
+		// 旧版本路径结构，直接拼接
+		packagePath := filepath.Join(applet, appID, version)
+		return packagePath, nil
+	}
+}
+
 func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 
 	// 更新任务状态为运行中
@@ -954,8 +1287,16 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 		return nil, err
 	}
 
-	// 构建Node.js工具参数
-	packagePath := filepath.Join(config.AppletPath, task.AppID, task.Version)
+	// 查找实际的package路径（支持新版本users目录和旧版本路径）
+	packagePath, err := u.findActualPackagePath(config.AppletPath, task.AppID, task.Version)
+	if err != nil {
+		task.DecompileStatus = "Error"
+		task.Message = fmt.Sprintf("查找package路径失败: %v", err)
+		u.updateVersionTask(task)
+		return nil, fmt.Errorf("查找package路径失败: %v", err)
+	}
+
+	log.Printf("使用package路径: %s", packagePath)
 
 	baseDir := u.GetAppPath()
 	unwxappDir := filepath.Join(baseDir, "tools", "Unwxapp")
@@ -967,7 +1308,32 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 	}
 	args = append(args, "-f") // 启用格式化
 
-	cmd := exec.Command("node", args...)
+	nodePath, err := exec.LookPath("node")
+	if err != nil {
+		// 尝试常见路径
+		possiblePaths := []string{
+			filepath.Join(os.Getenv("ProgramFiles"), "nodejs", "node.exe"),
+			filepath.Join(os.Getenv("ProgramFiles(x86)"), "nodejs", "node.exe"),
+			filepath.Join(os.Getenv("LOCALAPPDATA"), "Programs", "nodejs", "node.exe"),
+			filepath.Join(os.Getenv("APPDATA"), "npm", "node.exe"),
+		}
+
+		for _, path := range possiblePaths {
+			if _, err := os.Stat(path); err == nil {
+				nodePath = path
+				break
+			}
+		}
+
+		if nodePath == "" {
+			task.DecompileStatus = "Error"
+			task.Message = "无法找到node可执行文件"
+			u.updateVersionTask(task)
+			return nil, fmt.Errorf("无法找到node可执行文件")
+		}
+	}
+
+	cmd := exec.Command(nodePath, args...)
 	cmd.Dir = unwxappDir
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
@@ -1018,6 +1384,13 @@ func (u *UnWxapp) decompileWithNode(task *VersionTask) ([]string, error) {
 		if err := u.updateVersionTask(task); err != nil {
 		}
 		return nil, fmt.Errorf("反编译输出目录不存在，检查了包名: %v", packageNames)
+	}
+
+	// 先对反编译结果中的内联 style 属性做一次规整，方便后续敏感信息提取
+	for _, dir := range dirsToWalk {
+		if _, err := u.compactInlineStylesInDir(dir); err != nil {
+			log.Printf("规整内联样式失败（忽略继续）: %v", err)
+		}
 	}
 
 	// 统计文件数量
@@ -1099,8 +1472,22 @@ func (u *UnWxapp) extractInfo(task *VersionTask, files []string) {
 	}
 
 	// 获取输出目录的基础路径
-	config, _ := u.getConfig()
-	baseDir := filepath.Join(config.AppletPath, task.AppID, task.Version)
+	config, err := u.getConfig()
+	if err != nil {
+		task.MatchStatus = "Error"
+		task.Message = "获取配置失败: " + err.Error()
+		u.updateVersionTask(task)
+		return
+	}
+
+	// 查找实际的package路径（支持新版本users目录和旧版本路径）
+	baseDir, err := u.findActualPackagePath(config.AppletPath, task.AppID, task.Version)
+	if err != nil {
+		task.MatchStatus = "Error"
+		task.Message = "查找package路径失败: " + err.Error()
+		u.updateVersionTask(task)
+		return
+	}
 
 	// 按文件类型分类统计
 	fileStats := make(map[string]int)
@@ -1202,22 +1589,7 @@ func (u *UnWxapp) containsResult(results []string, newResult string) bool {
 	return false
 }
 
-// 按文件名对结果进行排序
-func (u *UnWxapp) sortResultsByFilename(results []string) []string {
-	sort.Slice(results, func(i, j int) bool {
-		// 提取文件名部分进行比较
-		fileI := strings.Split(results[i], " -> ")[0]
-		fileJ := strings.Split(results[j], " -> ")[0]
-		return fileI < fileJ
-	})
-	return results
-}
-
 // ============ 工具方法 ============
-
-func stripANSI(input string) string {
-	return ansiRegex.ReplaceAllString(input, "")
-}
 
 func (u *UnWxapp) fileExist(path string) bool {
 	_, err := os.Stat(path)
@@ -1239,19 +1611,6 @@ func (u *UnWxapp) stringSliceContain(slice []string, str string) bool {
 		}
 	}
 	return false
-}
-
-func (u *UnWxapp) removeEmptyAndDuplicateString(slice []string) []string {
-	keys := make(map[string]bool)
-	var result []string
-	for _, item := range slice {
-		item = strings.TrimSpace(item)
-		if item != "" && !keys[item] {
-			keys[item] = true
-			result = append(result, item)
-		}
-	}
-	return result
 }
 
 // 启动自动反编译

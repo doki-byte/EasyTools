@@ -3,11 +3,11 @@ package config
 import (
 	"EasyTools/app/controller/connect/ssh/app/utils"
 	toml2 "EasyTools/app/controller/connect/ssh/toml"
+	"EasyTools/app/controller/system"
 	"flag"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 )
 
@@ -27,31 +27,11 @@ type AppConfig struct {
 	KeyFile       string        `json:"key_file" toml:"key_file"`
 }
 
-// 获取应用基础目录
-func getAppBaseDir() string {
-	// 如果是 macOS，使用应用支持目录
-	if runtime.GOOS == "darwin" {
-		appName := "EasyTools"
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			panic("获取用户主目录失败: " + err.Error())
-		}
-		return filepath.Join(homeDir, "Library", "Application Support", appName)
-	}
-
-	// 其他系统使用当前目录下的 EasyToolsFiles
-	currentPath, err := os.Getwd()
-	if err != nil {
-		panic("获取当前路径失败: " + err.Error())
-	}
-	return filepath.Join(currentPath, "EasyToolsFiles")
-}
-
 var (
 	projectName      = "GoWebSSH"
 	confFileName     = "GoWebSSH.toml"
-	appBaseDir       = getAppBaseDir()
-	toolsDir         = filepath.Join(appBaseDir, "tools", projectName)
+	appBaseDir       = system.GetAppBaseDir()
+	toolsDir         = filepath.Join(appBaseDir, "config", projectName)
 	WorkDir          = toolsDir
 	confFileFullPath = filepath.Join(WorkDir, confFileName)
 )

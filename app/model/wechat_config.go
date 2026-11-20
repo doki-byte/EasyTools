@@ -10,10 +10,17 @@ import (
 const TableNameWechatConfig = "wechat_config"
 
 type WechatConfig struct {
-	ID            int    `gorm:"primarykey" json:"id"`
-	AppletPath    string `json:"applet_path" gorm:"column:applet_path"`
-	Rules         string `json:"rules" gorm:"column:rules"` // JSON格式存储规则
-	AutoDecompile bool   `json:"auto_decompile" gorm:"column:auto_decompile"`
+	ID                int    `gorm:"primarykey" json:"id"`
+	AppletPath        string `json:"applet_path" gorm:"column:applet_path"`
+	Rules             string `json:"rules" gorm:"column:rules"` // JSON格式存储规则
+	AutoDecompile     bool   `json:"auto_decompile" gorm:"column:auto_decompile"`
+	AppidQueryAPIKeys string `json:"appid_query_api_keys" gorm:"column:appid_query_api_keys"` // 多行 X-API-Key，一行一个
+	// WechatMPCookie 登录 mp.weixin.qq.com 后浏览器中的 Cookie（用于内嵌 searchWxaembedded 查询，可选）
+	WechatMPCookie string `json:"wechat_mp_cookie" gorm:"column:wechat_mp_cookie"`
+	// WechatMPToken 登录 mp.weixin.qq.com 后 URL 中的 token（用于内嵌 searchWxaembedded 查询，可选）
+	WechatMPToken string `json:"wechat_mp_token" gorm:"column:wechat_mp_token"`
+	// AppidQueryMode 元数据拉取：mp=仅公众号 MP、open=仅 X-API-Key、both=先 MP 再 API；空视为 both
+	AppidQueryMode string `json:"appid_query_mode" gorm:"column:appid_query_mode"`
 }
 
 func (*WechatConfig) TableName() string {

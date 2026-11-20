@@ -35,7 +35,7 @@ func Get(r *http.Request, key any) any {
 	return nil
 }
 
-// GetOk returns stored value and presence state like multi-value return of map access.
+// GetOk returns stored value and presence state like multi-value return of MapCheck access.
 func GetOk(r *http.Request, key any) (any, bool) {
 	mutex.RLock()
 	if _, ok := data[r]; ok {
@@ -47,7 +47,7 @@ func GetOk(r *http.Request, key any) (any, bool) {
 	return nil, false
 }
 
-// GetAll returns all stored values for the request as a map. Nil is returned for invalid requests.
+// GetAll returns all stored values for the request as a MapCheck. Nil is returned for invalid requests.
 func GetAll(r *http.Request) map[any]any {
 	mutex.RLock()
 	if context, ok := data[r]; ok {
@@ -62,7 +62,7 @@ func GetAll(r *http.Request) map[any]any {
 	return nil
 }
 
-// GetAllOk returns all stored values for the request as a map and a boolean value that indicates if
+// GetAllOk returns all stored values for the request as a MapCheck and a boolean value that indicates if
 // the request was registered.
 func GetAllOk(r *http.Request) (map[any]any, bool) {
 	mutex.RLock()

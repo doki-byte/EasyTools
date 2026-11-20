@@ -29,6 +29,18 @@ func DbCheck() gin2.HandlerFunc {
 			}
 		}
 
+		// 检查关键表是否存在，如果不存在则重新迁移
+		var count int64
+		checkTable := model.Db.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('ssh_confs', 'cmd_notes')").Scan(&count)
+		if checkTable.Error != nil || count < 2 {
+			// 表不存在或数量不对，重新迁移
+			if err := model.DbMigrate(config.DefaultConfig.DbType, config.DefaultConfig.DbDsn); err != nil {
+				c.Abort()
+				c.JSON(500, gin2.H{"code": 500, "msg": "数据库表初始化失败: " + err.Error()})
+				return
+			}
+		}
+
 		c.Next()
 	}
 }

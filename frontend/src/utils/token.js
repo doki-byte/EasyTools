@@ -1,14 +1,16 @@
+import { getItem, setItem, removeItem } from './storageManager'
+
 const TokenKey = 'EasyTools-Token'
 
 export function getToken() {
-    return localStorage.getItem(TokenKey)
+    return getItem(TokenKey, null)
 }
 
 export function setToken(token) {
-    return localStorage.setItem(TokenKey, token)
+    return setItem(TokenKey, token)
 }
 
 export function removeToken() {
-    return localStorage.removeItem(TokenKey)
+    removeItem(TokenKey)
 }
 

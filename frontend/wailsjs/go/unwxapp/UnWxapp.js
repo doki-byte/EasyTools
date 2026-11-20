@@ -38,12 +38,44 @@ export function GetAppPath() {
   return window['go']['unwxapp']['UnWxapp']['GetAppPath']();
 }
 
+export function GetAppidQueryAPIKeyStatuses() {
+  return window['go']['unwxapp']['UnWxapp']['GetAppidQueryAPIKeyStatuses']();
+}
+
+export function GetAppidQueryAPIKeys() {
+  return window['go']['unwxapp']['UnWxapp']['GetAppidQueryAPIKeys']();
+}
+
+export function GetAppidQueryMode() {
+  return window['go']['unwxapp']['UnWxapp']['GetAppidQueryMode']();
+}
+
 export function GetAppletPath() {
   return window['go']['unwxapp']['UnWxapp']['GetAppletPath']();
 }
 
+export function GetCtx() {
+  return window['go']['unwxapp']['UnWxapp']['GetCtx']();
+}
+
 export function GetMatchedString(arg1, arg2) {
   return window['go']['unwxapp']['UnWxapp']['GetMatchedString'](arg1, arg2);
+}
+
+export function GetPackagePath(arg1, arg2) {
+  return window['go']['unwxapp']['UnWxapp']['GetPackagePath'](arg1, arg2);
+}
+
+export function GetTaskStatus(arg1, arg2) {
+  return window['go']['unwxapp']['UnWxapp']['GetTaskStatus'](arg1, arg2);
+}
+
+export function GetWechatMPCookie() {
+  return window['go']['unwxapp']['UnWxapp']['GetWechatMPCookie']();
+}
+
+export function GetWechatMPToken() {
+  return window['go']['unwxapp']['UnWxapp']['GetWechatMPToken']();
 }
 
 export function GetWechatRules() {
@@ -62,6 +94,10 @@ export function Log(arg1) {
   return window['go']['unwxapp']['UnWxapp']['Log'](arg1);
 }
 
+export function RemoveDepletedAppidQueryAPIKeys() {
+  return window['go']['unwxapp']['UnWxapp']['RemoveDepletedAppidQueryAPIKeys']();
+}
+
 export function SaveWechatRules(arg1) {
   return window['go']['unwxapp']['UnWxapp']['SaveWechatRules'](arg1);
 }
@@ -74,10 +110,26 @@ export function SelectDirectory() {
   return window['go']['unwxapp']['UnWxapp']['SelectDirectory']();
 }
 
+export function SetAppidQueryAPIKeys(arg1) {
+  return window['go']['unwxapp']['UnWxapp']['SetAppidQueryAPIKeys'](arg1);
+}
+
+export function SetAppidQueryMode(arg1) {
+  return window['go']['unwxapp']['UnWxapp']['SetAppidQueryMode'](arg1);
+}
+
 export function SetAppletPath(arg1) {
   return window['go']['unwxapp']['UnWxapp']['SetAppletPath'](arg1);
 }
 
 export function SetCtx(arg1) {
   return window['go']['unwxapp']['UnWxapp']['SetCtx'](arg1);
+}
+
+export function SetWechatMPCookie(arg1) {
+  return window['go']['unwxapp']['UnWxapp']['SetWechatMPCookie'](arg1);
+}
+
+export function SetWechatMPToken(arg1) {
+  return window['go']['unwxapp']['UnWxapp']['SetWechatMPToken'](arg1);
 }

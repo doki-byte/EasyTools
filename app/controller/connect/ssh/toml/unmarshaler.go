@@ -85,7 +85,7 @@ func (d *Decoder) EnableUnmarshalerInterface() *Decoder {
 // supported by truncating extra digits.
 //
 // Empty tables decoded in an interface{} create an empty initialized
-// map[string]interface{}.
+// MapCheck[string]interface{}.
 //
 // Types implementing the encoding.TextUnmarshaler interface are decoded from a
 // TOML string.
@@ -112,7 +112,7 @@ func (d *Decoder) EnableUnmarshalerInterface() *Decoder {
 //	Local Date       -> LocalDate, time.Time
 //	Local Time       -> LocalTime, time.Time
 //	Array            -> slice and array, depending on elements types
-//	Table            -> map and struct
+//	Table            -> MapCheck and struct
 //	Inline Table     -> same as Table
 //	Array of Tables  -> same as Array and Table
 func (d *Decoder) Decode(v any) error {
@@ -144,7 +144,7 @@ type decoder struct {
 	stashedExpr bool
 
 	// Skip expressions until a table is found. This is set to true when a
-	// table could not be created (missing field in map), so all KV expressions
+	// table could not be created (missing field in MapCheck), so all KV expressions
 	// need to be skipped.
 	skipUntilTable bool
 
@@ -268,7 +268,7 @@ Rules for the unmarshal code:
 - The stack is used to keep track of which values need to be set where.
 - handle* functions <=> switch on a given unstable.Kind.
 - unmarshalX* functions need to unmarshal a node of kind X.
-- An "object" is either a struct or a map.
+- An "object" is either a struct or a MapCheck.
 */
 
 func (d *decoder) handleRootExpression(expr *unstable2.Node, v reflect.Value) error {
@@ -458,13 +458,13 @@ func (d *decoder) handleKeyPart(key unstable2.Iterator, v reflect.Value, nextFn 
 	case reflect.Map:
 		vt := v.Type()
 
-		// Create the key for the map element. Convert to key type.
+		// Create the key for the MapCheck element. Convert to key type.
 		mk, err := d.keyFromData(vt.Key(), key.Node().Data)
 		if err != nil {
 			return reflect.Value{}, err
 		}
 
-		// If the map does not exist, create it.
+		// If the MapCheck does not exist, create it.
 		if v.IsNil() {
 			vt := v.Type()
 			v = reflect.MakeMap(vt)
@@ -474,9 +474,9 @@ func (d *decoder) handleKeyPart(key unstable2.Iterator, v reflect.Value, nextFn 
 		mv := v.MapIndex(mk)
 		set := false
 		if !mv.IsValid() {
-			// If there is no value in the map, create a new one according to
-			// the map type. If the element type is interface, create either a
-			// map[string]interface{} or a []interface{} depending on whether
+			// If there is no value in the MapCheck, create a new one according to
+			// the MapCheck type. If the element type is interface, create either a
+			// MapCheck[string]interface{} or a []interface{} depending on whether
 			// this is the last part of the array table key.
 
 			t := vt.Elem()
@@ -1084,7 +1084,7 @@ func (d *decoder) keyFromData(keyType reflect.Type, data []byte) (reflect.Value,
 		}
 		return mk.Elem(), nil
 	}
-	return reflect.Value{}, fmt.Errorf("toml: cannot convert map key of type %s to expected type %s", stringType, keyType)
+	return reflect.Value{}, fmt.Errorf("toml: cannot convert MapCheck key of type %s to expected type %s", stringType, keyType)
 }
 
 func (d *decoder) handleKeyValuePart(key unstable2.Iterator, value *unstable2.Node, v reflect.Value) (reflect.Value, error) {
@@ -1102,7 +1102,7 @@ func (d *decoder) handleKeyValuePart(key unstable2.Iterator, value *unstable2.No
 			return reflect.Value{}, err
 		}
 
-		// If the map does not exist, create it.
+		// If the MapCheck does not exist, create it.
 		if v.IsNil() {
 			v = reflect.MakeMap(vt)
 			rv = v
@@ -1170,7 +1170,7 @@ func (d *decoder) handleKeyValuePart(key unstable2.Iterator, value *unstable2.No
 
 		// Following encoding/json: decoding an object into an
 		// interface{}, it needs to always hold a
-		// map[string]interface{}. This is for the types to be
+		// MapCheck[string]interface{}. This is for the types to be
 		// consistent whether a previous value was set or not.
 		if !v.IsValid() || v.Type() != mapStringInterfaceType {
 			v = makeMapStringInterface()
@@ -1235,7 +1235,7 @@ func fieldByIndex(v reflect.Value, path []int) reflect.Value {
 
 type fieldPathsMap = map[string][]int
 
-var globalFieldPathsCache atomic.Value // map[danger.TypeID]fieldPathsMap
+var globalFieldPathsCache atomic.Value // MapCheck[danger.TypeID]fieldPathsMap
 
 func structFieldPath(v reflect.Value, name string) ([]int, bool) {
 	t := v.Type()

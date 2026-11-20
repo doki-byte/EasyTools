@@ -1,0 +1,2309 @@
+{
+  "templates": [
+    {
+      "id": "sql-mysql-select",
+      "dbType": "mysql",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 100;"
+    },
+    {
+      "id": "sql-mysql-select-where",
+      "dbType": "mysql",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-mysql-select-limit",
+      "dbType": "mysql",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-mysql-select-order",
+      "dbType": "mysql",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC LIMIT 100;"
+    },
+    {
+      "id": "sql-mysql-select-distinct",
+      "dbType": "mysql",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-select-like",
+      "dbType": "mysql",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-mysql-select-in",
+      "dbType": "mysql",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-mysql-select-between",
+      "dbType": "mysql",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-mysql-select-join",
+      "dbType": "mysql",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-mysql-count",
+      "dbType": "mysql",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-count-where",
+      "dbType": "mysql",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-mysql-count-group",
+      "dbType": "mysql",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-mysql-select-max",
+      "dbType": "mysql",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-select-min",
+      "dbType": "mysql",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-select-avg",
+      "dbType": "mysql",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-select-sum",
+      "dbType": "mysql",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-insert",
+      "dbType": "mysql",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-mysql-insert-multi",
+      "dbType": "mysql",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-mysql-update",
+      "dbType": "mysql",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-mysql-update-multi",
+      "dbType": "mysql",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-mysql-delete",
+      "dbType": "mysql",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-mysql-delete-where",
+      "dbType": "mysql",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-mysql-show-tables",
+      "dbType": "mysql",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SHOW TABLES;"
+    },
+    {
+      "id": "sql-mysql-describe",
+      "dbType": "mysql",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "DESCRIBE table_name;"
+    },
+    {
+      "id": "sql-mysql-show-index",
+      "dbType": "mysql",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SHOW INDEX FROM table_name;"
+    },
+    {
+      "id": "sql-mysql-create-table",
+      "dbType": "mysql",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  name VARCHAR(255) NOT NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "id": "sql-mysql-alter-add",
+      "dbType": "mysql",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD COLUMN new_col VARCHAR(255);"
+    },
+    {
+      "id": "sql-mysql-alter-modify",
+      "dbType": "mysql",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name MODIFY COLUMN col1 VARCHAR(500);"
+    },
+    {
+      "id": "sql-mysql-alter-drop",
+      "dbType": "mysql",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-mysql-drop-table",
+      "dbType": "mysql",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-mysql-truncate",
+      "dbType": "mysql",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-mysql-explain",
+      "dbType": "mysql",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-postgresql-select",
+      "dbType": "postgresql",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 100;"
+    },
+    {
+      "id": "sql-postgresql-select-where",
+      "dbType": "postgresql",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-postgresql-select-limit",
+      "dbType": "postgresql",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-postgresql-select-order",
+      "dbType": "postgresql",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC LIMIT 100;"
+    },
+    {
+      "id": "sql-postgresql-select-distinct",
+      "dbType": "postgresql",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-postgresql-select-like",
+      "dbType": "postgresql",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-postgresql-select-in",
+      "dbType": "postgresql",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-postgresql-select-between",
+      "dbType": "postgresql",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-postgresql-select-join",
+      "dbType": "postgresql",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-postgresql-count",
+      "dbType": "postgresql",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-postgresql-count-where",
+      "dbType": "postgresql",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-postgresql-count-group",
+      "dbType": "postgresql",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-postgresql-select-max",
+      "dbType": "postgresql",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-postgresql-select-min",
+      "dbType": "postgresql",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-postgresql-select-avg",
+      "dbType": "postgresql",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-postgresql-select-sum",
+      "dbType": "postgresql",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-postgresql-insert",
+      "dbType": "postgresql",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-postgresql-insert-multi",
+      "dbType": "postgresql",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-postgresql-update",
+      "dbType": "postgresql",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-postgresql-update-multi",
+      "dbType": "postgresql",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-postgresql-delete",
+      "dbType": "postgresql",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-postgresql-delete-where",
+      "dbType": "postgresql",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-postgresql-show-tables",
+      "dbType": "postgresql",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SELECT tablename FROM pg_tables WHERE schemaname = 'public';"
+    },
+    {
+      "id": "sql-postgresql-describe",
+      "dbType": "postgresql",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "SELECT column_name, data_type, character_maximum_length, is_nullable FROM information_schema.columns WHERE table_name = 'table_name';"
+    },
+    {
+      "id": "sql-postgresql-show-index",
+      "dbType": "postgresql",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'table_name';"
+    },
+    {
+      "id": "sql-postgresql-create-table",
+      "dbType": "postgresql",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id SERIAL PRIMARY KEY,\n  name VARCHAR(255) NOT NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "id": "sql-postgresql-alter-add",
+      "dbType": "postgresql",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD COLUMN new_col VARCHAR(255);"
+    },
+    {
+      "id": "sql-postgresql-alter-modify",
+      "dbType": "postgresql",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ALTER COLUMN col1 TYPE VARCHAR(500);"
+    },
+    {
+      "id": "sql-postgresql-alter-drop",
+      "dbType": "postgresql",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-postgresql-drop-table",
+      "dbType": "postgresql",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-postgresql-truncate",
+      "dbType": "postgresql",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-postgresql-explain",
+      "dbType": "postgresql",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN ANALYZE SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlite-select",
+      "dbType": "sqlite",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 100;"
+    },
+    {
+      "id": "sql-sqlite-select-where",
+      "dbType": "sqlite",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlite-select-limit",
+      "dbType": "sqlite",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-sqlite-select-order",
+      "dbType": "sqlite",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC LIMIT 100;"
+    },
+    {
+      "id": "sql-sqlite-select-distinct",
+      "dbType": "sqlite",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-select-like",
+      "dbType": "sqlite",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-sqlite-select-in",
+      "dbType": "sqlite",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-sqlite-select-between",
+      "dbType": "sqlite",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-sqlite-select-join",
+      "dbType": "sqlite",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-sqlite-count",
+      "dbType": "sqlite",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-count-where",
+      "dbType": "sqlite",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-sqlite-count-group",
+      "dbType": "sqlite",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-sqlite-select-max",
+      "dbType": "sqlite",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-select-min",
+      "dbType": "sqlite",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-select-avg",
+      "dbType": "sqlite",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-select-sum",
+      "dbType": "sqlite",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-insert",
+      "dbType": "sqlite",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-sqlite-insert-multi",
+      "dbType": "sqlite",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-sqlite-update",
+      "dbType": "sqlite",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlite-update-multi",
+      "dbType": "sqlite",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlite-delete",
+      "dbType": "sqlite",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlite-delete-where",
+      "dbType": "sqlite",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-sqlite-show-tables",
+      "dbType": "sqlite",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SELECT name FROM sqlite_master WHERE type='table';"
+    },
+    {
+      "id": "sql-sqlite-describe",
+      "dbType": "sqlite",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "PRAGMA table_info(table_name);"
+    },
+    {
+      "id": "sql-sqlite-show-index",
+      "dbType": "sqlite",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='table_name';"
+    },
+    {
+      "id": "sql-sqlite-create-table",
+      "dbType": "sqlite",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  name TEXT NOT NULL,\n  created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "id": "sql-sqlite-alter-add",
+      "dbType": "sqlite",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD COLUMN new_col TEXT;"
+    },
+    {
+      "id": "sql-sqlite-alter-modify",
+      "dbType": "sqlite",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name RENAME COLUMN col1 TO new_col1;"
+    },
+    {
+      "id": "sql-sqlite-alter-drop",
+      "dbType": "sqlite",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-sqlite-drop-table",
+      "dbType": "sqlite",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-sqlite-truncate",
+      "dbType": "sqlite",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "DELETE FROM table_name;"
+    },
+    {
+      "id": "sql-sqlite-explain",
+      "dbType": "sqlite",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN QUERY PLAN SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-oracle-select",
+      "dbType": "oracle",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE ROWNUM <= 100;"
+    },
+    {
+      "id": "sql-oracle-select-where",
+      "dbType": "oracle",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-oracle-select-limit",
+      "dbType": "oracle",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM (SELECT a.*, ROWNUM rnum FROM (SELECT * FROM table_name) a WHERE ROWNUM <= 20) WHERE rnum >= 1;"
+    },
+    {
+      "id": "sql-oracle-select-order",
+      "dbType": "oracle",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC FETCH FIRST 100 ROWS ONLY;"
+    },
+    {
+      "id": "sql-oracle-select-distinct",
+      "dbType": "oracle",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-oracle-select-like",
+      "dbType": "oracle",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-oracle-select-in",
+      "dbType": "oracle",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-oracle-select-between",
+      "dbType": "oracle",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-oracle-select-join",
+      "dbType": "oracle",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-oracle-count",
+      "dbType": "oracle",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-oracle-count-where",
+      "dbType": "oracle",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-oracle-count-group",
+      "dbType": "oracle",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-oracle-select-max",
+      "dbType": "oracle",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-oracle-select-min",
+      "dbType": "oracle",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-oracle-select-avg",
+      "dbType": "oracle",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-oracle-select-sum",
+      "dbType": "oracle",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-oracle-insert",
+      "dbType": "oracle",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-oracle-insert-multi",
+      "dbType": "oracle",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT ALL INTO table_name (col1, col2) VALUES (val1, val2) INTO table_name (col1, col2) VALUES (val3, val4) SELECT * FROM DUAL;"
+    },
+    {
+      "id": "sql-oracle-update",
+      "dbType": "oracle",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-oracle-update-multi",
+      "dbType": "oracle",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-oracle-delete",
+      "dbType": "oracle",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-oracle-delete-where",
+      "dbType": "oracle",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-oracle-show-tables",
+      "dbType": "oracle",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SELECT table_name FROM user_tables;"
+    },
+    {
+      "id": "sql-oracle-describe",
+      "dbType": "oracle",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "DESC table_name;"
+    },
+    {
+      "id": "sql-oracle-show-index",
+      "dbType": "oracle",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SELECT index_name, table_name FROM user_indexes WHERE table_name = 'TABLE_NAME';"
+    },
+    {
+      "id": "sql-oracle-create-table",
+      "dbType": "oracle",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id NUMBER PRIMARY KEY,\n  name VARCHAR2(255) NOT NULL,\n  created_at DATE DEFAULT SYSDATE\n);"
+    },
+    {
+      "id": "sql-oracle-alter-add",
+      "dbType": "oracle",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD new_col VARCHAR2(255);"
+    },
+    {
+      "id": "sql-oracle-alter-modify",
+      "dbType": "oracle",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name MODIFY col1 VARCHAR2(500);"
+    },
+    {
+      "id": "sql-oracle-alter-drop",
+      "dbType": "oracle",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-oracle-drop-table",
+      "dbType": "oracle",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE table_name;"
+    },
+    {
+      "id": "sql-oracle-truncate",
+      "dbType": "oracle",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-oracle-explain",
+      "dbType": "oracle",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN PLAN FOR SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlserver-select",
+      "dbType": "sqlserver",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT TOP 100 * FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-select-where",
+      "dbType": "sqlserver",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlserver-select-limit",
+      "dbType": "sqlserver",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;"
+    },
+    {
+      "id": "sql-sqlserver-select-order",
+      "dbType": "sqlserver",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT TOP 100 * FROM table_name ORDER BY id DESC;"
+    },
+    {
+      "id": "sql-sqlserver-select-distinct",
+      "dbType": "sqlserver",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-select-like",
+      "dbType": "sqlserver",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-sqlserver-select-in",
+      "dbType": "sqlserver",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-sqlserver-select-between",
+      "dbType": "sqlserver",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-sqlserver-select-join",
+      "dbType": "sqlserver",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-sqlserver-count",
+      "dbType": "sqlserver",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-count-where",
+      "dbType": "sqlserver",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-sqlserver-count-group",
+      "dbType": "sqlserver",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-sqlserver-select-max",
+      "dbType": "sqlserver",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-select-min",
+      "dbType": "sqlserver",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-select-avg",
+      "dbType": "sqlserver",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-select-sum",
+      "dbType": "sqlserver",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-sqlserver-insert",
+      "dbType": "sqlserver",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-sqlserver-insert-multi",
+      "dbType": "sqlserver",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-sqlserver-update",
+      "dbType": "sqlserver",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlserver-update-multi",
+      "dbType": "sqlserver",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlserver-delete",
+      "dbType": "sqlserver",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-sqlserver-delete-where",
+      "dbType": "sqlserver",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-sqlserver-show-tables",
+      "dbType": "sqlserver",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';"
+    },
+    {
+      "id": "sql-sqlserver-describe",
+      "dbType": "sqlserver",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'table_name';"
+    },
+    {
+      "id": "sql-sqlserver-show-index",
+      "dbType": "sqlserver",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SELECT name FROM sys.indexes WHERE object_id = OBJECT_ID('table_name');"
+    },
+    {
+      "id": "sql-sqlserver-create-table",
+      "dbType": "sqlserver",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id INT PRIMARY KEY IDENTITY(1,1),\n  name NVARCHAR(255) NOT NULL,\n  created_at DATETIME DEFAULT GETDATE()\n);"
+    },
+    {
+      "id": "sql-sqlserver-alter-add",
+      "dbType": "sqlserver",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD new_col NVARCHAR(255);"
+    },
+    {
+      "id": "sql-sqlserver-alter-modify",
+      "dbType": "sqlserver",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ALTER COLUMN col1 NVARCHAR(500);"
+    },
+    {
+      "id": "sql-sqlserver-alter-drop",
+      "dbType": "sqlserver",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-sqlserver-drop-table",
+      "dbType": "sqlserver",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-sqlserver-truncate",
+      "dbType": "sqlserver",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-sqlserver-explain",
+      "dbType": "sqlserver",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "SET STATISTICS PROFILE ON; SELECT * FROM table_name WHERE id = 1; SET STATISTICS PROFILE OFF;"
+    },
+    {
+      "id": "sql-mariadb-select",
+      "dbType": "mariadb",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 100;"
+    },
+    {
+      "id": "sql-mariadb-select-where",
+      "dbType": "mariadb",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-mariadb-select-limit",
+      "dbType": "mariadb",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-mariadb-select-order",
+      "dbType": "mariadb",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC LIMIT 100;"
+    },
+    {
+      "id": "sql-mariadb-select-distinct",
+      "dbType": "mariadb",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-select-like",
+      "dbType": "mariadb",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-mariadb-select-in",
+      "dbType": "mariadb",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-mariadb-select-between",
+      "dbType": "mariadb",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-mariadb-select-join",
+      "dbType": "mariadb",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-mariadb-count",
+      "dbType": "mariadb",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-count-where",
+      "dbType": "mariadb",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-mariadb-count-group",
+      "dbType": "mariadb",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-mariadb-select-max",
+      "dbType": "mariadb",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-select-min",
+      "dbType": "mariadb",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-select-avg",
+      "dbType": "mariadb",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-select-sum",
+      "dbType": "mariadb",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-insert",
+      "dbType": "mariadb",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-mariadb-insert-multi",
+      "dbType": "mariadb",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-mariadb-update",
+      "dbType": "mariadb",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-mariadb-update-multi",
+      "dbType": "mariadb",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-mariadb-delete",
+      "dbType": "mariadb",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-mariadb-delete-where",
+      "dbType": "mariadb",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-mariadb-show-tables",
+      "dbType": "mariadb",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SHOW TABLES;"
+    },
+    {
+      "id": "sql-mariadb-describe",
+      "dbType": "mariadb",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "DESCRIBE table_name;"
+    },
+    {
+      "id": "sql-mariadb-show-index",
+      "dbType": "mariadb",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SHOW INDEX FROM table_name;"
+    },
+    {
+      "id": "sql-mariadb-create-table",
+      "dbType": "mariadb",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  name VARCHAR(255) NOT NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "id": "sql-mariadb-alter-add",
+      "dbType": "mariadb",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD COLUMN new_col VARCHAR(255);"
+    },
+    {
+      "id": "sql-mariadb-alter-modify",
+      "dbType": "mariadb",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name MODIFY COLUMN col1 VARCHAR(500);"
+    },
+    {
+      "id": "sql-mariadb-alter-drop",
+      "dbType": "mariadb",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-mariadb-drop-table",
+      "dbType": "mariadb",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-mariadb-truncate",
+      "dbType": "mariadb",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-mariadb-explain",
+      "dbType": "mariadb",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-dm-select",
+      "dbType": "dm",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT TOP 100 * FROM table_name;"
+    },
+    {
+      "id": "sql-dm-select-where",
+      "dbType": "dm",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-dm-select-limit",
+      "dbType": "dm",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-dm-select-order",
+      "dbType": "dm",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT TOP 100 * FROM table_name ORDER BY id DESC;"
+    },
+    {
+      "id": "sql-dm-select-distinct",
+      "dbType": "dm",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-dm-select-like",
+      "dbType": "dm",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-dm-select-in",
+      "dbType": "dm",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-dm-select-between",
+      "dbType": "dm",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-dm-select-join",
+      "dbType": "dm",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-dm-count",
+      "dbType": "dm",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-dm-count-where",
+      "dbType": "dm",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-dm-count-group",
+      "dbType": "dm",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-dm-select-max",
+      "dbType": "dm",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-dm-select-min",
+      "dbType": "dm",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-dm-select-avg",
+      "dbType": "dm",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-dm-select-sum",
+      "dbType": "dm",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-dm-insert",
+      "dbType": "dm",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-dm-insert-multi",
+      "dbType": "dm",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-dm-update",
+      "dbType": "dm",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-dm-update-multi",
+      "dbType": "dm",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-dm-delete",
+      "dbType": "dm",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-dm-delete-where",
+      "dbType": "dm",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-dm-show-tables",
+      "dbType": "dm",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SELECT TABLE_NAME FROM USER_TABLES;"
+    },
+    {
+      "id": "sql-dm-describe",
+      "dbType": "dm",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "SELECT COLUMN_NAME, DATA_TYPE, DATA_LENGTH, NULLABLE FROM USER_TAB_COLUMNS WHERE TABLE_NAME = 'TABLE_NAME';"
+    },
+    {
+      "id": "sql-dm-show-index",
+      "dbType": "dm",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SELECT INDEX_NAME FROM USER_INDEXES WHERE TABLE_NAME = 'TABLE_NAME';"
+    },
+    {
+      "id": "sql-dm-create-table",
+      "dbType": "dm",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id INT PRIMARY KEY IDENTITY(1,1),\n  name VARCHAR(255) NOT NULL,\n  created_at DATETIME DEFAULT SYSDATE\n);"
+    },
+    {
+      "id": "sql-dm-alter-add",
+      "dbType": "dm",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD new_col VARCHAR(255);"
+    },
+    {
+      "id": "sql-dm-alter-modify",
+      "dbType": "dm",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name MODIFY col1 VARCHAR(500);"
+    },
+    {
+      "id": "sql-dm-alter-drop",
+      "dbType": "dm",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-dm-drop-table",
+      "dbType": "dm",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE table_name;"
+    },
+    {
+      "id": "sql-dm-truncate",
+      "dbType": "dm",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-dm-explain",
+      "dbType": "dm",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-kingbase-select",
+      "dbType": "kingbase",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 100;"
+    },
+    {
+      "id": "sql-kingbase-select-where",
+      "dbType": "kingbase",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-kingbase-select-limit",
+      "dbType": "kingbase",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-kingbase-select-order",
+      "dbType": "kingbase",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC LIMIT 100;"
+    },
+    {
+      "id": "sql-kingbase-select-distinct",
+      "dbType": "kingbase",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-kingbase-select-like",
+      "dbType": "kingbase",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-kingbase-select-in",
+      "dbType": "kingbase",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-kingbase-select-between",
+      "dbType": "kingbase",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-kingbase-select-join",
+      "dbType": "kingbase",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-kingbase-count",
+      "dbType": "kingbase",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-kingbase-count-where",
+      "dbType": "kingbase",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-kingbase-count-group",
+      "dbType": "kingbase",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-kingbase-select-max",
+      "dbType": "kingbase",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-kingbase-select-min",
+      "dbType": "kingbase",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-kingbase-select-avg",
+      "dbType": "kingbase",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-kingbase-select-sum",
+      "dbType": "kingbase",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-kingbase-insert",
+      "dbType": "kingbase",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-kingbase-insert-multi",
+      "dbType": "kingbase",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-kingbase-update",
+      "dbType": "kingbase",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-kingbase-update-multi",
+      "dbType": "kingbase",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-kingbase-delete",
+      "dbType": "kingbase",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-kingbase-delete-where",
+      "dbType": "kingbase",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-kingbase-show-tables",
+      "dbType": "kingbase",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SELECT tablename FROM sys_tables WHERE schemaname = 'public';"
+    },
+    {
+      "id": "sql-kingbase-describe",
+      "dbType": "kingbase",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "SELECT column_name, data_type, character_maximum_length, is_nullable FROM information_schema.columns WHERE table_name = 'table_name';"
+    },
+    {
+      "id": "sql-kingbase-show-index",
+      "dbType": "kingbase",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SELECT indexname, indexdef FROM sys_indexes WHERE tablename = 'table_name';"
+    },
+    {
+      "id": "sql-kingbase-create-table",
+      "dbType": "kingbase",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id SERIAL PRIMARY KEY,\n  name VARCHAR(255) NOT NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "id": "sql-kingbase-alter-add",
+      "dbType": "kingbase",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD COLUMN new_col VARCHAR(255);"
+    },
+    {
+      "id": "sql-kingbase-alter-modify",
+      "dbType": "kingbase",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ALTER COLUMN col1 TYPE VARCHAR(500);"
+    },
+    {
+      "id": "sql-kingbase-alter-drop",
+      "dbType": "kingbase",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-kingbase-drop-table",
+      "dbType": "kingbase",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-kingbase-truncate",
+      "dbType": "kingbase",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-kingbase-explain",
+      "dbType": "kingbase",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN ANALYZE SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-gbase-select",
+      "dbType": "gbase",
+      "command": "select",
+      "name": "查询所有",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 100;"
+    },
+    {
+      "id": "sql-gbase-select-where",
+      "dbType": "gbase",
+      "command": "select_where",
+      "name": "条件查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-gbase-select-limit",
+      "dbType": "gbase",
+      "command": "select_limit",
+      "name": "分页查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name LIMIT 10 OFFSET 0;"
+    },
+    {
+      "id": "sql-gbase-select-order",
+      "dbType": "gbase",
+      "command": "select_order",
+      "name": "排序查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name ORDER BY id DESC LIMIT 100;"
+    },
+    {
+      "id": "sql-gbase-select-distinct",
+      "dbType": "gbase",
+      "command": "select_distinct",
+      "name": "去重查询",
+      "category": "查询语句",
+      "template": "SELECT DISTINCT col1 FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-select-like",
+      "dbType": "gbase",
+      "command": "select_like",
+      "name": "模糊查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE name LIKE '%keyword%';"
+    },
+    {
+      "id": "sql-gbase-select-in",
+      "dbType": "gbase",
+      "command": "select_in",
+      "name": "IN查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id IN (1, 2, 3);"
+    },
+    {
+      "id": "sql-gbase-select-between",
+      "dbType": "gbase",
+      "command": "select_between",
+      "name": "范围查询",
+      "category": "查询语句",
+      "template": "SELECT * FROM table_name WHERE id BETWEEN 1 AND 100;"
+    },
+    {
+      "id": "sql-gbase-select-join",
+      "dbType": "gbase",
+      "command": "select_join",
+      "name": "关联查询",
+      "category": "查询语句",
+      "template": "SELECT t1.*, t2.name FROM table_name t1 LEFT JOIN other_table t2 ON t1.id = t2.id;"
+    },
+    {
+      "id": "sql-gbase-count",
+      "dbType": "gbase",
+      "command": "count",
+      "name": "统计总数",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-count-where",
+      "dbType": "gbase",
+      "command": "count_where",
+      "name": "条件统计",
+      "category": "聚合查询",
+      "template": "SELECT COUNT(*) as total FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-gbase-count-group",
+      "dbType": "gbase",
+      "command": "count_group",
+      "name": "分组统计",
+      "category": "聚合查询",
+      "template": "SELECT col1, COUNT(*) as count FROM table_name GROUP BY col1;"
+    },
+    {
+      "id": "sql-gbase-select-max",
+      "dbType": "gbase",
+      "command": "select_max",
+      "name": "最大值",
+      "category": "聚合查询",
+      "template": "SELECT MAX(id) as max_id FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-select-min",
+      "dbType": "gbase",
+      "command": "select_min",
+      "name": "最小值",
+      "category": "聚合查询",
+      "template": "SELECT MIN(id) as min_id FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-select-avg",
+      "dbType": "gbase",
+      "command": "select_avg",
+      "name": "平均值",
+      "category": "聚合查询",
+      "template": "SELECT AVG(price) as avg_price FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-select-sum",
+      "dbType": "gbase",
+      "command": "select_sum",
+      "name": "求和",
+      "category": "聚合查询",
+      "template": "SELECT SUM(amount) as total_amount FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-insert",
+      "dbType": "gbase",
+      "command": "insert",
+      "name": "插入数据",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2);"
+    },
+    {
+      "id": "sql-gbase-insert-multi",
+      "dbType": "gbase",
+      "command": "insert_multi",
+      "name": "批量插入",
+      "category": "数据操作",
+      "template": "INSERT INTO table_name (col1, col2) VALUES (val1, val2), (val3, val4);"
+    },
+    {
+      "id": "sql-gbase-update",
+      "dbType": "gbase",
+      "command": "update",
+      "name": "更新数据",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1 WHERE id = 1;"
+    },
+    {
+      "id": "sql-gbase-update-multi",
+      "dbType": "gbase",
+      "command": "update_multi",
+      "name": "批量更新",
+      "category": "数据操作",
+      "template": "UPDATE table_name SET col1 = val1, col2 = val2 WHERE id = 1;"
+    },
+    {
+      "id": "sql-gbase-delete",
+      "dbType": "gbase",
+      "command": "delete",
+      "name": "删除数据",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE id = 1;"
+    },
+    {
+      "id": "sql-gbase-delete-where",
+      "dbType": "gbase",
+      "command": "delete_where",
+      "name": "条件删除",
+      "category": "数据操作",
+      "template": "DELETE FROM table_name WHERE col1 = 'value';"
+    },
+    {
+      "id": "sql-gbase-show-tables",
+      "dbType": "gbase",
+      "command": "show_tables",
+      "name": "显示表",
+      "category": "表结构",
+      "template": "SHOW TABLES;"
+    },
+    {
+      "id": "sql-gbase-describe",
+      "dbType": "gbase",
+      "command": "describe",
+      "name": "表结构",
+      "category": "表结构",
+      "template": "DESCRIBE table_name;"
+    },
+    {
+      "id": "sql-gbase-show-index",
+      "dbType": "gbase",
+      "command": "show_index",
+      "name": "显示索引",
+      "category": "表结构",
+      "template": "SHOW INDEX FROM table_name;"
+    },
+    {
+      "id": "sql-gbase-create-table",
+      "dbType": "gbase",
+      "command": "create_table",
+      "name": "创建表",
+      "category": "表结构",
+      "template": "CREATE TABLE table_name (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  name VARCHAR(255) NOT NULL,\n  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);"
+    },
+    {
+      "id": "sql-gbase-alter-add",
+      "dbType": "gbase",
+      "command": "alter_add",
+      "name": "添加列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name ADD COLUMN new_col VARCHAR(255);"
+    },
+    {
+      "id": "sql-gbase-alter-modify",
+      "dbType": "gbase",
+      "command": "alter_modify",
+      "name": "修改列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name MODIFY COLUMN col1 VARCHAR(500);"
+    },
+    {
+      "id": "sql-gbase-alter-drop",
+      "dbType": "gbase",
+      "command": "alter_drop",
+      "name": "删除列",
+      "category": "表结构",
+      "template": "ALTER TABLE table_name DROP COLUMN col1;"
+    },
+    {
+      "id": "sql-gbase-drop-table",
+      "dbType": "gbase",
+      "command": "drop_table",
+      "name": "删除表",
+      "category": "表结构",
+      "template": "DROP TABLE IF EXISTS table_name;"
+    },
+    {
+      "id": "sql-gbase-truncate",
+      "dbType": "gbase",
+      "command": "truncate",
+      "name": "清空表",
+      "category": "表结构",
+      "template": "TRUNCATE TABLE table_name;"
+    },
+    {
+      "id": "sql-gbase-explain",
+      "dbType": "gbase",
+      "command": "explain",
+      "name": "执行计划",
+      "category": "性能分析",
+      "template": "EXPLAIN SELECT * FROM table_name WHERE id = 1;"
+    }
+  ]
+}
+

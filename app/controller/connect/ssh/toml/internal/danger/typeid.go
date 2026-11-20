@@ -7,7 +7,7 @@ import (
 
 // typeID is used as key in encoder and decoder caches to enable using
 // the optimize runtime.mapaccess2_fast64 function instead of the more
-// expensive lookup if we were to use reflect.Type as map key.
+// expensive lookup if we were to use reflect.Type as MapCheck key.
 //
 // typeID holds the pointer to the reflect.Type value, which is unique
 // in the program.

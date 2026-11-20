@@ -6,6 +6,14 @@ export function AddTool(arg1) {
   return window['go']['controller']['Tool']['AddTool'](arg1);
 }
 
+export function AnalyzeFilePath(arg1) {
+  return window['go']['controller']['Tool']['AnalyzeFilePath'](arg1);
+}
+
+export function AutoGenerateIcon(arg1) {
+  return window['go']['controller']['Tool']['AutoGenerateIcon'](arg1);
+}
+
 export function Db() {
   return window['go']['controller']['Tool']['Db']();
 }
@@ -28,6 +36,10 @@ export function GetAppPath() {
 
 export function GetCategoryList() {
   return window['go']['controller']['Tool']['GetCategoryList']();
+}
+
+export function GetCtx() {
+  return window['go']['controller']['Tool']['GetCtx']();
 }
 
 export function GetSearchTools(arg1) {

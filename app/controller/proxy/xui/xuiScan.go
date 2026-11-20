@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	"EasyTools/app/controller/proxy"
+
 	"github.com/xuri/excelize/v2"
 )
 
@@ -48,6 +50,13 @@ type ProxyInfo struct {
 func NewXUIScanner(ctx context.Context, xuiMode string, eventEmitter func(event string, data ...interface{})) *XUIScanner {
 	rand.Seed(time.Now().UnixNano())
 
+	// 使用全局代理的HTTP客户端，但设置自定义超时时间
+	baseClient := proxy.GlobalProxyManager.GetHTTPClient()
+	client := &http.Client{
+		Transport: baseClient.Transport,
+		Timeout:   5 * time.Second,
+	}
+
 	return &XUIScanner{
 		ctx:          ctx,
 		switchHTTP:   xuiMode == "2", // 只有模式2才开启HTTP代理
@@ -57,12 +66,7 @@ func NewXUIScanner(ctx context.Context, xuiMode string, eventEmitter func(event 
 		excelFile:    "3x-ui可用代理集合.xlsx",
 		eventEmitter: eventEmitter,
 		xuiMode:      xuiMode,
-		client: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-			Timeout: 5 * time.Second,
-		},
+		client:       client,
 	}
 }
 

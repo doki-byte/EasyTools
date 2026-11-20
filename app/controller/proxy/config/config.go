@@ -1,17 +1,14 @@
 package config
 
 import (
-	"database/sql"
+	"EasyTools/app/controller/system"
+	extractor "EasyTools/app/embed"
+	embedconfig "EasyTools/app/embed/config"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
-	"runtime"
-	"strconv"
-	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type Config struct {
@@ -19,8 +16,15 @@ type Config struct {
 	FofaKey   string
 	HunterKey string
 	QuakeKey  string
-	Country   string
 	Maxpage   string
+
+	// 搜索语句配置
+	FofaSocks5Query   string
+	FofaXuiQuery      string
+	HunterSocks5Query string
+	HunterXuiQuery    string
+	QuakeSocks5Query  string
+	QuakeXuiQuery     string
 
 	CoroutineCount int
 	LiveProxies    int
@@ -37,198 +41,124 @@ type Config struct {
 	Xui   string
 }
 
-// 获取应用基础目录
-func getAppBaseDir() string {
-	// 如果是 macOS，使用应用支持目录
-	if runtime.GOOS == "darwin" {
-		appName := "EasyTools"
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			panic("获取用户主目录失败: " + err.Error())
+// 获取配置文件路径
+func getConfigPath() string {
+	configName := "proxy_config.json"
+	baseDir := system.GetAppBaseDir()
+	return filepath.Join(baseDir, "config", configName)
+}
+
+// 初始化配置
+func initConfig() (*Config, error) {
+	// 读取现有配置
+	return loadConfig()
+}
+
+// 加载配置
+func loadConfig() (*Config, error) {
+	configPath := getConfigPath()
+
+	// 确保默认配置文件存在（第一次运行或文件被删除时）
+	if err := ensureDefaultProxyConfig(configPath); err != nil {
+		return nil, fmt.Errorf("初始化默认配置失败: %v", err)
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("读取配置文件失败: %v", err)
+	}
+
+	var config Config
+	if err := json.Unmarshal(data, &config); err != nil {
+		// 如果解析失败，尝试恢复为内置默认配置后再解析一次
+		log.Printf("解析代理配置失败，尝试恢复默认配置: %v", err)
+		if err := resetProxyConfig(configPath); err != nil {
+			return nil, fmt.Errorf("解析配置文件失败且恢复默认配置失败: %v", err)
 		}
-		return filepath.Join(homeDir, "Library", "Application Support", appName)
-	}
 
-	// 其他系统使用当前目录下的 EasyToolsFiles
-	currentPath, err := os.Getwd()
-	if err != nil {
-		panic("获取当前路径失败: " + err.Error())
-	}
-	return filepath.Join(currentPath, "EasyToolsFiles")
-}
-
-// 获取数据库路径
-func getDBPath() string {
-	dbName := "config.db"
-	baseDir := getAppBaseDir()
-	return filepath.Join(baseDir, dbName)
-}
-
-// 初始化数据库和表
-func initDB() (*sql.DB, error) {
-	dbPath := getDBPath()
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %v", err)
-	}
-
-	// 创建配置表
-	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS proxyconfig (
-		key TEXT PRIMARY KEY,
-		value TEXT
-	);`
-
-	_, err = db.Exec(createTableSQL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create table: %v", err)
-	}
-
-	// 插入默认配置
-	defaultConfig := map[string]string{
-		"Timeout":        "10",
-		"Xui":            "0",
-		"Country":        "0",
-		"Email":          "",
-		"FofaKey":        "",
-		"HunterKey":      "",
-		"QuakeKey":       "",
-		"Maxpage":        "10",
-		"CoroutineCount": "200",
-		"SocksAddress":   "socks5://127.0.0.1:1080",
-	}
-
-	// 使用事务批量插入
-	tx, err := db.Begin()
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %v", err)
-	}
-
-	stmt, err := tx.Prepare("INSERT OR IGNORE INTO proxyconfig (key, value) VALUES (?, ?)")
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare statement: %v", err)
-	}
-	defer stmt.Close()
-
-	for key, value := range defaultConfig {
-		_, err = stmt.Exec(key, value)
+		data, err = os.ReadFile(configPath)
 		if err != nil {
-			tx.Rollback()
-			return nil, fmt.Errorf("failed to insert default config: %v", err)
+			return nil, fmt.Errorf("重新读取默认配置失败: %v", err)
+		}
+
+		if err := json.Unmarshal(data, &config); err != nil {
+			return nil, fmt.Errorf("解析默认配置失败: %v", err)
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	return &config, nil
+}
+
+// ensureDefaultProxyConfig 确保本地存在默认的 proxy_config.json
+func ensureDefaultProxyConfig(configPath string) error {
+	info, err := os.Stat(configPath)
+	if err == nil && info.Size() > 0 {
+		// 文件已存在且非空
+		return nil
 	}
 
-	return db, nil
+	// 优先使用解压器释放整个 config 目录（包含 cms_finger.db 等所有文件）
+	extractor.InitExtractor()
+	if err := extractor.GetExtractor().ExtractOne("config"); err != nil {
+		log.Printf("解压 config 资源失败，将尝试直接写入默认 proxy_config.json: %v", err)
+	}
+
+	// 如果解压后文件已经存在且非空，直接返回
+	info, err = os.Stat(configPath)
+	if err == nil && info.Size() > 0 {
+		return nil
+	}
+
+	// 兜底：单独写入内置默认 proxy_config.json，避免第一次运行失败
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		return fmt.Errorf("创建配置目录失败: %v", err)
+	}
+
+	data, err := embedconfig.Assets.ReadFile("proxy_config.json")
+	if err != nil {
+		return fmt.Errorf("读取内置默认配置失败: %v", err)
+	}
+
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("写入默认配置失败: %v", err)
+	}
+
+	return nil
+}
+
+// resetProxyConfig 使用内置默认配置覆盖本地配置（用于文件损坏时的恢复）
+func resetProxyConfig(configPath string) error {
+	// 从内置资源中读取默认配置
+	data, err := embedconfig.Assets.ReadFile("proxy_config.json")
+	if err != nil {
+		return fmt.Errorf("读取内置默认配置失败: %v", err)
+	}
+
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("写入默认配置失败: %v", err)
+	}
+
+	return nil
 }
 
 func GetConfig() *Config {
-	c := &Config{}
-
-	// 初始化数据库
-	db, err := initDB()
+	config, err := initConfig()
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("初始化配置失败: %v", err)
 	}
-	defer db.Close()
-
-	// 查询所有配置项
-	rows, err := db.Query("SELECT key, value FROM proxyconfig")
-	if err != nil {
-		log.Fatalf("Failed to query config: %v", err)
-	}
-	defer rows.Close()
-
-	// 将结果存储到map中
-	configMap := make(map[string]string)
-	for rows.Next() {
-		var key, value string
-		if err := rows.Scan(&key, &value); err != nil {
-			log.Printf("Failed to scan row: %v", err)
-			continue
-		}
-		configMap[key] = value
-	}
-
-	// 使用反射设置结构体字段
-	cr := reflect.ValueOf(c).Elem()
-	for key, value := range configMap {
-		field := cr.FieldByName(key)
-		if !field.IsValid() {
-			log.Printf("Warning: Unknown config key: %s", key)
-			continue
-		}
-
-		switch field.Kind() {
-		case reflect.String:
-			field.SetString(value)
-		case reflect.Int:
-			intValue, err := strconv.Atoi(value)
-			if err != nil {
-				log.Printf("Warning: Invalid integer value for key %s: %s", key, value)
-				continue
-			}
-			field.SetInt(int64(intValue))
-		case reflect.Slice:
-			if field.Type().Elem().Kind() == reflect.String {
-				field.Set(reflect.ValueOf(strings.Split(value, ",")))
-			}
-		}
-	}
-
-	return c
+	return config
 }
 
 func (p *Config) SaveConfig() error {
-	db, err := sql.Open("sqlite3", getDBPath())
+
+	configPath := getConfigPath()
+	data, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	// 准备更新语句
-	stmt, err := db.Prepare("REPLACE INTO proxyconfig (key, value) VALUES (?, ?)")
-	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %v", err)
-	}
-	defer stmt.Close()
-
-	// 需要保存的字段
-	fields := map[string]interface{}{
-		"Email":          p.Email,
-		"FofaKey":        p.FofaKey,
-		"HunterKey":      p.HunterKey,
-		"QuakeKey":       p.QuakeKey,
-		"Maxpage":        p.Maxpage,
-		"CoroutineCount": p.CoroutineCount,
-		"Timeout":        p.Timeout,
-		"SocksAddress":   p.SocksAddress,
-		"Country":        p.Country,
-		"Xui":            p.Xui,
+		return fmt.Errorf("序列化配置失败: %v", err)
 	}
 
-	// 更新数据库
-	for key, value := range fields {
-		var strValue string
-
-		switch v := value.(type) {
-		case string:
-			strValue = v
-		case int:
-			strValue = strconv.Itoa(v)
-		default:
-			log.Printf("Unsupported type for key %s", key)
-			continue
-		}
-
-		_, err := stmt.Exec(key, strValue)
-		if err != nil {
-			return fmt.Errorf("failed to update config for key %s: %v", key, err)
-		}
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("写入配置文件失败: %v", err)
 	}
 
 	return nil

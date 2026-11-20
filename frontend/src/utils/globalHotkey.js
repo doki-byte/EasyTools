@@ -1,5 +1,6 @@
 import { LOCALSTORAGE_KEY, DEFAULT_HOTKEY, normalizeAccelerator, accelFromEvent } from './hotkeyUtils';
 import { ToggleShowHide } from '../../wailsjs/go/hotkey/HotKey';
+import { getItem, setItem } from './storageManager';
 
 class GlobalHotkeyManager {
     constructor() {
@@ -22,7 +23,7 @@ class GlobalHotkeyManager {
 
     loadHotkeyFromStorage() {
         try {
-            const v = localStorage.getItem(LOCALSTORAGE_KEY);
+            const v = getItem(LOCALSTORAGE_KEY, null);
             this.hotkeyConfig.showHide = v ? normalizeAccelerator(v) : DEFAULT_HOTKEY;
         } catch (err) {
             console.error('读取 localStorage 失败:', err);
@@ -33,9 +34,14 @@ class GlobalHotkeyManager {
     saveHotkeyConfig(accelerator) {
         try {
             const norm = normalizeAccelerator(accelerator);
-            localStorage.setItem(LOCALSTORAGE_KEY, norm);
-            this.hotkeyConfig.showHide = norm;
-            return true;
+            const success = setItem(LOCALSTORAGE_KEY, norm);
+            if (success) {
+                this.hotkeyConfig.showHide = norm;
+                return true;
+            } else {
+                console.error('保存 localStorage 失败: 存储空间可能不足');
+                return false;
+            }
         } catch (error) {
             console.error('保存 localStorage 失败:', error);
             return false;

@@ -50,15 +50,23 @@ func (h *HotKey) toggleShowHide() error {
 	defer h.mu.Unlock()
 
 	if h.isVisible {
+		// 隐藏窗口
 		wruntime.WindowHide(h.ctx)
 		h.isVisible = false
 	} else {
-		// show & bring to front
+		// 显示窗口并尝试置于前台
 		wruntime.WindowShow(h.ctx)
 		wruntime.WindowUnminimise(h.ctx)
-		// set always on top briefly to ensure focus (可根据需求调整)
+
+		// 只“短暂”置顶一次以抢回焦点，随后立即/稍后取消，
+		// 避免窗口一直处于最前，挡住其他程序。
 		wruntime.WindowSetAlwaysOnTop(h.ctx, true)
-		// 取消置顶在前端或后端可选，这里保持置顶短时间后由前端控制也可
+		go func(ctx context.Context) {
+			// 这里延迟一点点时间，给系统一个刷新 Z-Order 的机会
+			time.Sleep(200 * time.Millisecond)
+			wruntime.WindowSetAlwaysOnTop(ctx, false)
+		}(h.ctx)
+
 		h.isVisible = true
 	}
 	return nil

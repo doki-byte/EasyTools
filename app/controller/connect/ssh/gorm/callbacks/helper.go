@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-// ConvertMapToValuesForCreate convert map to values
+// ConvertMapToValuesForCreate convert MapCheck to values
 func ConvertMapToValuesForCreate(stmt *gorm2.Statement, mapValue map[string]any) (values clause2.Values) {
 	values.Columns = make([]clause2.Column, 0, len(mapValue))
 	selectColumns, restricted := stmt.SelectAndOmitColumns(true, false)
@@ -38,7 +38,7 @@ func ConvertMapToValuesForCreate(stmt *gorm2.Statement, mapValue map[string]any)
 	return
 }
 
-// ConvertSliceOfMapToValuesForCreate convert slice of map to values
+// ConvertSliceOfMapToValuesForCreate convert slice of MapCheck to values
 func ConvertSliceOfMapToValuesForCreate(stmt *gorm2.Statement, mapValues []map[string]any) (values clause2.Values) {
 	columns := make([]string, 0, len(mapValues))
 

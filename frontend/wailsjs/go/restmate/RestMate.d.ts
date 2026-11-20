@@ -9,6 +9,8 @@ export function AddEnv(arg1:string):Promise<restmate.JSResp>;
 
 export function AddVar(arg1:string,arg2:string,arg3:string):Promise<restmate.JSResp>;
 
+export function BatchInvokeRequests(arg1:string,arg2:number,arg3:number,arg4:boolean):Promise<restmate.JSResp>;
+
 export function ChoseFile():Promise<restmate.JSResp>;
 
 export function ClearAllCookies():Promise<restmate.JSResp>;
@@ -39,6 +41,10 @@ export function GetRequest(arg1:string,arg2:string):Promise<restmate.JSResp>;
 
 export function ImportCollection():Promise<restmate.JSResp>;
 
+export function ImportSwaggerFromUrl(arg1:string):Promise<restmate.JSResp>;
+
+export function ImportSwaggerFromUrlWithName(arg1:string,arg2:string):Promise<restmate.JSResp>;
+
 export function InitFile(arg1:string,arg2:string):Promise<void>;
 
 export function InitRestMateDbFile():Promise<void>;
@@ -55,6 +61,10 @@ export function RenameRequest(arg1:string,arg2:string,arg3:string):Promise<restm
 
 export function SelectEnv(arg1:string):Promise<restmate.JSResp>;
 
+export function SendBypassRequest(arg1:context.Context,arg2:string,arg3:string):Promise<number>;
+
 export function Startup(arg1:context.Context):Promise<void>;
+
+export function UploadBypassTest(arg1:restmate.UploadBypassRequest):Promise<restmate.JSResp>;
 
 export function UpsertRequest(arg1:restmate.Request):Promise<restmate.JSResp>;

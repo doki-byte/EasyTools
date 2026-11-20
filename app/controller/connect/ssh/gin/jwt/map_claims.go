@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// MapClaims is a claims type that uses the map[string]interface{} for JSON
+// MapClaims is a claims type that uses the MapCheck[string]interface{} for JSON
 // decoding. This is the default claims type if you don't supply one
 type MapClaims map[string]any
 
@@ -39,7 +39,7 @@ func (m MapClaims) GetSubject() (string, error) {
 	return m.parseString("sub")
 }
 
-// parseNumericDate tries to parse a key in the map claims type as a number
+// parseNumericDate tries to parse a key in the MapCheck claims type as a number
 // date. This will succeed, if the underlying type is either a [float64] or a
 // [json.Number]. Otherwise, nil will be returned.
 func (m MapClaims) parseNumericDate(key string) (*NumericDate, error) {
@@ -64,7 +64,7 @@ func (m MapClaims) parseNumericDate(key string) (*NumericDate, error) {
 	return nil, newError(fmt.Sprintf("%s is invalid", key), ErrInvalidType)
 }
 
-// parseClaimsString tries to parse a key in the map claims type as a
+// parseClaimsString tries to parse a key in the MapCheck claims type as a
 // [ClaimsStrings] type, which can either be a string or an array of string.
 func (m MapClaims) parseClaimsString(key string) (ClaimStrings, error) {
 	var cs []string
@@ -86,7 +86,7 @@ func (m MapClaims) parseClaimsString(key string) (ClaimStrings, error) {
 	return cs, nil
 }
 
-// parseString tries to parse a key in the map claims type as a [string] type.
+// parseString tries to parse a key in the MapCheck claims type as a [string] type.
 // If the key does not exist, an empty string is returned. If the key has the
 // wrong type, an error is returned.
 func (m MapClaims) parseString(key string) (string, error) {

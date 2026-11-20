@@ -99,7 +99,7 @@ func (p *Proxy) startHTTPListening() Response {
 	runtime.EventsEmit(p.ctx, "log_update", "[INF] x-ui模式：HTTP代理信息已保存到Excel文件，请直接使用生成的HTTP代理")
 	runtime.EventsEmit(p.ctx, "log_update", "[INF] 使用方法：http://用户名:密码@地址:端口")
 
-	return p.errorResponse("x-ui扫描完成，HTTP代理信息已保存到Excel")
+	return p.successResponse("x-ui扫描完成，HTTP代理信息已保存到Excel", nil)
 }
 
 // 处理SOCKS5连接

@@ -1,9 +1,9 @@
 package extractor
 
 import (
+	"EasyTools/app/embed/config"
 	"EasyTools/app/embed/cyberchef"
 	"EasyTools/app/embed/dict"
-	"EasyTools/app/embed/note"
 	"EasyTools/app/embed/restmate"
 	"EasyTools/app/embed/unwxapp"
 	"path/filepath"
@@ -14,13 +14,6 @@ func InitExtractor() {
 	ext := GetExtractor()
 
 	configs := map[string]*ExtractConfig{
-		"notes": {
-			FS:           note.Assets,
-			TargetDir:    filepath.Join("notes"),
-			Description:  "笔记文件",
-			CheckSymlink: true,
-			ExcludeExts:  []string{".go", ".mod", ".sum"}, // 排除Go文件
-		},
 		"unwxapp": {
 			FS:           unwxapp.Assets,
 			TargetDir:    filepath.Join("tools", "Unwxapp"),
@@ -37,15 +30,23 @@ func InitExtractor() {
 		},
 		"restmate": {
 			FS:           restmate.Assets,
-			TargetDir:    filepath.Join("tools", "restmate"),
+			TargetDir:    filepath.Join("config", "restmate"),
 			Description:  "Restmate工具",
 			CheckSymlink: true,
 			ExcludeExts:  []string{".go", ".mod", ".sum"},
 		},
 		"dict": {
-			FS:           dict.Assets,
-			TargetDir:    filepath.Join("tools", "dict"),
-			Description:  "dict字典",
+			FS:             dict.Assets,
+			TargetDir:      filepath.Join("tools", "dict"),
+			Description:    "dict字典",
+			CheckSymlink:   true,
+			ExcludeExts:    []string{".go", ".mod", ".sum"},
+			ForceCheckDirs: []string{"dirsearch", "jwt", "domain"},
+		},
+		"config": {
+			FS:           config.Assets,
+			TargetDir:    filepath.Join("config"),
+			Description:  "配置文件",
 			CheckSymlink: true,
 			ExcludeExts:  []string{".go", ".mod", ".sum"},
 		},

@@ -164,7 +164,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	// the claims. However, this comes with a performance penalty so only use
 	// it if we must and, otherwise, simple use json.Unmarshal.
 	if !p.useJSONNumber {
-		// JSON Unmarshal. Special case for map type to avoid weird pointer behavior.
+		// JSON Unmarshal. Special case for MapCheck type to avoid weird pointer behavior.
 		if c, ok := token.Claims.(MapClaims); ok {
 			err = json.Unmarshal(claimBytes, &c)
 		} else {
@@ -173,7 +173,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	} else {
 		dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
 		dec.UseNumber()
-		// JSON Decode. Special case for map type to avoid weird pointer behavior.
+		// JSON Decode. Special case for MapCheck type to avoid weird pointer behavior.
 		if c, ok := token.Claims.(MapClaims); ok {
 			err = dec.Decode(&c)
 		} else {

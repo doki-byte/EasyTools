@@ -55,7 +55,7 @@ Let's start with an example that shows the sessions API in a nutshell:
 First we initialize a session store calling NewCookieStore() and passing a
 secret key used to authenticate the session. Inside the handler, we call
 store.Get() to retrieve an existing session or a new one. Then we set some
-session values in session.Values, which is a map[interface{}]interface{}.
+session values in session.Values, which is a MapCheck[interface{}]interface{}.
 And finally we call session.Save() to save the session in the response.
 
 Note that in production code, we should check for errors when calling
@@ -113,7 +113,7 @@ so it is easy to register new datatypes for storage in sessions:
 		Age			int
 	}
 
-	type M map[string]interface{}
+	type M MapCheck[string]interface{}
 
 	func init() {
 
@@ -124,10 +124,10 @@ so it is easy to register new datatypes for storage in sessions:
 As it's not possible to pass a raw type as a parameter to a function, gob.Register()
 relies on us passing it a value of the desired type. In the example above we've passed
 it a pointer to a struct and a pointer to a custom type representing a
-map[string]interface. (We could have passed non-pointer values if we wished.) This will
+MapCheck[string]interface. (We could have passed non-pointer values if we wished.) This will
 then allow us to serialise/deserialise values of those types to and from our sessions.
 
-Note that because session values are stored in a map[string]interface{}, there's
+Note that because session values are stored in a MapCheck[string]interface{}, there's
 a need to type-assert data when retrieving it. We'll use the Person struct we registered above:
 
 	func MyHandler(w http.ResponseWriter, r *http.Request) {

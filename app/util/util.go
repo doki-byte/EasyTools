@@ -39,6 +39,7 @@ func (u *Util) InitFile() *Util {
 	_ = u.PathExist(filepath.Join(baseDir, "icon"))
 	_ = u.PathExist(filepath.Join(baseDir, "tools"))
 	_ = u.PathExist(filepath.Join(baseDir, "file"))
+	_ = u.PathExist(fmt.Sprintf("%s\\config", u.GetAppPath()))
 	return u
 }
 
@@ -143,6 +144,65 @@ func (u *Util) ShellCMD(cmdPath, cmdStr, paramStr string, terminal int) {
 		}
 	}
 	shellName := filepath.Base(shellPath)
+
+	// 处理 macOS 的 .app 应用程序
+	if runtime.GOOS == "darwin" && strings.HasSuffix(strings.ToLower(cmdStr), ".app") {
+		cleanPath := strings.Trim(cmdStr, "\"")
+
+		// 检查文件/目录是否存在（处理相对路径和绝对路径）
+		fullPath := cleanPath
+		if !filepath.IsAbs(cleanPath) {
+			// 如果是相对路径，尝试结合 cmdPath
+			if cmdPath != "" {
+				fullPath = filepath.Join(cmdPath, cleanPath)
+			} else {
+				// 如果没有指定 cmdPath，使用当前工作目录
+				wd, err := os.Getwd()
+				if err == nil {
+					fullPath = filepath.Join(wd, cleanPath)
+				}
+			}
+		}
+
+		// 检查 .app 目录是否存在
+		if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+			fmt.Printf("错误: 应用程序不存在: %s\n", fullPath)
+
+			// 尝试在标准应用程序目录中查找
+			appName := filepath.Base(fullPath)
+			standardPaths := []string{
+				filepath.Join("/Applications", appName),
+				filepath.Join(os.Getenv("HOME"), "Applications", appName),
+			}
+
+			for _, path := range standardPaths {
+				if _, err := os.Stat(path); !os.IsNotExist(err) {
+					fullPath = path
+					fmt.Printf("在标准位置找到应用程序: %s\n", fullPath)
+					break
+				}
+			}
+
+			// 如果仍然找不到，返回错误
+			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+				fmt.Printf("错误: 无法找到应用程序: %s\n", appName)
+				return
+			}
+		}
+
+		// 构建 open 命令
+		openCommand := fmt.Sprintf("open -a \"%s\"", fullPath)
+		if paramStr != "" {
+			openCommand += " --args " + paramStr
+		}
+
+		// 对于 .app 文件，我们直接使用 open 命令，不需要 cd
+		cmdStr = openCommand
+		cmdPath = ""  // 清空路径，因为 open 命令不需要 cd
+		paramStr = "" // 清空参数，因为已经包含在 open 命令中
+
+		fmt.Printf("找到应用程序: %s\n", fullPath)
+	}
 
 	// 拼接完整命令：先切换到指定目录，然后执行命令
 	var fullCommand string

@@ -10,8 +10,28 @@ export function GetHTTPClient() {
   return window['go']['proxy']['ProxyManager']['GetHTTPClient']();
 }
 
+export function GetProxyDialer() {
+  return window['go']['proxy']['ProxyManager']['GetProxyDialer']();
+}
+
 export function GetProxyStatus() {
   return window['go']['proxy']['ProxyManager']['GetProxyStatus']();
+}
+
+export function GetSOCKS5Dialer() {
+  return window['go']['proxy']['ProxyManager']['GetSOCKS5Dialer']();
+}
+
+export function GetSystemProxy() {
+  return window['go']['proxy']['ProxyManager']['GetSystemProxy']();
+}
+
+export function Initialize() {
+  return window['go']['proxy']['ProxyManager']['Initialize']();
+}
+
+export function IsSystemProxySupported() {
+  return window['go']['proxy']['ProxyManager']['IsSystemProxySupported']();
 }
 
 export function SetCtx(arg1) {
@@ -20,6 +40,10 @@ export function SetCtx(arg1) {
 
 export function SetGlobalProxy(arg1, arg2) {
   return window['go']['proxy']['ProxyManager']['SetGlobalProxy'](arg1, arg2);
+}
+
+export function SetSystemProxy(arg1, arg2) {
+  return window['go']['proxy']['ProxyManager']['SetSystemProxy'](arg1, arg2);
 }
 
 export function TestProxyConnection(arg1) {

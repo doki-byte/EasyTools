@@ -36,7 +36,7 @@ type Token struct {
 	Valid     bool           // Valid specifies if the token is valid.  Populated when you Parse/Verify a token
 }
 
-// New creates a new [Token] with the specified signing method and an empty map
+// New creates a new [Token] with the specified signing method and an empty MapCheck
 // of claims. Additional options can be specified, but are currently unused.
 func New(method SigningMethod, opts ...TokenOption) *Token {
 	return NewWithClaims(method, MapClaims{}, opts...)

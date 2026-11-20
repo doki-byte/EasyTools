@@ -1,0 +1,34 @@
+* text=auto eol=lf
+
+*.go        text eol=lf
+*.js        text eol=lf
+*.ts        text eol=lf
+*.vue       text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sh        text eol=lf
+
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.icns      binary
+*.exe       binary
+*.dll       binary
+*.so        binary
+*.dylib     binary
+*.db        binary
+*.zip       binary
+*.7z        binary
+
+# 内置第三方资源，避免 diff 噪声
+app/embed/cyberchef/** linguist-vendored
+app/lib/nuclei/** linguist-vendored
+app/embed/unwxapp/node_modules/** linguist-vendored
+app/embed/dict/** linguist-vendored

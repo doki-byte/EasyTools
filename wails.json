@@ -7,16 +7,16 @@
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "info": {
-    "ProductVersion": "1.9.5",
-    "FileVersion": "1.9.5",
-    "CompanyName": "渗透云记",
-    "FileDescription": "EasyTools渗透测试工具箱",
-    "Copyright": "©渗透云记",
-    "ProductName": "EasyTools渗透测试工具箱",
-    "Comments": "power By Muhan"
+    "ProductVersion": "2.3.1",
+    "FileVersion": "2.3.1",
+    "CompanyName": "EasyTools",
+    "FileDescription": "EasyTools 渗透测试工具箱",
+    "Copyright": "Copyright (c) EasyTools Contributors. Licensed under the MIT License.",
+    "ProductName": "EasyTools",
+    "Comments": "EasyTools"
   },
   "mac": {
-    "bundleID": "com.muhan.easytools",
+    "bundleID": "io.github.easytools.app",
     "helpBookFolder": "",
     "helpBookName": "",
     "icon": "build/appicon.png",

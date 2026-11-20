@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { getToken } from './token'
-import { Notification } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 // 创建 axios 实例
@@ -34,10 +34,9 @@ service.interceptors.response.use(
 
     // 自定义错误码不为 200 时，视为错误
     if (res.code !== 200) {
-      Notification({
-        type: 'error',
-        title: '温馨提示',
-        message: res['message']
+      ElMessage.error({
+        message: res['message'] || '请求失败',
+        duration: 3000
       })
 
       // 错误码 501: 非法 token；502: 其他客户端登录；503: token 过期

@@ -1,7 +1,9 @@
 .DS_Store
 node_modules
-/dist
 
+# 构建产物目录：保留占位文件，保证 go:embed frontend/dist 在裸克隆后仍可编译
+/dist/*
+!/dist/gitkeep
 
 # local env files
 .env.local

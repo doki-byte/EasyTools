@@ -7,7 +7,7 @@ import (
 type allocator struct {
 	sync.Mutex
 	available [][]byte
-	// map key is the request order
+	// MapCheck key is the request order
 	used map[uint32][][]byte
 }
 

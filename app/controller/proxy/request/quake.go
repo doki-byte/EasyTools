@@ -1,6 +1,7 @@
 package request
 
 import (
+	infoCollection "EasyTools/app/controller/infoCollection"
 	"EasyTools/app/controller/proxy"
 	"EasyTools/app/controller/proxy/config"
 	"bytes"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -117,9 +119,50 @@ func quakehttp(postdata QuakeData, key string, timeout string) (*QuakeAutoGenera
 }
 
 func Quakeall(keyword string) (urls []string, err error) {
+	// 优先从空间测绘配置读取 QuakeKey / timeout / maxPages，回退到 proxy_config.json
+	var apiKey string
+	var timeout string
+	var maxPage string
+
+	if cfg, err := infoCollection.LoadConfigForProxy(); err == nil && cfg != nil {
+		if key, ok := cfg.APIKeys["quake"]; ok {
+			apiKey = strings.TrimSpace(key)
+		}
+		if v, ok := cfg.Settings["timeout"]; ok {
+			switch vv := v.(type) {
+			case float64:
+				timeout = strconv.Itoa(int(vv))
+			case int:
+				timeout = strconv.Itoa(vv)
+			case string:
+				timeout = vv
+			}
+		}
+		if v, ok := cfg.Settings["maxPages"]; ok {
+			switch vv := v.(type) {
+			case float64:
+				maxPage = strconv.Itoa(int(vv))
+			case int:
+				maxPage = strconv.Itoa(vv)
+			case string:
+				maxPage = vv
+			}
+		}
+	}
+
 	quake := config.GetConfig()
+	if apiKey == "" {
+		apiKey = quake.QuakeKey
+	}
+	if timeout == "" {
+		timeout = quake.Timeout
+	}
+	if maxPage == "" {
+		maxPage = quake.Maxpage
+	}
+
 	postdata := quake_api(keyword, 0, 50)
-	res, err := quakehttp(postdata, quake.QuakeKey, quake.Timeout)
+	res, err := quakehttp(postdata, apiKey, timeout)
 	if err != nil {
 		return nil, fmt.Errorf("quake 第一页请求失败: %v", err)
 	}
@@ -127,12 +170,12 @@ func Quakeall(keyword string) (urls []string, err error) {
 	for _, value := range res.Data {
 		urls = append(urls, value.Ip+":"+strconv.Itoa(value.Port))
 	}
-	Maxpage, _ := strconv.Atoi(quake.Maxpage)
+	Maxpage, _ := strconv.Atoi(maxPage)
 	if pagelength > 1 {
 		for i := 1; i <= pagelength && i <= Maxpage*2; i++ {
 			fmt.Println("quake 正在请求第" + strconv.Itoa(i) + "页数据")
 			postdata = quake_api(keyword, i*50, 50)
-			res, _ = quakehttp(postdata, quake.QuakeKey, quake.Timeout)
+			res, _ = quakehttp(postdata, apiKey, timeout)
 			if len(res.Data) > 0 {
 				for _, value := range res.Data {
 					urls = append(urls, value.Ip+":"+strconv.Itoa(value.Port))
@@ -153,29 +196,34 @@ func (fp *QuakeConfig) Name() string {
 }
 
 func (fp *QuakeConfig) Fetch() ([]string, error) {
-	quake := config.GetConfig()
+	// 只根据 Key 是否存在判断是否启用，Key 来源已在 Quakeall 中统一处理
+	var hasKey bool
+	if cfg, err := infoCollection.LoadConfigForProxy(); err == nil && cfg != nil {
+		if key, ok := cfg.APIKeys["quake"]; ok && strings.TrimSpace(key) != "" && cfg.Enabled["quake"] {
+			hasKey = true
+		}
+	}
+	if !hasKey {
+		quake := config.GetConfig()
+		if quake.QuakeKey != "" {
+			hasKey = true
+		}
+	}
 
-	var quakekeys string
+	if hasKey {
+		var quakekeys string
 
-	if quake.QuakeKey != "" {
-		if quake.Xui == "1" {
-			quakekeys = fmt.Sprintf("body:\"HttpUtil.post('/getTwoFactorEnable')\"")
+		cfg := config.GetConfig()
+		if cfg.Xui == "1" || cfg.Xui == "2" {
+			quakekeys = cfg.QuakeXuiQuery
 		} else {
-			switch quake.Country {
-			case "0":
-				quakekeys = fmt.Sprintf("service:\"socks5\" and response:\"Accepted Auth Method: 0x0\"")
-			case "1":
-				quakekeys = fmt.Sprintf("service:\"socks5\" and response:\"Accepted Auth Method: 0x0\" and country: \"China\"")
-			case "2":
-				quakekeys = fmt.Sprintf("service:\"socks5\" and response:\"Accepted Auth Method: 0x0\" and not country: \"China\"")
-			}
+			quakekeys = cfg.QuakeSocks5Query
 		}
 
 		urls, err := Quakeall(quakekeys)
 		if err != nil {
 			log.Printf("Quake搜索失败: %v", err)
-			// 可以选择返回部分结果，或者返回错误
-			return urls, err // 或者 return urls, nil 取决于你的需求
+			return urls, err
 		}
 		return urls, nil
 	} else {

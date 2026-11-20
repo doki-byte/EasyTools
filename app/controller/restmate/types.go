@@ -55,13 +55,18 @@ type KV struct {
 	Value string `json:"value"`
 }
 type Result struct {
-	StatusCode   int    `json:"statusCode"`
-	HttpStatus   string `json:"httpStatus"`
-	BodyContent  string `json:"bodyContent"`
-	ErrorContent string `json:"errorContent"`
-	ContentType  string `json:"contentType"`
-	Duration     string `json:"duration"`
-	Headers      []KV   `json:"headers"`
+	StatusCode     int    `json:"statusCode"`
+	HttpStatus     string `json:"httpStatus"`
+	BodyContent    string `json:"bodyContent"`
+	ErrorContent   string `json:"errorContent"`
+	ContentType    string `json:"contentType"`
+	Duration       string `json:"duration"`
+	Headers        []KV   `json:"headers"`
+	RequestPacket  string `json:"requestPacket,omitempty"`
+	ResponsePacket string `json:"responsePacket,omitempty"`
+	IsBinary       bool   `json:"isBinary,omitempty"`
+	BinaryData     string `json:"binaryData,omitempty"`     // Base64 编码的二进制数据
+	SuggestedExt   string `json:"suggestedExt,omitempty"`   // 建议的文件扩展名
 }
 type ReqRsp struct {
 	ID     string `json:"id"`
@@ -112,4 +117,10 @@ type Item struct {
 			} `json:"options"`
 		} `json:"body"`
 	} `json:"request,omitempty"`
+}
+
+// BatchConfig 批量发包配置
+type BatchConfig struct {
+	Concurrency int `json:"concurrency"` // 并发数（每秒请求数）
+	RetryCount  int `json:"retryCount"`  // 重试次数
 }

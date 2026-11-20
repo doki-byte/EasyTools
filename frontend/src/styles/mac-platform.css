@@ -1,0 +1,370 @@
+/**
+ * Mac 平台特定的样式优化
+ * 解决 Mac 上字体渲染、间距、显示等问题
+ */
+
+/* Mac 平台的字体渲染优化 */
+@supports (-webkit-font-smoothing: antialiased) {
+  /* 全局字体平滑优化 */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* 与 #app 一致：禁用 optimizeLegibility，避免输入/大段文本时每帧高成本排版 */
+    text-rendering: auto;
+  }
+
+  /* 针对 Mac 的字体粗细微调 */
+  body,
+  html {
+    font-weight: 400;
+  }
+
+  /* Mac 上标题和重要文本稍微加粗以提高可读性 */
+  h1, h2, h3, h4, h5, h6,
+  .el-card__header,
+  .el-dialog__title,
+  .el-form-item__label {
+    font-weight: 600;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上菜单项字体优化 */
+  .menu .item {
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.3px;
+  }
+
+  /* Mac 上标题栏字体优化 */
+  .custom-titlebar {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .custom-titlebar .app-title,
+  .custom-titlebar .window-title {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 600;
+  }
+
+  /* Mac 上表格文字优化 */
+  .el-table th,
+  .el-table td {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上按钮文字优化 */
+  .el-button {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上输入框文字优化 */
+  .el-input__inner,
+  .el-textarea__inner {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+
+  /* Mac 上标签页文字优化 */
+  .el-tabs__item {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上卡片标题优化 */
+  .el-card__header {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上字体行高优化（Mac 上通常需要稍微增加行高） */
+  body {
+    line-height: 1.6;
+  }
+
+  /* Mac 上小字号文本的行高优化 */
+  .el-table,
+  .el-table th,
+  .el-table td {
+    line-height: 1.5;
+  }
+
+  /* Mac 上代码字体优化 */
+  code,
+  pre,
+  .el-textarea__inner[style*="monospace"],
+  [style*="font-family: monospace"] {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+
+  /* Mac 上滚动条样式优化 */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  /* Mac 上文本选择优化 */
+  ::selection {
+    background: rgba(79, 159, 237, 0.3);
+    color: inherit;
+  }
+
+  ::-moz-selection {
+    background: rgba(79, 159, 237, 0.3);
+    color: inherit;
+  }
+
+  /* Mac 上 Element Plus 组件字体优化 */
+  .el-select .el-input__inner,
+  .el-cascader .el-input__inner,
+  .el-date-editor .el-input__inner {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上对话框内容优化 */
+  .el-dialog__body {
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  /* Mac 上工具提示优化 */
+  .el-tooltip__popper {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+
+  /* Mac 上菜单下拉项优化 */
+  .el-dropdown-menu__item {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+
+  /* Mac 上通知消息优化 */
+  .el-message,
+  .el-notification {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上分页器优化 */
+  .el-pagination {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .el-pagination .el-pager li {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+
+  /* Mac 上标签优化 */
+  .el-tag {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+  }
+
+  /* Mac 上链接优化 */
+  .el-link {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上描述列表优化 */
+  .el-descriptions__label {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  .el-descriptions__content {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上步骤条优化 */
+  .el-steps .el-step__title {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上时间线优化 */
+  .el-timeline-item__content {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上警告框优化 */
+  .el-alert__title {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  .el-alert__content {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上骨架屏优化 */
+  .el-skeleton__text {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上空状态优化 */
+  .el-empty__description {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上结果页优化 */
+  .el-result__title {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上自定义组件字体优化 */
+  .theme-background-container,
+  .system,
+  .site {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上卡片背景文字优化 */
+  .el-card__body {
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  /* Mac 上输入框占位符优化 */
+  .el-input__inner::placeholder,
+  .el-textarea__inner::placeholder {
+    -webkit-font-smoothing: antialiased;
+    opacity: 0.6;
+  }
+
+  /* Mac 上禁用状态文字优化 */
+  .el-button.is-disabled,
+  .el-input.is-disabled .el-input__inner {
+    -webkit-font-smoothing: antialiased;
+    opacity: 0.5;
+  }
+
+  /* Mac 上加载状态优化 */
+  .el-loading-mask {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上树形控件优化 */
+  .el-tree-node__label {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上表单标签优化 */
+  .el-form-item__label {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上单选框和复选框优化 */
+  .el-radio__label,
+  .el-checkbox__label {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上开关优化 */
+  .el-switch__label {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上滑块优化 */
+  .el-slider__button {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上评分组件优化 */
+  .el-rate__text {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上颜色选择器优化 */
+  .el-color-picker__trigger {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上日期选择器优化 */
+  .el-picker-panel {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .el-date-table td {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上级联选择器优化 */
+  .el-cascader-menu__item {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上穿梭框优化 */
+  .el-transfer-panel__header {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .el-transfer-panel__body {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上上传组件优化 */
+  .el-upload-list__item-name {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上图片查看器优化 */
+  .el-image-viewer__actions {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上头像优化 */
+  .el-avatar {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上徽章优化 */
+  .el-badge__content {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上轮播图优化 */
+  .el-carousel__indicators {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上走马灯优化 */
+  .el-collapse-item__header {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  .el-collapse-item__content {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Mac 上进度条文字优化 */
+  .el-progress-bar__innerText {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 500;
+  }
+
+  /* Mac 上统计数值优化 */
+  .el-statistic__number {
+    -webkit-font-smoothing: antialiased;
+    font-weight: 600;
+  }
+}
+

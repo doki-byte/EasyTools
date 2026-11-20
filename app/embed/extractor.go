@@ -1,6 +1,7 @@
 package extractor
 
 import (
+	"encoding/base64"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -14,13 +15,14 @@ import (
 
 // 解压配置
 type ExtractConfig struct {
-	FS           embed.FS // 嵌入的文件系统
-	TargetDir    string   // 目标目录（相对于应用基目录）
-	Description  string   // 描述信息
-	CheckSymlink bool     // 是否检查符号链接
-	ExcludeExts  []string // 要排除的文件扩展名
-	IncludeExts  []string // 要包含的文件扩展名（如果为空则包含所有）
-	ExcludeDirs  []string // 要排除的目录
+	FS             embed.FS // 嵌入的文件系统
+	TargetDir      string   // 目标目录（相对于应用基目录）
+	Description    string   // 描述信息
+	CheckSymlink   bool     // 是否检查符号链接
+	ExcludeExts    []string // 要排除的文件扩展名
+	IncludeExts    []string // 要包含的文件扩展名（如果为空则包含所有）
+	ExcludeDirs    []string // 要排除的目录
+	ForceCheckDirs []string // 强制检查的子目录列表，如果这些目录不存在则强制释放
 }
 
 // 解压管理器
@@ -124,10 +126,25 @@ func (e *Extractor) ExtractOne(name string) error {
 
 	targetDir := filepath.Join(e.appBaseDir, config.TargetDir)
 
-	// 检查目标目录是否已存在
-	if _, err := os.Stat(targetDir); err == nil {
-		log.Printf("%s 资源文件夹已存在，跳过解压", config.Description)
-		return nil
+	// 检查是否需要强制释放（检查ForceCheckDirs中的目录是否存在）
+	needForceExtract := false
+	if len(config.ForceCheckDirs) > 0 {
+		for _, checkDir := range config.ForceCheckDirs {
+			checkPath := filepath.Join(targetDir, checkDir)
+			if _, err := os.Stat(checkPath); os.IsNotExist(err) {
+				needForceExtract = true
+				log.Printf("%s 强制检查目录 %s 不存在，需要强制释放", config.Description, checkDir)
+				break
+			}
+		}
+	}
+
+	// 如果目标目录已存在且不需要强制释放，则跳过
+	if !needForceExtract {
+		if _, err := os.Stat(targetDir); err == nil {
+			log.Printf("%s 资源文件夹已存在，跳过解压", config.Description)
+			return nil
+		}
 	}
 
 	log.Printf("开始解压 %s 资源...", config.Description)
@@ -149,9 +166,25 @@ func (e *Extractor) ExtractAll() error {
 	for _, config := range e.configs {
 		targetDir := filepath.Join(e.appBaseDir, config.TargetDir)
 
-		if _, err := os.Stat(targetDir); err == nil {
-			log.Printf("%s 资源文件夹已存在，跳过解压", config.Description)
-			continue
+		// 检查是否需要强制释放（检查ForceCheckDirs中的目录是否存在）
+		needForceExtract := false
+		if len(config.ForceCheckDirs) > 0 {
+			for _, checkDir := range config.ForceCheckDirs {
+				checkPath := filepath.Join(targetDir, checkDir)
+				if _, err := os.Stat(checkPath); os.IsNotExist(err) {
+					needForceExtract = true
+					log.Printf("%s 强制检查目录 %s 不存在，需要强制释放", config.Description, checkDir)
+					break
+				}
+			}
+		}
+
+		// 如果目标目录已存在且不需要强制释放，则跳过
+		if !needForceExtract {
+			if _, err := os.Stat(targetDir); err == nil {
+				log.Printf("%s 资源文件夹已存在，跳过解压", config.Description)
+				continue
+			}
 		}
 
 		log.Printf("开始解压 %s 资源...", config.Description)
@@ -173,7 +206,8 @@ func (e *Extractor) ExtractAll() error {
 // 提取并写入文件到目标目录
 func (e *Extractor) extractResource(fsEmbed embed.FS, resourcePath, targetDir string) (string, error) {
 	resourcePath = strings.ReplaceAll(resourcePath, "\\", "/")
-	outputPath := filepath.Join(targetDir, resourcePath)
+	outputRelPath := strings.TrimSuffix(resourcePath, ".etenc")
+	outputPath := filepath.Join(targetDir, outputRelPath)
 
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return "", fmt.Errorf("创建目录失败: %w", err)
@@ -184,11 +218,32 @@ func (e *Extractor) extractResource(fsEmbed embed.FS, resourcePath, targetDir st
 		return "", fmt.Errorf("无法读取资源文件 %s: %w", resourcePath, err)
 	}
 
+	if strings.HasSuffix(resourcePath, ".etenc") {
+		decoded, err := decodeEmbeddedContent(data)
+		if err != nil {
+			return "", fmt.Errorf("解码资源文件 %s 失败: %w", resourcePath, err)
+		}
+		data = decoded
+	}
+
 	if err := os.WriteFile(outputPath, data, 0644); err != nil {
 		return "", fmt.Errorf("无法写入文件 %s: %w", outputPath, err)
 	}
 
 	return outputPath, nil
+}
+
+func decodeEmbeddedContent(data []byte) ([]byte, error) {
+	clean := strings.TrimSpace(string(data))
+	if clean == "" {
+		return []byte{}, nil
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(clean)
+	if err != nil {
+		return nil, err
+	}
+	return decoded, nil
 }
 
 // 解压整个文件系统

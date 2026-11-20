@@ -2,12 +2,15 @@ import { defineStore } from "pinia";
 import { GetProfile, SaveConfig, StopListening } from "../../../../wailsjs/go/proxy/Proxy";
 
 export interface Config {
-    Email: string;
-    FofaKey: string;
-    HunterKey: string;
-    QuakeKey: string;
-    Country: string;
     Maxpage: string;
+
+    // 搜索语句配置
+    FofaSocks5Query: string;
+    FofaXuiQuery: string;
+    HunterSocks5Query: string;
+    HunterXuiQuery: string;
+    QuakeSocks5Query: string;
+    QuakeXuiQuery: string;
 
     CoroutineCount: number;
     LiveProxies: number;
@@ -35,16 +38,19 @@ export const useConfigStore = defineStore('config', {
         AllProxies: 0,
         Timeout: 0,
         SocksAddress: 'NULL',
-        Email: "",
-        FofaKey: "",
-        HunterKey: "",
-        QuakeKey: "",
         CheckTimeout: 0,
         Maxpage: 0,
         LiveProxyLists: [] as any[],
-        Country: "0",
-        Xui:"0",
-        CurrentIP: "N/A" // 添加当前IP字段
+        Xui: "0",
+        CurrentIP: "N/A",
+
+        // 搜索语句配置
+        FofaSocks5Query: "",
+        FofaXuiQuery: "",
+        HunterSocks5Query: "",
+        HunterXuiQuery: "",
+        QuakeSocks5Query: "",
+        QuakeXuiQuery: ""
     }),
 
     actions: {
@@ -58,13 +64,16 @@ export const useConfigStore = defineStore('config', {
                 this.AllProxies = profile.AllProxies;
                 this.Timeout = Number(profile.Timeout);
                 this.SocksAddress = profile.SocksAddress;
-                this.Email = profile.Email;
-                this.FofaKey = profile.FofaKey;
-                this.HunterKey = profile.HunterKey;
-                this.QuakeKey = profile.QuakeKey;
                 this.Maxpage = Number(profile.Maxpage);
-                this.Country = profile.Country;
-                this.Xui=profile.Xui;
+                this.Xui = profile.Xui;
+
+                // 搜索语句配置
+                this.FofaSocks5Query = profile.FofaSocks5Query;
+                this.FofaXuiQuery = profile.FofaXuiQuery;
+                this.HunterSocks5Query = profile.HunterSocks5Query;
+                this.HunterXuiQuery = profile.HunterXuiQuery;
+                this.QuakeSocks5Query = profile.QuakeSocks5Query;
+                this.QuakeXuiQuery = profile.QuakeXuiQuery;
             } catch (err) {
                 console.error("获取配置失败:", err);
             }
@@ -132,30 +141,6 @@ export const useConfigStore = defineStore('config', {
         setStatus(status: number) {
             this.Status = status;
         },
-        getEmail() {
-            return this.Email;
-        },
-        setEmail(email: string) {
-            this.Email = email;
-        },
-        getFofaKey() {
-            return this.FofaKey;
-        },
-        setFofaKey(FofaKey: string) {
-            this.FofaKey = FofaKey;
-        },
-        getHunterKey() {
-            return this.HunterKey;
-        },
-        setHunterKey(HunterKey: string) {
-            this.HunterKey = HunterKey;
-        },
-        getQuakeKey() {
-            return this.QuakeKey;
-        },
-        setQuakeKey(QuakeKey: string) {
-            this.QuakeKey = QuakeKey;
-        },
         getCheckTimeout() {
             return this.CheckTimeout;
         },
@@ -168,17 +153,48 @@ export const useConfigStore = defineStore('config', {
         setMaxpage(maxpage: number) {
             this.Maxpage = maxpage;
         },
-        getCountry(){
-            return this.Country;
-        },
-        setCountry(country: string) {
-            this.Country = country;
-        },
         getXui(){
             return this.Xui;
         },
         setXui(xui: string) {
             this.Xui = xui;
+        },
+        // 搜索语句的getter和setter
+        getFofaSocks5Query() {
+            return this.FofaSocks5Query;
+        },
+        setFofaSocks5Query(query: string) {
+            this.FofaSocks5Query = query;
+        },
+        getFofaXuiQuery() {
+            return this.FofaXuiQuery;
+        },
+        setFofaXuiQuery(query: string) {
+            this.FofaXuiQuery = query;
+        },
+        getHunterSocks5Query() {
+            return this.HunterSocks5Query;
+        },
+        setHunterSocks5Query(query: string) {
+            this.HunterSocks5Query = query;
+        },
+        getHunterXuiQuery() {
+            return this.HunterXuiQuery;
+        },
+        setHunterXuiQuery(query: string) {
+            this.HunterXuiQuery = query;
+        },
+        getQuakeSocks5Query() {
+            return this.QuakeSocks5Query;
+        },
+        setQuakeSocks5Query(query: string) {
+            this.QuakeSocks5Query = query;
+        },
+        getQuakeXuiQuery() {
+            return this.QuakeXuiQuery;
+        },
+        setQuakeXuiQuery(query: string) {
+            this.QuakeXuiQuery = query;
         },
         // 添加当前IP的getter和setter
         getCurrentIP() {

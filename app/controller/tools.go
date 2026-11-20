@@ -3,12 +3,21 @@ package controller
 import (
 	"EasyTools/app/controller/system"
 	"EasyTools/app/model"
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"image"
+	"image/png"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/mat/besticon/v3/ico"
+	"github.com/orcastor/fico"
+	lnk "github.com/parsiya/golnk"
 )
 
 // Tool 系统API
@@ -410,21 +419,6 @@ func (s *Tool) UpdateCommandSorts(sorts []map[string]interface{}) error {
 	return nil
 }
 
-// 通用类型转换函数
-func GetUint(value interface{}) (uint, error) {
-	switch v := value.(type) {
-	case float64:
-		if v < 0 {
-			return 0, fmt.Errorf("负值转换错误")
-		}
-		return uint(v), nil
-	case int:
-		return uint(v), nil
-	default:
-		return 0, fmt.Errorf("无法转换类型: %T", v)
-	}
-}
-
 // 在Tool结构体中添加以下方法
 func (s *Tool) MoveCommandToCategory(request map[string]interface{}) error {
 	db := s.Db()
@@ -488,4 +482,250 @@ func (s *Tool) ReadImageAsBase64(path string) string {
 	}
 	log.Printf("Reading image: %s", base64.StdEncoding.EncodeToString(data))
 	return base64.StdEncoding.EncodeToString(data)
+}
+
+// 自动生成图标并保存到 icon 目录
+func (s *Tool) AutoGenerateIcon(filePath string) (string, error) {
+	// 确保 icon 目录存在
+	iconDir := filepath.Join(system.GetAppBaseDir(), "icon")
+
+	// 提取图标数据
+	iconData, err := s.extractIcon(filePath)
+	if err != nil {
+		return "", fmt.Errorf("提取图标失败: %v", err)
+	}
+
+	// 如果提取失败，返回空字符串（使用默认图标）
+	if len(iconData) == 0 {
+		return "", nil
+	}
+
+	// 生成唯一的图标文件名
+	baseName := filepath.Base(filePath)
+	nameWithoutExt := strings.TrimSuffix(baseName, filepath.Ext(baseName))
+	fileName := fmt.Sprintf("%s_%d.png", nameWithoutExt, time.Now().UnixNano())
+	iconPath := filepath.Join(iconDir, fileName)
+
+	// 保存图标文件
+	if err := os.WriteFile(iconPath, iconData, 0644); err != nil {
+		return "", fmt.Errorf("保存图标文件失败: %v", err)
+	}
+
+	return fileName, nil
+}
+
+// 提取图标的核心方法
+func (s *Tool) extractIcon(filePath string) ([]byte, error) {
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("文件不存在: %s", filePath)
+	}
+
+	ext := strings.ToLower(filepath.Ext(filePath))
+
+	// 根据文件类型使用不同的提取方法
+	switch ext {
+	case ".lnk":
+		return s.extractLnkIcon(filePath)
+	case ".exe", ".dll":
+		return s.extractExeIcon(filePath)
+	case ".ico":
+		return s.extractIcoFile(filePath)
+	default:
+		// 对于其他文件类型，尝试使用 fico 提取
+		return s.extractWithFico(filePath)
+	}
+}
+
+// 提取 lnk 文件的图标
+func (s *Tool) extractLnkIcon(lnkPath string) ([]byte, error) {
+	// 解析 lnk 文件获取目标路径
+	lnkFile, err := lnk.File(lnkPath)
+	if err != nil {
+		return nil, fmt.Errorf("解析lnk文件失败: %v", err)
+	}
+
+	targetPath := lnkFile.LinkInfo.LocalBasePath
+	if targetPath == "" {
+		return nil, fmt.Errorf("无法获取lnk目标路径")
+	}
+
+	// 递归提取目标文件的图标
+	return s.extractIcon(targetPath)
+}
+
+// 提取 exe/dll 文件的图标
+func (s *Tool) extractExeIcon(exePath string) ([]byte, error) {
+	var buf bytes.Buffer
+
+	// 使用 fico 提取图标
+	config := fico.Config{
+		Format: "png",
+		Width:  64,
+		Height: 64,
+	}
+
+	err := fico.F2ICO(&buf, exePath, config)
+	if err != nil {
+		// 如果 fico 失败，尝试备用方法
+		return s.extractWithFico(exePath)
+	}
+
+	// 检查是否成功提取到图标数据
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("未找到图标数据")
+	}
+
+	return buf.Bytes(), nil
+}
+
+// 使用 fico 库提取图标（通用方法）
+func (s *Tool) extractWithFico(filePath string) ([]byte, error) {
+	var buf bytes.Buffer
+
+	config := fico.Config{
+		Format: "png",
+		Width:  64,
+		Height: 64,
+	}
+
+	err := fico.F2ICO(&buf, filePath, config)
+	if err != nil {
+		return nil, fmt.Errorf("fico提取图标失败: %v", err)
+	}
+
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("fico未找到图标")
+	}
+
+	return buf.Bytes(), nil
+}
+
+// 提取 ico 文件
+func (s *Tool) extractIcoFile(icoPath string) ([]byte, error) {
+	// 读取 ico 文件
+	file, err := os.Open(icoPath)
+	if err != nil {
+		return nil, fmt.Errorf("打开ico文件失败: %v", err)
+	}
+	defer file.Close()
+
+	// 解码 ico 文件
+	img, err := ico.Decode(file)
+	if err != nil {
+		return nil, fmt.Errorf("解码ico文件失败: %v", err)
+	}
+
+	// 转换为 png
+	return s.imageToPng(img)
+}
+
+// 将 image.Image 转换为 PNG 字节数据
+func (s *Tool) imageToPng(img image.Image) ([]byte, error) {
+	var buf bytes.Buffer
+
+	// 调整图片大小到标准尺寸
+	resizedImg := s.resizeImage(img, 64, 64)
+
+	// 编码为 PNG
+	err := png.Encode(&buf, resizedImg)
+	if err != nil {
+		return nil, fmt.Errorf("PNG编码失败: %v", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+// 调整图片大小
+func (s *Tool) resizeImage(img image.Image, width, height int) image.Image {
+	// 简单的调整大小实现
+	bounds := img.Bounds()
+	imgWidth := bounds.Dx()
+	imgHeight := bounds.Dy()
+
+	// 如果图片已经小于目标尺寸，直接返回
+	if imgWidth <= width && imgHeight <= height {
+		return img
+	}
+
+	// 计算缩放比例
+	scaleX := float64(width) / float64(imgWidth)
+	scaleY := float64(height) / float64(imgHeight)
+	scale := scaleX
+	if scaleY < scaleX {
+		scale = scaleY
+	}
+
+	newWidth := int(float64(imgWidth) * scale)
+	newHeight := int(float64(imgHeight) * scale)
+
+	// 创建新图片
+	newImg := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
+
+	// 简单的最近邻缩放
+	for y := 0; y < newHeight; y++ {
+		for x := 0; x < newWidth; x++ {
+			srcX := int(float64(x) / scale)
+			srcY := int(float64(y) / scale)
+			newImg.Set(x, y, img.At(srcX, srcY))
+		}
+	}
+
+	return newImg
+}
+
+// 分析文件路径信息
+func (s *Tool) AnalyzeFilePath(fullPath string) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+
+	// 获取文件信息
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil {
+		return nil, fmt.Errorf("获取文件信息失败: %v", err)
+	}
+
+	// 提取路径信息
+	dir := filepath.Dir(fullPath)
+	fileName := filepath.Base(fullPath)
+	fileExt := filepath.Ext(fileName)
+	nameWithoutExt := strings.TrimSuffix(fileName, fileExt)
+
+	result["directory"] = dir
+	result["filename"] = fileName
+	result["filenameWithoutExt"] = nameWithoutExt
+	result["extension"] = strings.ToLower(fileExt)
+	result["fullPath"] = fullPath
+	result["isDirectory"] = fileInfo.IsDir()
+
+	// 根据文件类型推断建议的命令和名称
+	suggestedCmd, suggestedName := s.getSuggestedCommand(fileName, fileExt, nameWithoutExt)
+	result["suggestedCmd"] = suggestedCmd
+	result["suggestedName"] = suggestedName
+
+	return result, nil
+}
+
+// 获取建议的命令和名称
+func (s *Tool) getSuggestedCommand(fileName, fileExt, nameWithoutExt string) (string, string) {
+	ext := strings.ToLower(fileExt)
+
+	switch ext {
+	case ".exe":
+		return fileName, nameWithoutExt
+	case ".jar":
+		return "java -jar " + fileName, nameWithoutExt
+	case ".bat", ".cmd":
+		return fileName, nameWithoutExt
+	case ".py":
+		return "python " + fileName, nameWithoutExt
+	case ".ps1":
+		return "powershell -File " + fileName, nameWithoutExt
+	case ".sh":
+		return "./" + fileName, nameWithoutExt
+	case ".lnk":
+		return fileName, nameWithoutExt
+	default:
+		// 对于未知类型，尝试直接执行
+		return fileName, nameWithoutExt
+	}
 }

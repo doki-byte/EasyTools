@@ -68,7 +68,7 @@ func (p *Proxy) checkRegularProxies() Response {
 	baseDir := util.GetAppBaseDir()
 	path := filepath.Join(baseDir, "proxy_success.txt")
 
-	// 使用 map 去重代理列表
+	// 使用 MapCheck 去重代理列表
 	proxySet := make(map[string]struct{})
 	for _, proxy := range availableProxiesList {
 		proxySet[proxy] = struct{}{}

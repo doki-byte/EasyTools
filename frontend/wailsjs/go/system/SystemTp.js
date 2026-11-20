@@ -18,6 +18,10 @@ export function GetAppPath() {
   return window['go']['system']['SystemTp']['GetAppPath']();
 }
 
+export function GetCtx() {
+  return window['go']['system']['SystemTp']['GetCtx']();
+}
+
 export function InitMianSha() {
   return window['go']['system']['SystemTp']['InitMianSha']();
 }

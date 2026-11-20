@@ -14,14 +14,14 @@ import (
 // parsePreloadMap extracts nested preloads. e.g.
 //
 //	// schema has a "k0" relation and a "k7.k8" embedded relation
-//	parsePreloadMap(schema, map[string][]interface{}{
+//	parsePreloadMap(schema, MapCheck[string][]interface{}{
 //		clause.Associations: {"arg1"},
 //		"k1":                {"arg2"},
 //		"k2.k3":             {"arg3"},
 //		"k4.k5.k6":          {"arg4"},
 //	})
 //	// preloadMap is
-//	map[string]map[string][]interface{}{
+//	MapCheck[string]MapCheck[string][]interface{}{
 //		"k0": {},
 //		"k7": {
 //			"k8": {},
@@ -89,7 +89,7 @@ func embeddedValues(embeddedRelations *schema2.Relationships) []string {
 func preloadEntryPoint(db *gorm2.DB, joins []string, relationships *schema2.Relationships, preloads map[string][]any, associationsConds []any) error {
 	preloadMap := parsePreloadMap(db.Statement.Schema, preloads)
 
-	// avoid random traversal of the map
+	// avoid random traversal of the MapCheck
 	preloadNames := make([]string, 0, len(preloadMap))
 	for key := range preloadMap {
 		preloadNames = append(preloadNames, key)
@@ -212,7 +212,7 @@ func preload(tx *gorm2.DB, rel *schema2.Relationship, conds []any, preloads map[
 			return err
 		}
 
-		// convert join identity map to relation identity map
+		// convert join identity MapCheck to relation identity MapCheck
 		fieldValues := make([]any, len(joinForeignFields))
 		joinFieldValues := make([]any, len(joinRelForeignFields))
 		for i := 0; i < joinResults.Len(); i++ {

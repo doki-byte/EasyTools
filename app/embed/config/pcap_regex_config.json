@@ -1,0 +1,7 @@
+{
+  "flagRegex": "flag\\{[^}]+\\}|FLAG\\{[^}]+\\}|ctf\\{[^}]+\\}|CTF\\{[^}]+\\}|key\\{[^}]+\\}|flag\\[[^\\]]+\\]",
+  "sqlRegex": "(SELECT|INSERT|UPDATE|DELETE).*?FROM|UNION.*?SELECT|DROP.*TABLE|INSERT.*INTO|UPDATE.*SET",
+  "credentialRegex": "password\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})|passwd\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})|pwd\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})|username\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})|user\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})|login\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})|auth\\s*[=:]\\s*['\"]?([^'\"\\s]{3,50})",
+  "keyRegex": "api[_-]?key\\s*[=:]\\s*['\"]?([a-zA-Z0-9_-]{10,50})['\"]?|secret[_-]?key\\s*[=:]\\s*['\"]?([a-zA-Z0-9_-]{10,50})['\"]?|access[_-]?token\\s*[=:]\\s*['\"]?([a-zA-Z0-9_-]{10,50})['\"]?|bearer\\s+([a-zA-Z0-9_-]{20,100})|token\\s*[=:]\\s*['\"]?([a-zA-Z0-9_-]{10,50})['\"]?",
+  "customRegex": {}
+}
